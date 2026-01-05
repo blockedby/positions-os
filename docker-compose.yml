@@ -43,6 +43,23 @@ services:
       timeout: 5s
       retries: 3
 
+  # database migrations (run with: docker compose run --rm migrate)
+  migrate:
+    image: migrate/migrate:latest
+    container_name: jhos-migrate
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path=/migrations",
+      "-database=postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable",
+      "up"
+    ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools  # only run explicitly: docker compose --profile tools run migrate
+
   # --------------------------------------------------------
   # ai services
   # --------------------------------------------------------
