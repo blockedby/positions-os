@@ -1,0 +1,54 @@
+# dependencies
+node_modules/
+vendor/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# logs
+logs/
+*.log
+
+# ide
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# os
+.DS_Store
+Thumbs.db
+
+# build artifacts
+dist/
+build/
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# test
+coverage/
+*.cover
+*.out
+
+# docker volumes (if mounted locally)
+postgres_data/
+nats_data/
+ollama_data/
+
+# telegram sessions (sensitive!)
+*.session
+sessions/
+
+# generated pdfs (optional - may want to keep)
+# generated/
+
+# temporary files
+tmp/
+temp/
+*.tmp
