@@ -1,0 +1,230 @@
+package telegram
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/celestix/gotgproto"
+	"github.com/gotd/td/tg"
+)
+
+// Client wraps gotgproto client and provides high-level telegram operations
+type Client struct {
+	client *gotgproto.Client
+}
+
+// NewClient creates a new telegram client wrapper from gotgproto client
+func NewClient(client *gotgproto.Client) *Client {
+	return &Client{client: client}
+}
+
+// Close stops the client
+func (c *Client) Close() {
+	if c.client != nil {
+		c.client.Stop()
+	}
+}
+
+// API returns the raw tg.Client for direct API calls
+func (c *Client) API() *tg.Client {
+	return c.client.API()
+}
+
+// ResolveChannel resolves channel username to Channel info
+// username can be with or without @ prefix
+func (c *Client) ResolveChannel(ctx context.Context, username string) (*Channel, error) {
+	// strip @ prefix if present
+	username = strings.TrimPrefix(username, "@")
+
+	resolved, err := c.client.API().ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
+		Username: username,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("resolve username %s: %w", username, err)
+	}
+
+	if len(resolved.Chats) == 0 {
+		return nil, fmt.Errorf("channel not found: %s", username)
+	}
+
+	ch, ok := resolved.Chats[0].(*tg.Channel)
+	if !ok {
+		return nil, fmt.Errorf("not a channel: %s", username)
+	}
+
+	// get full channel info to check if it's a forum
+	fullCh, err := c.client.API().ChannelsGetFullChannel(ctx, &tg.InputChannel{
+		ChannelID:  ch.ID,
+		AccessHash: ch.AccessHash,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get full channel: %w", err)
+	}
+
+	chFull, ok := fullCh.FullChat.(*tg.ChannelFull)
+	if !ok {
+		return nil, fmt.Errorf("unexpected channel type")
+	}
+
+	// forum flag is at position 30 in ChannelFull flags
+	isForum := chFull.Flags.Has(30)
+
+	return &Channel{
+		ID:         ch.ID,
+		AccessHash: ch.AccessHash,
+		Username:   username,
+		Title:      ch.Title,
+		IsForum:    isForum,
+	}, nil
+}
+
+// ChannelExists checks if channel username exists and is accessible
+func (c *Client) ChannelExists(ctx context.Context, username string) (bool, error) {
+	_, err := c.ResolveChannel(ctx, username)
+	if err != nil {
+		// check if it's a "not found" error
+		if strings.Contains(err.Error(), "not found") {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+// GetMessages fetches messages from a channel
+// offsetID: start from this message id (0 = newest messages)
+// limit: max number of messages to fetch (max 100)
+func (c *Client) GetMessages(ctx context.Context, channel *Channel, offsetID int, limit int) ([]Message, error) {
+	if limit > 100 {
+		limit = 100 // telegram api limit
+	}
+
+	history, err := c.client.API().MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
+		Peer: &tg.InputPeerChannel{
+			ChannelID:  channel.ID,
+			AccessHash: channel.AccessHash,
+		},
+		OffsetID: offsetID,
+		Limit:    limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get history: %w", err)
+	}
+
+	return c.extractMessages(history, channel)
+}
+
+// GetTopics returns list of forum topics for a channel
+// returns empty list if channel is not a forum
+func (c *Client) GetTopics(ctx context.Context, channel *Channel) ([]Topic, error) {
+	if !channel.IsForum {
+		return []Topic{}, nil
+	}
+
+	result, err := c.client.API().MessagesGetForumTopics(ctx, &tg.MessagesGetForumTopicsRequest{
+		Peer: &tg.InputPeerChannel{
+			ChannelID:  channel.ID,
+			AccessHash: channel.AccessHash,
+		},
+		Limit: 100, // fetch up to 100 topics
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get forum topics: %w", err)
+	}
+
+	// result is *tg.MessagesForumTopics
+	topics := result
+
+	var out []Topic
+	for _, t := range topics.Topics {
+		topic, ok := t.(*tg.ForumTopic)
+		if !ok {
+			continue
+		}
+
+		out = append(out, Topic{
+			ID:         topic.ID,
+			Title:      topic.Title,
+			TopMessage: topic.TopMessage,
+			Closed:     topic.Closed,
+			Pinned:     topic.Pinned,
+		})
+	}
+
+	return out, nil
+}
+
+// GetTopicMessages fetches messages from a specific forum topic
+func (c *Client) GetTopicMessages(ctx context.Context, channel *Channel, topicID int, offsetID int, limit int) ([]Message, error) {
+	if limit > 100 {
+		limit = 100
+	}
+
+	result, err := c.client.API().MessagesGetReplies(ctx, &tg.MessagesGetRepliesRequest{
+		Peer: &tg.InputPeerChannel{
+			ChannelID:  channel.ID,
+			AccessHash: channel.AccessHash,
+		},
+		MsgID:    topicID, // topic id is the message id
+		OffsetID: offsetID,
+		Limit:    limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get topic messages: %w", err)
+	}
+
+	return c.extractMessages(result, channel)
+}
+
+// extractMessages converts telegram message response to our Message type
+func (c *Client) extractMessages(messagesClass tg.MessagesMessagesClass, channel *Channel) ([]Message, error) {
+	var messages []Message
+
+	switch h := messagesClass.(type) {
+	case *tg.MessagesChannelMessages:
+		for _, msg := range h.Messages {
+			if m := c.parseMessage(msg, channel); m != nil {
+				messages = append(messages, *m)
+			}
+		}
+	case *tg.MessagesMessages:
+		for _, msg := range h.Messages {
+			if m := c.parseMessage(msg, channel); m != nil {
+				messages = append(messages, *m)
+			}
+		}
+	}
+
+	return messages, nil
+}
+
+// parseMessage converts a single telegram message to our Message type
+func (c *Client) parseMessage(msg tg.MessageClass, channel *Channel) *Message {
+	m, ok := msg.(*tg.Message)
+	if !ok {
+		return nil
+	}
+
+	// extract topic id from reply header if it's a forum message
+	var topicID *int
+	if m.ReplyTo != nil {
+		if replyHeader, ok := m.ReplyTo.(*tg.MessageReplyHeader); ok {
+			if replyHeader.ForumTopic {
+				tid := replyHeader.ReplyToMsgID
+				topicID = &tid
+			}
+		}
+	}
+
+	return &Message{
+		ID:        m.ID,
+		ChannelID: channel.ID,
+		Text:      m.Message,
+		Date:      time.Unix(int64(m.Date), 0),
+		TopicID:   topicID,
+		Views:     m.Views,
+		Forwards:  m.Forwards,
+	}
+}

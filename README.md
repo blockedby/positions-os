@@ -1,105 +1,174 @@
 # Positions OS
 
-Система управления поиском работы: парсинг вакансий, AI-анализ, автоматизация откликов.
+Automated job search system: vacancy scraping, AI analysis, and application automation.
 
-## Быстрый старт
+## Quick Start
 
-### Требования
+### Requirements
 
 - Docker & Docker Compose
 - Go 1.21+
-- Make (опционально)
+- Telegram API credentials (get from https://my.telegram.org)
 
-### Запуск
+### Setup
 
-```bash
-# 1. Скопируй .env файл
-cp .env.example .env
+1. **Prepare Environment**:
 
-# 2. Запусти инфраструктуру
-docker compose up -d postgres nats
+   ```powershell
+   copy .env.example .env
+   # Fill TG_API_ID and TG_API_HASH from https://my.telegram.org
+   ```
 
-# 3. Примени миграции
-docker compose --profile tools run --rm migrate
+2. **Generate Session**:
 
-# 4. Проверь что всё работает
-docker compose ps
-```
+   ```powershell
+   go run cmd/tg-auth/main.go
+   # Follow prompts. For session, you can use TDesktop (if installed) or SMS.
+   # Copy the result string to TG_SESSION_STRING in .env
+   ```
 
-### Остановка
+3. **Start Infrastructure**:
 
-```bash
-docker compose down
-```
+   ```powershell
+   docker compose up -d
+   # Apply migrations (requires migrate tool or use docker profile if configured in Makefile)
+   # For Windows without 'make', you can run:
+   docker compose --profile tools run --rm migrate
+   ```
 
-## Структура проекта
+4. **Launch Service**:
+   ```powershell
+   go run cmd/collector/main.go
+   ```
+
+## Project Structure
 
 ```
 positions-os/
-├── cmd/                    # точки входа сервисов
-├── internal/               # внутренние пакеты
-│   ├── config/             # конфигурация
-│   ├── database/           # работа с postgresql
-│   ├── logger/             # логирование
-│   ├── models/             # типы данных
-│   └── nats/               # pub/sub клиент
-├── migrations/             # sql миграции
-├── docs/                   # документация
-└── docker-compose.yml      # инфраструктура
+├── cmd/                       # service entry points
+│   ├── tg-auth/              # telegram authentication cli tool
+│   ├── tg-topics/            # telegram forum topics lister
+│   └── collector/            # collector service (phase 1)
+├── internal/                  # internal packages
+│   ├── config/               # configuration
+│   ├── database/             # postgresql client
+│   ├── logger/               # structured logging
+│   ├── models/               # data models
+│   ├── nats/                 # nats pub/sub client
+│   ├── telegram/             # telegram api client
+│   ├── repository/           # data access layer
+│   └── collector/            # collector business logic
+├── migrations/                # sql database migrations
+├── docs/                      # documentation
+└── docker-compose.yml         # infrastructure setup
 ```
 
-## Makefile команды
+## Scripts
+
+- **Auth**: `go run cmd/tg-auth/main.go` — Generate Telegram session string.
+- **Topics**: `go run cmd/tg-topics/main.go @channel` — List forum topics.
+- **Collector**: `go run cmd/collector/main.go` — Start service locally.
+- **Infrastructure**: `docker compose up -d` — Start DB and NATS.
+- **Migrations**: `make migrate-up` — Apply database schema.
+- **Tests**: `go test ./...` — Run all tests.
+
+## AI Prompts
+
+- [Chain of Thoughts](docs/prompts/chain-of-thoughts.xml) — Reasoning guidelines.
+- [Job Extraction](docs/prompts/job-extraction.xml) — Data extraction schema.
+
+## Services
+
+| Service       | Port | Description                |
+| ------------- | ---- | -------------------------- |
+| PostgreSQL    | 5432 | Main database              |
+| NATS          | 4222 | Message broker             |
+| NATS Monitor  | 8222 | NATS monitoring            |
+| Collector API | 3100 | Scraping service (Phase 1) |
+
+## Commands (PowerShell on Windows)
+
+```powershell
+# install dependencies
+go mod tidy
+
+# run migrations (requires migrate cli)
+migrate -path migrations -database "postgres://jhos:jhos_secret@localhost:5432/jhos?sslmode=disable" up
+
+# build all services
+go build -o bin/ ./cmd/...
+
+# run tests
+go test -v ./...
+
+# format code
+go fmt ./...
+```
+
+## API Endpoints (Phase 1: Collector)
+
+### Scraping Control
 
 ```bash
-make deps           # установить зависимости
-make migrate-up     # применить миграции
-make migrate-down   # откатить последнюю миграцию
-make docker-up      # запустить docker
-make docker-down    # остановить docker
-make build          # собрать бинарники
-make test           # запустить тесты
-make lint           # проверить код
+# start scraping a channel
+POST /api/v1/scrape/telegram
+{
+  "channel": "@golang_jobs",
+  "limit": 100,
+  "topic_ids": [1, 15, 28]  # optional, for forums only
+}
+
+# stop current scraping task
+DELETE /api/v1/scrape/current
+
+# get scraping status
+GET /api/v1/scrape/status
+
+# health check
+GET /health
 ```
 
-## Сервисы
+### Target Management
 
-| Сервис       | Порт | Описание             |
-| ------------ | ---- | -------------------- |
-| PostgreSQL   | 5432 | База данных          |
-| NATS         | 4222 | Message broker       |
-| NATS Monitor | 8222 | NATS мониторинг      |
-| Web UI       | 3100 | Веб-интерфейс (TODO) |
+```bash
+# list all scraping targets
+GET /api/v1/targets
 
-## Документация
-
-- [План реализации](docs/implementation-order.md)
-- [Telegram интеграция](docs/telegram-integration.md)
-- [Фаза 0: Инфраструктура](docs/phase-0-infrastructure.md)
-
-## Переменные окружения
-
-```env
-# database
-DATABASE_URL=postgres://jhos:jhos_secret@localhost:5432/jhos?sslmode=disable
-
-# nats
-NATS_URL=nats://localhost:4222
-
-# llm (lm studio compatible)
-LLM_BASE_URL=http://localhost:1234/v1
-LLM_MODEL=local-model
-
-# telegram
-TG_API_ID=
-TG_API_HASH=
-TG_SESSION_STRING=
-
-# server
-HTTP_PORT=3100
-LOG_LEVEL=info
-LOG_FILE=./logs/app.log
+# create new target
+POST /api/v1/targets
+{
+  "name": "Go Jobs",
+  "type": "TG_CHANNEL",
+  "url": "@golang_jobs"
+}
 ```
 
-## Лицензия
+## Documentation
+
+- [Implementation Plan](docs/implementation-order.md)
+- [Phase 0: Infrastructure](docs/phase-0-infrastructure.md)
+- [Phase 1: Collector](docs/phase-1-collector.md)
+
+## Environment Variables
+
+See `.env.example` for all available configuration options.
+
+Key variables:
+
+- `TG_API_ID` - Telegram API ID (from https://my.telegram.org)
+- `TG_API_HASH` - Telegram API Hash
+- `TG_SESSION_STRING` - Generated via `tg-auth` tool
+- `DATABASE_URL` - PostgreSQL connection string
+- `NATS_URL` - NATS server URL
+
+## Development Phases
+
+- [x] **Phase 0**: Infrastructure (PostgreSQL, NATS, migrations)
+- [x] **Phase 1**: Collector (Telegram scraping, REST API)
+- [ ] **Phase 2**: Analyzer (LLM-based job analysis)
+- [ ] **Phase 3**: Brain (Resume tailoring, application automation)
+- [ ] **Phase 4**: Web UI (User interface)
+
+## License
 
 Private

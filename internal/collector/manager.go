@@ -1,0 +1,121 @@
+package collector
+
+import (
+	"context"
+	"errors"
+	"sync"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+// errors
+var (
+	ErrAlreadyRunning = errors.New("a scrape job is already running")
+)
+
+// ScrapeOptions holds options for a scrape job
+type ScrapeOptions struct {
+	TargetID uuid.UUID
+	Channel  string
+	Limit    int
+	Until    *time.Time
+	TopicIDs []int
+}
+
+// ScrapeJob represents an active scrape job
+type ScrapeJob struct {
+	ID        uuid.UUID
+	TargetID  uuid.UUID
+	StartedAt time.Time
+	Options   ScrapeOptions
+}
+
+// Scraper defines the interface for scraping logic
+type Scraper interface {
+	Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult, error)
+}
+
+// ScrapeManager manages active scrape jobs
+// ensures only one job runs at a time
+// thread-safe
+type ScrapeManager struct {
+	mu       sync.Mutex
+	current  *ScrapeJob
+	cancelFn context.CancelFunc
+	scraper  Scraper
+}
+
+// NewScrapeManager creates a new scrape manager
+func NewScrapeManager(scraper Scraper) *ScrapeManager {
+	return &ScrapeManager{
+		scraper: scraper,
+	}
+}
+
+// Start starts a new scrape job
+// returns ErrAlreadyRunning if a job is already running
+func (m *ScrapeManager) Start(ctx context.Context, opts ScrapeOptions) (*ScrapeJob, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.current != nil {
+		return nil, ErrAlreadyRunning
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	m.cancelFn = cancel
+
+	job := &ScrapeJob{
+		ID:        uuid.New(),
+		TargetID:  opts.TargetID,
+		StartedAt: time.Now(),
+		Options:   opts,
+	}
+	m.current = job
+
+	// run the actual scraping in a goroutine
+	go m.run(ctx, job)
+
+	return job, nil
+}
+
+// Stop stops the current scrape job
+// safe to call when no job is running
+func (m *ScrapeManager) Stop() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.cancelFn != nil {
+		m.cancelFn()
+		m.cancelFn = nil
+	}
+	m.current = nil
+}
+
+// Current returns the currently running job
+// returns nil if no job is running
+func (m *ScrapeManager) Current() *ScrapeJob {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.current
+}
+
+// run executes the scrape job
+// this is called in a goroutine
+func (m *ScrapeManager) run(ctx context.Context, job *ScrapeJob) {
+	defer func() {
+		m.mu.Lock()
+		if m.current != nil && m.current.ID == job.ID {
+			m.current = nil
+			m.cancelFn = nil
+		}
+		m.mu.Unlock()
+	}()
+
+	// execute scraping
+	if m.scraper != nil {
+		_, _ = m.scraper.Scrape(ctx, job.Options)
+		// errors are logged inside Scrape method usually
+	}
+}

@@ -61,118 +61,53 @@ services:
       - tools  # only run explicitly: docker compose --profile tools run migrate
 
   # --------------------------------------------------------
-  # ai services
+  # application services
+  # --------------------------------------------------------
+
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jhos-collector
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    ports:
+      - "3100:3100"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
+      NATS_URL: nats://nats:4222
+      TG_API_ID: ${TG_API_ID}
+      TG_API_HASH: ${TG_API_HASH}
+      TG_SESSION_STRING: ${TG_SESSION_STRING}
+      COLLECTOR_PORT: 3100
+      COLLECTOR_LOG_LEVEL: debug
+    profiles:
+      - app # Add profile so it doesn't start by default with tests if not needed
+
+  # --------------------------------------------------------
+  # tests
   # --------------------------------------------------------
   
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   container_name: jhos-ollama
-  #   restart: unless-stopped
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-    # uncomment for gpu support (nvidia)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
-  # --------------------------------------------------------
-  # application services (stubs - to be implemented)
-  # --------------------------------------------------------
-
-  # collector:
-  #   build:
-  #     context: ./services/collector
-  #     dockerfile: Dockerfile
-  #   container_name: jhos-collector
-  #   restart: unless-stopped
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     nats:
-  #       condition: service_started
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
-  #     NATS_URL: nats://nats:4222
-  #     TG_API_ID: ${TG_API_ID}
-  #     TG_API_HASH: ${TG_API_HASH}
-  #     TG_SESSION_STRING: ${TG_SESSION_STRING}
-  #   volumes:
-  #     - ./data/sessions:/app/sessions
-
-  # analyzer:
-  #   build:
-  #     context: ./services/analyzer
-  #     dockerfile: Dockerfile
-  #   container_name: jhos-analyzer
-  #   restart: unless-stopped
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     nats:
-  #       condition: service_started
-  #     ollama:
-  #       condition: service_started
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
-  #     NATS_URL: nats://nats:4222
-  #     OLLAMA_URL: http://ollama:11434
-
-  # brain:
-  #   build:
-  #     context: ./services/brain
-  #     dockerfile: Dockerfile
-  #   container_name: jhos-brain
-  #   restart: unless-stopped
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     nats:
-  #       condition: service_started
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
-  #     NATS_URL: nats://nats:4222
-  #     OPENAI_API_KEY: ${OPENAI_API_KEY}
-
-  # dispatcher:
-  #   build:
-  #     context: ./services/dispatcher
-  #     dockerfile: Dockerfile
-  #   container_name: jhos-dispatcher
-  #   restart: unless-stopped
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     nats:
-  #       condition: service_started
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
-  #     NATS_URL: nats://nats:4222
-  #     TG_API_ID: ${TG_API_ID}
-  #     TG_API_HASH: ${TG_API_HASH}
-  #     TG_SESSION_STRING: ${TG_SESSION_STRING}
-
-  # web:
-  #   build:
-  #     context: ./services/web
-  #     dockerfile: Dockerfile
-  #   container_name: jhos-web
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     nats:
-  #       condition: service_started
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
-  #     NATS_URL: nats://nats:4222
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: jhos-integration-tests
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    environment:
+      INTEGRATION_TEST: "1"
+      DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
+      NATS_URL: nats://nats:4222
+    profiles:
+      - test
 
 volumes:
   postgres_data:

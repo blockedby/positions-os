@@ -1,0 +1,14 @@
+FROM golang:1.24-alpine
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Install build tools if needed (gcc etc for cgo), but we use pure go mostly.
+# If pgx needs cgo, we might need build-base.
+# pgx is pure go.
+
+CMD ["go", "test", "-v", "./tests/integration/..."]

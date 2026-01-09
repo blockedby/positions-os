@@ -73,3 +73,25 @@ help:
 	@echo "  fmt            - format code"
 	@echo "  check          - verify compilation"
 	@echo "  clean          - clean build artifacts"
+	@echo "  collector      - run collector service"
+	@echo "  tg-auth        - run telegram auth tool"
+
+# run collector service
+collector:
+	go run ./cmd/collector/main.go
+
+# run telegram auth tool
+tg-auth:
+	go run ./cmd/tg-auth/main.go
+
+# run telegram topics lister (usage: make tg-topics channel=@forum)
+tg-topics:
+	go run ./cmd/tg-topics/main.go $(channel)
+
+# run unit tests only
+test-unit:
+	go test -v -race ./internal/...
+
+# run all tests with coverage
+test-coverage:
+	go test -cover ./...

@@ -42,7 +42,9 @@ nats_data/
 ollama_data/
 
 # telegram sessions (sensitive!)
+tg_session
 *.session
+*.session-journal
 sessions/
 
 # generated pdfs (optional - may want to keep)

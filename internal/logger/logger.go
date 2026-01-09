@@ -66,6 +66,17 @@ func Init(level string, logFile string) error {
 	return nil
 }
 
+// Get returns the global logger.
+// Returns a no-op logger if not initialized.
+func Get() *Logger {
+	if Global == nil {
+		// return a no-op logger (writes to discard)
+		noop := zerolog.Nop()
+		return &Logger{noop}
+	}
+	return Global
+}
+
 // Info logs an info message using the global logger.
 func Info(msg string) {
 	if Global != nil {
