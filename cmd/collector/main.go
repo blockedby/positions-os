@@ -50,6 +50,8 @@ func main() {
 		log.Fatal().Msg("TG_API_ID, TG_API_HASH and TG_SESSION_STRING are required")
 	}
 
+	log.Info().Int("session_len", len(tgSession)).Str("session_prefix", tgSession[:10]).Msg("loaded session string")
+
 	tgAppID, err := strconv.Atoi(tgAppIDStr)
 	if err != nil {
 		log.Fatal().Err(err).Msg("invalid TG_API_ID")
@@ -113,7 +115,7 @@ func main() {
 
 	// create manager and handler
 	manager := collector.NewScrapeManager(svc) // inject service as scraper
-	handler := collector.NewHandler(manager)
+	handler := collector.NewHandler(manager, targetsRepo)
 	router := collector.NewRouter(handler)
 
 	// get port from env

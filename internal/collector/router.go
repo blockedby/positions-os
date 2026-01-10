@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 // NewRouter creates a new chi router with all collector endpoints
@@ -16,6 +17,13 @@ func NewRouter(handler *Handler) http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 
+	// basic cors
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS", "DELETE", "PUT"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
+	}))
+
 	// health check
 	r.Get("/health", handler.Health)
 
@@ -26,13 +34,12 @@ func NewRouter(handler *Handler) http.Handler {
 		r.Delete("/scrape/current", handler.StopScrape)
 		r.Get("/scrape/status", handler.Status)
 
-		// targets endpoints (placeholder for now)
-		r.Get("/targets", func(w http.ResponseWriter, r *http.Request) {
-			respondJSON(w, http.StatusOK, []interface{}{})
-		})
-		r.Post("/targets", func(w http.ResponseWriter, r *http.Request) {
-			respondError(w, http.StatusNotImplemented, "not implemented yet")
-		})
+		// targets endpoints
+		r.Get("/targets", handler.ListTargets)
+		r.Post("/targets", handler.CreateTarget)
+
+		// tools endpoints
+		r.Get("/tools/telegram/topics", handler.ListForumTopics)
 	})
 
 	return r

@@ -65,12 +65,41 @@ positions-os/
 
 ## Scripts
 
-- **Auth**: `go run cmd/tg-auth/main.go` — Generate Telegram session string.
-- **Topics**: `go run cmd/tg-topics/main.go @channel` — List forum topics.
-- **Collector**: `go run cmd/collector/main.go` — Start service locally.
-- **Infrastructure**: `docker compose up -d` — Start DB and NATS.
-- **Migrations**: `make migrate-up` — Apply database schema.
-- **Tests**: `go test ./...` — Run all tests.
+### 1. Authentication
+
+Generate a Telegram session string required for `.env`:
+
+```powershell
+go run cmd/tg-auth/main.go
+```
+
+_Follow the interactive prompts (Option 2 for SMS is recommended)._
+
+### 2. Inspect Forum Topics
+
+If you need to scrape specific sub-chats (topics) from a supergroup:
+
+```powershell
+go run cmd/tg-topics/main.go @some_forum_username
+```
+
+_This will output a list of topics and their IDs (e.g., `id: 15`). Use these IDs in your scrape request._
+
+### 3. Run Collector
+
+Start the collector service locally:
+
+```powershell
+go run cmd/collector/main.go
+```
+
+### 4. Tests
+
+Run integration and unit tests:
+
+```powershell
+go test ./...
+```
 
 ## AI Prompts
 

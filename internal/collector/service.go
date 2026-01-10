@@ -16,6 +16,7 @@ import (
 type TelegramClient interface {
 	ResolveChannel(ctx context.Context, username string) (*telegram.Channel, error)
 	GetMessages(ctx context.Context, channel *telegram.Channel, offsetID int, limit int) ([]telegram.Message, error)
+	GetTopics(ctx context.Context, channel *telegram.Channel) ([]telegram.Topic, error)
 }
 
 // Service orchestrates the scraping process
@@ -59,6 +60,27 @@ func NewService(
 		publisher: publisher,
 		log:       log,
 	}
+}
+
+// ListTopics returns list of topics for a forum channel
+func (s *Service) ListTopics(ctx context.Context, channelURL string) ([]telegram.Topic, error) {
+	// resolve channel
+	channel, err := s.tgClient.ResolveChannel(ctx, channelURL)
+	if err != nil {
+		return nil, fmt.Errorf("resolve channel: %w", err)
+	}
+
+	if !channel.IsForum {
+		return nil, fmt.Errorf("channel is not a forum")
+	}
+
+	// fetch topics
+	topics, err := s.tgClient.GetTopics(ctx, channel)
+	if err != nil {
+		return nil, fmt.Errorf("get topics: %w", err)
+	}
+
+	return topics, nil
 }
 
 // ScrapeResult contains scraping statistics

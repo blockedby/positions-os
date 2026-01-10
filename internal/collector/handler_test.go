@@ -7,11 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/blockedby/positions-os/internal/telegram"
 )
 
 // test health endpoint
 func TestHandler_Health(t *testing.T) {
-	handler := NewHandler(NewScrapeManager(&MockScraper{}))
+	handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 	router := NewRouter(handler)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -27,7 +29,7 @@ func TestHandler_Health(t *testing.T) {
 // test start scrape endpoint
 func TestHandler_StartScrape(t *testing.T) {
 	t.Run("returns 400 on empty request", func(t *testing.T) {
-		handler := NewHandler(NewScrapeManager(&MockScraper{}))
+		handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 		router := NewRouter(handler)
 
 		body := `{}`
@@ -43,7 +45,7 @@ func TestHandler_StartScrape(t *testing.T) {
 	})
 
 	t.Run("returns 400 on invalid json", func(t *testing.T) {
-		handler := NewHandler(NewScrapeManager(&MockScraper{}))
+		handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 		router := NewRouter(handler)
 
 		body := `not json`
@@ -59,7 +61,7 @@ func TestHandler_StartScrape(t *testing.T) {
 	})
 
 	t.Run("returns 400 on negative limit", func(t *testing.T) {
-		handler := NewHandler(NewScrapeManager(&MockScraper{}))
+		handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 		router := NewRouter(handler)
 
 		body := `{"channel": "@test", "limit": -1}`
@@ -75,7 +77,7 @@ func TestHandler_StartScrape(t *testing.T) {
 	})
 
 	t.Run("returns 200 on valid request", func(t *testing.T) {
-		handler := NewHandler(NewScrapeManager(&MockScraper{}))
+		handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 		router := NewRouter(handler)
 
 		body := `{"channel": "@test_channel"}`
@@ -100,7 +102,7 @@ func TestHandler_StartScrape(t *testing.T) {
 
 	t.Run("returns 409 when already running", func(t *testing.T) {
 		manager := NewScrapeManager(&MockScraper{Delay: 100 * time.Millisecond})
-		handler := NewHandler(manager)
+		handler := NewHandler(manager, nil)
 		router := NewRouter(handler)
 
 		// start first job
@@ -130,7 +132,7 @@ func TestHandler_StartScrape(t *testing.T) {
 // test stop scrape endpoint
 func TestHandler_StopScrape(t *testing.T) {
 	t.Run("returns 200 even when not running", func(t *testing.T) {
-		handler := NewHandler(NewScrapeManager(&MockScraper{}))
+		handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 		router := NewRouter(handler)
 
 		req := httptest.NewRequest(http.MethodDelete, "/api/v1/scrape/current", nil)
@@ -145,7 +147,7 @@ func TestHandler_StopScrape(t *testing.T) {
 
 	t.Run("stops running job", func(t *testing.T) {
 		manager := NewScrapeManager(&MockScraper{})
-		handler := NewHandler(manager)
+		handler := NewHandler(manager, nil)
 		router := NewRouter(handler)
 
 		// start a job first
@@ -174,7 +176,7 @@ func TestHandler_StopScrape(t *testing.T) {
 // test status endpoint
 func TestHandler_Status(t *testing.T) {
 	t.Run("returns no job when not running", func(t *testing.T) {
-		handler := NewHandler(NewScrapeManager(&MockScraper{}))
+		handler := NewHandler(NewScrapeManager(&MockScraper{}), nil)
 		router := NewRouter(handler)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/scrape/status", nil)
@@ -184,6 +186,45 @@ func TestHandler_Status(t *testing.T) {
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("Status() status = %d, want %d", rec.Code, http.StatusOK)
+		}
+	})
+}
+
+// test list topics endpoint
+func TestHandler_ListForumTopics(t *testing.T) {
+	t.Run("returns topics with correct json keys", func(t *testing.T) {
+		mockScraper := &MockScraper{
+			TopicsToReturn: []telegram.Topic{
+				{ID: 1, Title: "General"},
+			},
+		}
+		handler := NewHandler(NewScrapeManager(mockScraper), nil)
+		router := NewRouter(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/tools/telegram/topics?channel=@test", nil)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("ListForumTopics() status = %d, want %d", rec.Code, http.StatusOK)
+		}
+
+		var resp []map[string]interface{}
+		if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(resp) == 0 {
+			t.Fatal("response is empty")
+		}
+
+		topic := resp[0]
+		if _, ok := topic["id"]; !ok {
+			t.Error("JSON key 'id' missing (check case?)")
+		}
+		if _, ok := topic["title"]; !ok {
+			t.Error("JSON key 'title' missing (check case?)")
 		}
 	})
 }

@@ -6,44 +6,44 @@ import (
 
 // Message represents a parsed telegram message
 type Message struct {
-	ID        int       // message id (unique within channel)
-	ChannelID int64     // channel id
-	Text      string    // message text content
-	Date      time.Time // message creation timestamp
-	TopicID   *int      // forum topic id (nil for non-forum channels)
-	Views     int       // view count
-	Forwards  int       // forward count
+	ID        int       `json:"id"`
+	ChannelID int64     `json:"channel_id"`
+	Text      string    `json:"text"`
+	Date      time.Time `json:"date"`
+	TopicID   *int      `json:"topic_id"`
+	Views     int       `json:"views"`
+	Forwards  int       `json:"forwards"`
 }
 
 // Topic represents a forum topic
 type Topic struct {
-	ID         int    // topic id (same as message_thread_id)
-	Title      string // topic title
-	TopMessage int    // id of last message in topic
-	Closed     bool   // whether topic is closed
-	Pinned     bool   // whether topic is pinned
+	ID         int    `json:"id"`
+	Title      string `json:"title"`
+	TopMessage int    `json:"top_message"`
+	Closed     bool   `json:"closed"`
+	Pinned     bool   `json:"pinned"`
 }
 
 // Channel represents a telegram channel info
 type Channel struct {
-	ID         int64  // channel id
-	AccessHash int64  // access hash for api calls
-	Username   string // channel username (without @)
-	Title      string // channel title
-	IsForum    bool   // whether it's a forum-type supergroup
+	ID         int64  `json:"id"`
+	AccessHash int64  `json:"access_hash"`
+	Username   string `json:"username"`
+	Title      string `json:"title"`
+	IsForum    bool   `json:"is_forum"`
 }
 
 // ParsedRange represents a range of scraped message ids
 type ParsedRange struct {
-	MinMsgID int64 // lowest message id scraped
-	MaxMsgID int64 // highest message id scraped
+	MinMsgID int64 `json:"min_msg_id"`
+	MaxMsgID int64 `json:"max_msg_id"`
 }
 
 // ScrapeStats tracks statistics during scraping
 type ScrapeStats struct {
-	TotalFetched int // total messages fetched from telegram
-	NewMessages  int // new messages saved to database
-	SkippedOld   int // messages skipped due to deduplication
-	SkippedEmpty int // messages skipped due to empty content
-	Errors       int // error count
+	TotalFetched int `json:"total_fetched"`
+	NewMessages  int `json:"new_messages"`
+	SkippedOld   int `json:"skipped_old"`
+	SkippedEmpty int `json:"skipped_empty"`
+	Errors       int `json:"errors"`
 }

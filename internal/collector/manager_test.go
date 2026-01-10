@@ -6,14 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/google/uuid"
 )
 
 // MockScraper for testing
 type MockScraper struct {
-	Called bool
-	Opts   ScrapeOptions
-	Delay  time.Duration
+	Called         bool
+	Opts           ScrapeOptions
+	Delay          time.Duration
+	TopicsToReturn []telegram.Topic
 }
 
 func (m *MockScraper) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult, error) {
@@ -26,6 +28,10 @@ func (m *MockScraper) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeRe
 		}
 	}
 	return &ScrapeResult{}, nil
+}
+
+func (m *MockScraper) ListTopics(ctx context.Context, channelURL string) ([]telegram.Topic, error) {
+	return m.TopicsToReturn, nil
 }
 
 // test manager start

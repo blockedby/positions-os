@@ -57,21 +57,21 @@ All tests passing:
 
 ### Repository Layer (Database Integration)
 
-- [ ] `internal/repository/jobs.go` - Jobs CRUD operations
-- [ ] `internal/repository/targets.go` - Targets CRUD operations
-- [ ] Integration tests with actual PostgreSQL
+- [x] `internal/repository/jobs.go` - Jobs CRUD operations
+- [x] `internal/repository/targets.go` - Targets CRUD operations
+- [x] Integration tests with actual PostgreSQL
 
 ### Telegram Integration
 
-- [ ] `internal/telegram/parser.go` - Scraping orchestration
-- [ ] Connect TG client to collector service
-- [ ] NATS event publishing for new jobs
+- [x] `internal/telegram/parser.go` - Superseded by `internal/collector/service.go`
+- [x] Connect TG client to collector service
+- [x] NATS event publishing for new jobs
 
 ### Full Integration
 
-- [ ] Wire repository to collector service
-- [ ] Wire telegram client to collector service
-- [ ] End-to-end testing
+- [x] Wire repository to collector service
+- [x] Wire telegram client to collector service
+- [x] End-to-end testing
 
 ## 🚀 How to Run
 
@@ -99,6 +99,10 @@ export COLLECTOR_LOG_FILE=./logs/collector.log
 go run cmd/collector/main.go
 ```
 
+### Manual Testing
+
+Open `tests/integration/collector_manual_test.html` in your browser to interact with the running service.
+
 ### Generate Telegram Session
 
 ```bash
@@ -115,14 +119,14 @@ go run cmd/tg-topics/main.go @your_forum
 
 ## 📊 API Endpoints
 
-| Endpoint                  | Method | Description                 |
-| ------------------------- | ------ | --------------------------- |
-| `/health`                 | GET    | Health check                |
-| `/api/v1/scrape/telegram` | POST   | Start scraping              |
-| `/api/v1/scrape/current`  | DELETE | Stop current scrape         |
-| `/api/v1/scrape/status`   | GET    | Get scrape status           |
-| `/api/v1/targets`         | GET    | List targets (placeholder)  |
-| `/api/v1/targets`         | POST   | Create target (placeholder) |
+| Endpoint                  | Method | Description                |
+| ------------------------- | ------ | -------------------------- |
+| `/health`                 | GET    | Health check               |
+| `/api/v1/scrape/telegram` | POST   | Start scraping             |
+| `/api/v1/scrape/current`  | DELETE | Stop current scrape        |
+| `/api/v1/scrape/status`   | GET    | Get scrape status          |
+| `/api/v1/targets`         | GET    | List all active targets    |
+| `/api/v1/targets`         | POST   | Create new scraping target |
 
 ## 📝 Design Decisions
 
@@ -162,17 +166,17 @@ go run cmd/tg-topics/main.go @your_forum
 
 ## 📈 Progress
 
-| Component  | Status            | Tests        |
-| ---------- | ----------------- | ------------ |
-| CLI Tools  | ✅ Complete       | N/A (manual) |
-| Types      | ✅ Complete       | ✅ Passing   |
-| Repository | ✅ Logic Complete | ✅ Passing   |
-| Validation | ✅ Complete       | ✅ Passing   |
-| Manager    | ✅ Complete       | ✅ Passing   |
-| Handlers   | ✅ Complete       | ✅ Passing   |
-| Router     | ✅ Complete       | ✅ Passing   |
-| Main       | ✅ Complete       | N/A          |
+| Component  | Status      | Tests        |
+| ---------- | ----------- | ------------ |
+| CLI Tools  | ✅ Complete | N/A (manual) |
+| Types      | ✅ Complete | ✅ Passing   |
+| Repository | ✅ Complete | ✅ Passing   |
+| Validation | ✅ Complete | ✅ Passing   |
+| Manager    | ✅ Complete | ✅ Passing   |
+| Handlers   | ✅ Complete | ✅ Passing   |
+| Router     | ✅ Complete | ✅ Passing   |
+| Main       | ✅ Complete | N/A          |
 
-**Overall: ~75% complete**
+**Overall: 100% complete**
 
-Next steps: Repository DB integration, Telegram parser, NATS publishing
+Next steps: Proceed to Phase 2 (Analyzer Service).

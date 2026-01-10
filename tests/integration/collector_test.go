@@ -35,6 +35,10 @@ func (m *MockTGClient) GetMessages(ctx context.Context, channel *telegram.Channe
 	return m.Messages, nil
 }
 
+func (m *MockTGClient) GetTopics(ctx context.Context, channel *telegram.Channel) ([]telegram.Topic, error) {
+	return []telegram.Topic{}, nil
+}
+
 // MockPublisher mocks event publisher
 type MockPublisher struct {
 	Events []collector.JobNewEvent
@@ -121,7 +125,7 @@ func TestEndToEnd_Scraping(t *testing.T) {
 	// run scrape
 	ctx := context.Background()
 	opts := collector.ScrapeOptions{
-		Channel: "@test_channel",
+		Channel: "@easy_python_job",
 		Limit:   10,
 	}
 
@@ -141,7 +145,7 @@ func TestEndToEnd_Scraping(t *testing.T) {
 	// verify db state
 
 	// target created?
-	target, err := targetsRepo.GetByURL(ctx, "test_channel")
+	target, err := targetsRepo.GetByURL(ctx, "easy_python_job")
 	if err != nil {
 		t.Fatalf("GetByURL error: %v", err)
 	}

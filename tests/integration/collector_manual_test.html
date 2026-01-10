@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Collector Manual Test Console</title>
+    <style>
+      :root {
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --success: #10b981;
+        --error: #ef4444;
+        --border: #334155;
+        --glass: rgba(30, 41, 59, 0.7);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        line-height: 1.6;
+        padding: 2rem;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 2rem;
+      }
+
+      h1 {
+        grid-column: 1 / -1;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #60a5fa, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+      }
+
+      .card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
+      }
+
+      .control-group {
+        margin-bottom: 1rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        background: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        transition: border-color 0.2s;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      button {
+        width: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--accent);
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.85rem;
+      }
+
+      button:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
+
+      button.secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+
+      button.secondary:hover {
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+      }
+
+      button.danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      button.danger:hover {
+        background: var(--error);
+        color: white;
+      }
+
+      #log-area {
+        background: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        height: 500px;
+        overflow-y: auto;
+        font-family: "Fira Code", monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+      }
+
+      .log-entry {
+        margin-bottom: 0.5rem;
+        border-left: 2px solid transparent;
+        padding-left: 0.5rem;
+      }
+      .log-success {
+        border-color: var(--success);
+        color: #86efac;
+      }
+      .log-error {
+        border-color: var(--error);
+        color: #fca5a5;
+      }
+      .log-info {
+        border-color: var(--accent);
+        color: #bfdbfe;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--border);
+        color: var(--text-secondary);
+      }
+      .status-online {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+      }
+      .status-offline {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h1>
+          Collector
+          <span style="font-size: 0.5em; opacity: 0.5; vertical-align: middle"
+            >v1.0</span
+          >
+        </h1>
+
+        <div class="card">
+          <h2>Status & Health</h2>
+          <div class="control-group">
+            <label>Collector API</label>
+            <div id="health-status" class="status-badge status-offline">
+              Checking...
+            </div>
+          </div>
+          <div class="control-group">
+            <button onclick="checkHealth()" class="secondary">
+              Refresh Status
+            </button>
+          </div>
+          <div class="control-group">
+            <label>Current Status</label>
+            <pre
+              id="scrape-status"
+              style="
+                font-size: 0.8rem;
+                background: #0f172a;
+                padding: 0.5rem;
+                border-radius: 4px;
+              "
+            >
+Unknown</pre
+            >
+          </div>
+          <div class="control-group">
+            <button onclick="getScrapeStatus()" class="secondary">
+              Check Scrape Status
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Actions</h2>
+          <div class="control-group">
+            <label>Scrape Channel</label>
+            <input
+              type="text"
+              id="manual-channel"
+              placeholder="@golang_jobs"
+              value="@golang_jobs"
+            />
+          </div>
+          <div class="control-group">
+            <label>Limit (0 = all)</label>
+            <input type="number" id="manual-limit" value="10" />
+          </div>
+          <div class="control-group">
+            <label>Topic IDs (comma-separated)</label>
+            <input
+              type="text"
+              id="manual-topic-ids"
+              placeholder="e.g. 1, 15 (optional)"
+            />
+          </div>
+          <div class="control-group">
+            <button onclick="startScrape()">Start Scraping</button>
+          </div>
+          <div class="control-group">
+            <button onclick="stopScrape()" class="danger">
+              Stop Current Task
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Database Targets</h2>
+          <div class="control-group">
+            <button onclick="listTargets()" class="secondary">
+              List All Targets
+            </button>
+          </div>
+          <hr style="border-color: var(--border); margin: 1rem 0" />
+          <div class="control-group">
+            <label>Add New Target</label>
+            <input
+              type="text"
+              id="target-name"
+              placeholder="Name (e.g. Go Jobs)"
+            />
+          </div>
+          <div class="control-group">
+            <input
+              type="text"
+              id="target-url"
+              placeholder="URL (e.g. @golang_jobs)"
+            />
+          </div>
+          <div class="control-group">
+            <button onclick="addTarget()">Save Target</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <!-- Forum Explorer -->
+        <div class="card">
+          <h2>Forum Explorer</h2>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr auto;
+              gap: 1rem;
+              margin-bottom: 1rem;
+            "
+          >
+            <input
+              type="text"
+              id="explorer-channel"
+              placeholder="@forum_username"
+            />
+            <button onclick="fetchTopics()" style="width: auto">
+              Fetch Topics
+            </button>
+          </div>
+          <div id="topics-list" style="max-height: 300px; overflow-y: auto">
+            <div
+              style="
+                padding: 1rem;
+                text-align: center;
+                color: var(--text-secondary);
+              "
+            >
+              Enter a forum username to see topics...
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card"
+          style="height: 500px; display: flex; flex-direction: column"
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1rem;
+            "
+          >
+            <h2>Operation Log</h2>
+            <button
+              onclick="clearLog()"
+              class="secondary"
+              style="width: auto; padding: 0.25rem 0.75rem; font-size: 0.75rem"
+            >
+              Clear
+            </button>
+          </div>
+          <div id="log-area"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3100"; // Adjust manual port if needed
+
+      function log(message, type = "info") {
+        const area = document.getElementById("log-area");
+        const entry = document.createElement("div");
+        entry.className = `log-entry log-${type}`;
+
+        const time = new Date().toLocaleTimeString();
+        if (typeof message === "object") {
+          message = JSON.stringify(message, null, 2);
+        }
+
+        entry.textContent = `[${time}] ${message}`;
+        area.prepend(entry);
+      }
+
+      function clearLog() {
+        document.getElementById("log-area").innerHTML = "";
+      }
+
+      async function checkHealth() {
+        try {
+          const res = await fetch(`${API_BASE}/health`);
+          if (res.ok) {
+            document.getElementById("health-status").className =
+              "status-badge status-online";
+            document.getElementById("health-status").textContent = "Online";
+            log("Health check passed", "success");
+          } else {
+            throw new Error(res.statusText);
+          }
+        } catch (e) {
+          document.getElementById("health-status").className =
+            "status-badge status-offline";
+          document.getElementById("health-status").textContent = "Offline";
+          log(`Health check failed: ${e.message}`, "error");
+        }
+      }
+
+      async function getScrapeStatus() {
+        try {
+          const res = await fetch(`${API_BASE}/api/v1/scrape/status`);
+          const data = await res.json();
+          document.getElementById("scrape-status").textContent = JSON.stringify(
+            data,
+            null,
+            2
+          );
+          log("Fetched status", "info");
+        } catch (e) {
+          log(`Failed to get status: ${e.message}`, "error");
+        }
+      }
+
+      async function fetchTopics() {
+        const channel = document.getElementById("explorer-channel").value;
+        if (!channel) {
+          log("Please enter a channel for explorer", "error");
+          return;
+        }
+
+        log(`Fetching topics for ${channel}...`, "info");
+        const listDiv = document.getElementById("topics-list");
+        listDiv.innerHTML = '<div style="padding:1rem">Loading...</div>';
+
+        try {
+          const res = await fetch(
+            `${API_BASE}/api/v1/tools/telegram/topics?channel=${channel}`
+          );
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || res.statusText);
+          }
+          const topics = await res.json();
+          renderTopics(topics, channel);
+          log(`Found ${topics.length} topics`, "success");
+        } catch (e) {
+          listDiv.innerHTML = `<div style="color:var(--error); padding:1rem">Error: ${e.message}</div>`;
+          log(`Error fetching topics: ${e.message}`, "error");
+        }
+      }
+
+      function renderTopics(topics, channel) {
+        const listDiv = document.getElementById("topics-list");
+        if (!topics || topics.length === 0) {
+          listDiv.innerHTML =
+            '<div style="padding:1rem">No topics found or channel is not a forum.</div>';
+          return;
+        }
+
+        let html = `
+          <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid var(--border)">
+                <th style="padding:0.5rem">ID</th>
+                <th style="padding:0.5rem">Title</th>
+                <th style="padding:0.5rem">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        topics.forEach((t) => {
+          html += `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+              <td style="padding:0.5rem; color:var(--accent)">${t.id}</td>
+              <td style="padding:0.5rem">${t.title}</td>
+              <td style="padding:0.5rem">
+                <button 
+                  onclick="selectTopic('${channel}', ${t.id})" 
+                  class="secondary" 
+                  style="padding:0.25rem 0.5rem; font-size:0.75rem; width:auto;"
+                >
+                  Select
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += "</tbody></table>";
+        listDiv.innerHTML = html;
+      }
+
+      function selectTopic(channel, id) {
+        document.getElementById("manual-channel").value = channel;
+        // append or set? let's set for now, or append if same channel
+        const currentChannel = document.getElementById("manual-channel").value;
+        const currentIds = document.getElementById("manual-topic-ids").value;
+
+        if (currentChannel === channel && currentIds) {
+          // check if already there
+          if (
+            !currentIds
+              .split(",")
+              .map((s) => s.trim())
+              .includes(String(id))
+          ) {
+            document.getElementById("manual-topic-ids").value =
+              currentIds + ", " + id;
+          }
+        } else {
+          document.getElementById("manual-channel").value = channel;
+          document.getElementById("manual-topic-ids").value = id;
+        }
+
+        // highlight sidebar
+        log(`Selected ${channel} topic ${id}`, "info");
+      }
+
+      async function startScrape() {
+        const channel = document.getElementById("manual-channel").value;
+        const limit = parseInt(document.getElementById("manual-limit").value);
+        const topicIdsStr = document.getElementById("manual-topic-ids").value;
+
+        if (!channel) {
+          log("Please enter a channel name", "error");
+          return;
+        }
+
+        let topic_ids = [];
+        if (topicIdsStr) {
+          topic_ids = topicIdsStr
+            .split(",")
+            .map((s) => parseInt(s.trim()))
+            .filter((n) => !isNaN(n));
+        }
+
+        try {
+          const payload = {
+            channel: channel,
+            limit: limit,
+            topic_ids: topic_ids.length > 0 ? topic_ids : undefined,
+          };
+
+          log(`Starting scrape for ${channel}...`, "info");
+          const res = await fetch(`${API_BASE}/api/v1/scrape/telegram`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+            log(data, "success");
+          } else {
+            log(data, "error");
+          }
+        } catch (e) {
+          log(`Error starting scrape: ${e.message}`, "error");
+        }
+      }
+
+      async function stopScrape() {
+        try {
+          log("Stopping current scrape...", "info");
+          const res = await fetch(`${API_BASE}/api/v1/scrape/current`, {
+            method: "DELETE",
+          });
+          if (res.ok) {
+            log("Scrape stopped successfully", "success");
+          } else {
+            const data = await res.json();
+            log(data, "error");
+          }
+        } catch (e) {
+          log(`Error stopping scrape: ${e.message}`, "error");
+        }
+      }
+
+      async function listTargets() {
+        try {
+          log("Fetching targets...", "info");
+          const res = await fetch(`${API_BASE}/api/v1/targets`);
+          const data = await res.json();
+          log(data, "success");
+        } catch (e) {
+          log(`Error fetching targets: ${e.message}`, "error");
+        }
+      }
+
+      async function addTarget() {
+        const name = document.getElementById("target-name").value;
+        const url = document.getElementById("target-url").value;
+
+        if (!name || !url) {
+          log("Name and URL are required", "error");
+          return;
+        }
+
+        try {
+          log(`Adding target ${name}...`, "info");
+          const res = await fetch(`${API_BASE}/api/v1/targets`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: name,
+              type: "TG_CHANNEL",
+              url: url,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            log(data, "success");
+            // clear inputs
+            document.getElementById("target-name").value = "";
+            document.getElementById("target-url").value = "";
+          } else {
+            log(data, "error");
+          }
+        } catch (e) {
+          log(`Error adding target: ${e.message}`, "error");
+        }
+      }
+
+      // Checking health on load
+      checkHealth();
+    </script>
+  </body>
+</html>

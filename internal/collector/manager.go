@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/google/uuid"
 )
 
@@ -34,6 +35,7 @@ type ScrapeJob struct {
 // Scraper defines the interface for scraping logic
 type Scraper interface {
 	Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult, error)
+	ListTopics(ctx context.Context, channelURL string) ([]telegram.Topic, error)
 }
 
 // ScrapeManager manages active scrape jobs
@@ -118,4 +120,12 @@ func (m *ScrapeManager) run(ctx context.Context, job *ScrapeJob) {
 		_, _ = m.scraper.Scrape(ctx, job.Options)
 		// errors are logged inside Scrape method usually
 	}
+}
+
+// ListTopics delegates to scraper
+func (m *ScrapeManager) ListTopics(ctx context.Context, channelURL string) ([]telegram.Topic, error) {
+	if m.scraper == nil {
+		return nil, errors.New("no scraper initialized")
+	}
+	return m.scraper.ListTopics(ctx, channelURL)
 }

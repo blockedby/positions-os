@@ -4,16 +4,22 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // Handler handles HTTP requests for collector service
 type Handler struct {
-	manager *ScrapeManager
+	manager     *ScrapeManager
+	targetsRepo *repository.TargetsRepository
 }
 
 // NewHandler creates a new handler with the given manager
-func NewHandler(manager *ScrapeManager) *Handler {
-	return &Handler{manager: manager}
+func NewHandler(manager *ScrapeManager, targetsRepo *repository.TargetsRepository) *Handler {
+	return &Handler{
+		manager:     manager,
+		targetsRepo: targetsRepo,
+	}
 }
 
 // Health handles GET /health
@@ -95,6 +101,73 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 		"started_at": current.StartedAt.Format(time.RFC3339),
 		"channel":    current.Options.Channel,
 	})
+}
+
+// ListTargets handles GET /api/v1/targets
+func (h *Handler) ListTargets(w http.ResponseWriter, r *http.Request) {
+	targets, err := h.targetsRepo.GetActive(r.Context())
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, targets)
+}
+
+// CreateTargetRequest represents request body for creating a target
+type CreateTargetRequest struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	URL  string `json:"url"`
+}
+
+// CreateTarget handles POST /api/v1/targets
+func (h *Handler) CreateTarget(w http.ResponseWriter, r *http.Request) {
+	var req CreateTargetRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+
+	if req.Name == "" || req.URL == "" {
+		respondError(w, http.StatusBadRequest, "name and url are required")
+		return
+	}
+
+	if req.Type == "" {
+		req.Type = "TG_CHANNEL"
+	}
+
+	target := &repository.ScrapingTarget{
+		Name:     req.Name,
+		Type:     req.Type,
+		URL:      req.URL,
+		IsActive: true,
+		Metadata: map[string]interface{}{},
+	}
+
+	if err := h.targetsRepo.Create(r.Context(), target); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, target)
+}
+
+// ListForumTopics handles GET /api/v1/tools/telegram/topics
+func (h *Handler) ListForumTopics(w http.ResponseWriter, r *http.Request) {
+	channel := r.URL.Query().Get("channel")
+	if channel == "" {
+		respondError(w, http.StatusBadRequest, "channel query param is required")
+		return
+	}
+
+	topics, err := h.manager.ListTopics(r.Context(), channel)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, topics)
 }
 
 // helper functions
