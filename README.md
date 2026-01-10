@@ -189,12 +189,15 @@ Key variables:
 - `TG_SESSION_STRING` - Generated via `tg-auth` tool
 - `DATABASE_URL` - PostgreSQL connection string
 - `NATS_URL` - NATS server URL
+- `LLM_BASE_URL` - LLM API endpoint (e.g. `http://localhost:1234/v1` or `https://api.openai.com/v1`)
+- `LLM_API_KEY` - API Key for LLM service
+- `LLM_MODEL` - Model name (e.g. `gpt-4o-mini`, `qwen2.5-coder-7b-instruct`)
 
 ## Development Phases
 
 - [x] **Phase 0**: Infrastructure (PostgreSQL, NATS, migrations)
 - [x] **Phase 1**: Collector (Telegram scraping, REST API)
-- [ ] **Phase 2**: Analyzer (LLM-based job analysis)
+- [~] **Phase 2**: Analyzer (LLM-based job analysis) - _In Progress_
 - [ ] **Phase 3**: Brain (Resume tailoring, application automation)
 - [ ] **Phase 4**: Web UI (User interface)
 

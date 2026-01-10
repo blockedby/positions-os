@@ -12,12 +12,16 @@ import (
 
 // Client wraps gotgproto client and provides high-level telegram operations
 type Client struct {
-	client *gotgproto.Client
+	client      *gotgproto.Client
+	rateLimiter *RateLimiter
 }
 
 // NewClient creates a new telegram client wrapper from gotgproto client
 func NewClient(client *gotgproto.Client) *Client {
-	return &Client{client: client}
+	return &Client{
+		client:      client,
+		rateLimiter: DefaultRateLimiter(),
+	}
 }
 
 // Close stops the client
@@ -38,10 +42,17 @@ func (c *Client) ResolveChannel(ctx context.Context, username string) (*Channel,
 	// strip @ prefix if present
 	username = strings.TrimPrefix(username, "@")
 
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	resolved, err := c.client.API().ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
 		Username: username,
 	})
 	if err != nil {
+		if wait := c.checkFloodWait(err); wait > 0 {
+			c.rateLimiter.SetFloodWait(wait)
+		}
 		return nil, fmt.Errorf("resolve username %s: %w", username, err)
 	}
 
@@ -101,6 +112,10 @@ func (c *Client) GetMessages(ctx context.Context, channel *Channel, offsetID int
 		limit = 100 // telegram api limit
 	}
 
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	history, err := c.client.API().MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer: &tg.InputPeerChannel{
 			ChannelID:  channel.ID,
@@ -110,6 +125,9 @@ func (c *Client) GetMessages(ctx context.Context, channel *Channel, offsetID int
 		Limit:    limit,
 	})
 	if err != nil {
+		if wait := c.checkFloodWait(err); wait > 0 {
+			c.rateLimiter.SetFloodWait(wait)
+		}
 		return nil, fmt.Errorf("get history: %w", err)
 	}
 
@@ -123,6 +141,10 @@ func (c *Client) GetTopics(ctx context.Context, channel *Channel) ([]Topic, erro
 		return []Topic{}, nil
 	}
 
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	result, err := c.client.API().MessagesGetForumTopics(ctx, &tg.MessagesGetForumTopicsRequest{
 		Peer: &tg.InputPeerChannel{
 			ChannelID:  channel.ID,
@@ -131,6 +153,9 @@ func (c *Client) GetTopics(ctx context.Context, channel *Channel) ([]Topic, erro
 		Limit: 100, // fetch up to 100 topics
 	})
 	if err != nil {
+		if wait := c.checkFloodWait(err); wait > 0 {
+			c.rateLimiter.SetFloodWait(wait)
+		}
 		return nil, fmt.Errorf("get forum topics: %w", err)
 	}
 
@@ -172,6 +197,9 @@ func (c *Client) GetTopicMessages(ctx context.Context, channel *Channel, topicID
 		Limit:    limit,
 	})
 	if err != nil {
+		if wait := c.checkFloodWait(err); wait > 0 {
+			c.rateLimiter.SetFloodWait(wait)
+		}
 		return nil, fmt.Errorf("get topic messages: %w", err)
 	}
 
@@ -227,4 +255,30 @@ func (c *Client) parseMessage(msg tg.MessageClass, channel *Channel) *Message {
 		Views:     m.Views,
 		Forwards:  m.Forwards,
 	}
+}
+
+// checkFloodWait checks if error is a FLOOD_WAIT error and returns wait seconds
+func (c *Client) checkFloodWait(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	// gotgproto/gotd errors are usually wrapped
+	// we check for specific error string as it's the most reliable way
+	// without deep coupling to gotd/tg definition of FloodWait
+	str := err.Error()
+	if strings.Contains(str, "FLOOD_WAIT_") {
+		// format is usually FLOOD_WAIT_X where X is seconds
+		var seconds int
+		// try to parse from string, e.g. "rpc error: code 420: FLOOD_WAIT_15"
+		parts := strings.Split(str, "FLOOD_WAIT_")
+		if len(parts) > 1 {
+			// take the number part
+			numStr := strings.TrimSpace(parts[1])
+			// sometimes it has " (caused by...)" or other suffix, simple scan
+			fmt.Sscanf(numStr, "%d", &seconds)
+			return seconds
+		}
+	}
+	return 0
 }

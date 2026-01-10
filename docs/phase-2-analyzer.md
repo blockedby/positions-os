@@ -387,23 +387,23 @@ positions-os/
 
 ### Этап 1: LLM Client
 
-- [ ] 2.1.1 — `go get github.com/sashabaranov/go-openai`
-- [ ] 2.1.2 — `internal/llm/client.go` wrapper
-- [ ] 2.1.3 — `internal/llm/prompts.go` XML loader
-- [ ] 2.1.4 — Тест с LM Studio
+- [x] 2.1.1 — `go get github.com/sashabaranov/go-openai`
+- [x] 2.1.2 — `internal/llm/client.go` wrapper
+- [x] 2.1.3 — `internal/llm/prompts.go` XML loader
+- [x] 2.1.4 — Тест с LM Studio (`go test -tags=integration ./internal/llm/...`)
 
 ### Этап 2: Rate Limiter
 
-- [ ] 2.2.1 — `internal/telegram/ratelimit.go`
-- [ ] 2.2.2 — Интеграция в parser
-- [ ] 2.2.3 — FLOOD_WAIT handling
+- [x] 2.2.1 — `internal/telegram/ratelimit.go`
+- [x] 2.2.2 — Интеграция в parser
+- [x] 2.2.3 — FLOOD_WAIT handling
 
 ### Этап 3: Processor
 
-- [ ] 2.3.1 — `internal/analyzer/processor.go`
-- [ ] 2.3.2 — JSON parsing & cleanup
-- [ ] 2.3.3 — Validator
-- [ ] 2.3.4 — Unit tests
+- [x] 2.3.1 — `internal/analyzer/processor.go`
+- [x] 2.3.2 — JSON parsing & cleanup
+- [x] 2.3.3 — Validator
+- [x] 2.3.4 — Unit tests
 
 ### Этап 4: Repository Updates
 
