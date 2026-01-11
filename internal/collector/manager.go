@@ -65,7 +65,12 @@ func (m *ScrapeManager) Start(ctx context.Context, opts ScrapeOptions) (*ScrapeJ
 		return nil, ErrAlreadyRunning
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	// IMPORTANT: Use background context, NOT the HTTP request context!
+	// The HTTP request context gets canceled when the handler returns,
+	// which would immediately cancel our scrape job.
+	// We create a new cancellable context from Background() so the job
+	// continues running after the HTTP response is sent.
+	scrapeCtx, cancel := context.WithCancel(context.Background())
 	m.cancelFn = cancel
 
 	job := &ScrapeJob{
@@ -77,7 +82,7 @@ func (m *ScrapeManager) Start(ctx context.Context, opts ScrapeOptions) (*ScrapeJ
 	m.current = job
 
 	// run the actual scraping in a goroutine
-	go m.run(ctx, job)
+	go m.run(scrapeCtx, job)
 
 	return job, nil
 }

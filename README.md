@@ -157,6 +157,33 @@ GET /api/v1/scrape/status
 GET /health
 ```
 
+## Limits & Rate Limiting
+
+### Telegram API Limits
+
+- **Messages per batch**: 100 (Telegram API maximum)
+- **Rate limit delay**: 100ms between batches (auto-applied)
+- **FloodWait handling**: Automatic backoff when Telegram returns FLOOD_WAIT errors
+
+### Application Safety Limits
+
+- **Maximum batches per scrape**: 100 (prevents infinite loops, ~ 10,000 messages max)
+- **Duplicate offset detection**: Scrape exits if offset doesn't change between batches
+- **Context timeout**: Scrape jobs run in background with cancellable contexts
+
+### Configurable Limits
+
+| Parameter     | Request Field | Default | Description                                        |
+| ------------- | ------------- | ------- | -------------------------------------------------- |
+| Message limit | `limit`       | 100     | Maximum messages to fetch                          |
+| Until date    | `until`       | -       | Stop at messages older than this date (YYYY-MM-DD) |
+
+### Recommendations
+
+- Use `"limit": 10-50` for testing new channels
+- Use `"limit": 100-500` for regular scraping
+- Avoid unlimited scrapes on channels with 1000+ messages
+
 ### Target Management
 
 ```bash

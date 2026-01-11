@@ -46,6 +46,7 @@ tg_session
 *.session
 *.session-journal
 sessions/
+session.txt
 
 # generated pdfs (optional - may want to keep)
 # generated/

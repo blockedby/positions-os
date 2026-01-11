@@ -96,31 +96,47 @@ type ScrapeResult struct {
 func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult, error) {
 	result := &ScrapeResult{}
 
+	s.log.Info().
+		Interface("options", opts).
+		Msg("scrape: starting")
+
 	// get or create target
+	s.log.Debug().Msg("scrape: getting or creating target")
 	target, err := s.getOrCreateTarget(ctx, opts)
 	if err != nil {
+		s.log.Error().Err(err).Msg("scrape: failed to get target")
 		return nil, fmt.Errorf("get target: %w", err)
 	}
 
 	s.log.Info().
 		Str("target_id", target.ID.String()).
 		Str("channel", target.URL).
-		Msg("starting scrape")
+		Msg("scrape: target resolved")
 
 	// resolve channel if needed
+	s.log.Debug().Str("channel", target.URL).Msg("scrape: resolving channel")
 	channel, err := s.tgClient.ResolveChannel(ctx, target.URL)
 	if err != nil {
+		s.log.Error().Err(err).Str("channel", target.URL).Msg("scrape: failed to resolve channel")
 		return nil, fmt.Errorf("resolve channel: %w", err)
 	}
 
+	s.log.Info().
+		Int64("channel_id", channel.ID).
+		Int64("access_hash", channel.AccessHash).
+		Bool("is_forum", channel.IsForum).
+		Msg("scrape: channel resolved")
+
 	// update target with telegram info
 	if err := s.targets.UpdateTelegramInfo(ctx, target.ID, channel.ID, channel.AccessHash); err != nil {
-		s.log.Warn().Err(err).Msg("failed to update telegram info")
+		s.log.Warn().Err(err).Msg("scrape: failed to update telegram info")
 	}
 
 	// get message filter for deduplication
+	s.log.Debug().Msg("scrape: creating message filter")
 	filter, err := s.ranges.NewFilter(ctx, target.ID)
 	if err != nil {
+		s.log.Error().Err(err).Msg("scrape: failed to create filter")
 		return nil, fmt.Errorf("create filter: %w", err)
 	}
 
@@ -130,26 +146,60 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 		limit = 100 // default batch size
 	}
 
+	s.log.Info().Int("batch_size", limit).Msg("scrape: starting message fetch loop")
+
+	// Safety limits to prevent infinite loops
+	const maxBatches = 100 // Maximum 100 batches = 10,000 messages max
+
 	var minMsgID, maxMsgID int64
 	offsetID := 0
+	previousOffsetID := -1 // Track previous offset to detect stuck loops
+	batchNum := 0
 
 	// fetch messages in batches
-	for {
+	for batchNum < maxBatches {
+		batchNum++
+		s.log.Info().
+			Int("batch", batchNum).
+			Int("max_batches", maxBatches).
+			Int("offset_id", offsetID).
+			Int("limit", min(limit, 100)).
+			Msg("scrape: fetching messages batch")
+
+		// Detect if we're stuck on the same offset (infinite loop protection)
+		if offsetID == previousOffsetID && offsetID != 0 {
+			s.log.Warn().
+				Int("offset_id", offsetID).
+				Msg("scrape: offset not changing, exiting to prevent infinite loop")
+			break
+		}
+		previousOffsetID = offsetID
+
 		select {
 		case <-ctx.Done():
-			s.log.Info().Msg("scrape cancelled")
+			s.log.Info().Msg("scrape: cancelled by context")
 			return result, nil
 		default:
 		}
 
 		messages, err := s.tgClient.GetMessages(ctx, channel, offsetID, min(limit, 100))
 		if err != nil {
-			s.log.Error().Err(err).Msg("failed to get messages")
+			s.log.Error().
+				Err(err).
+				Int("batch", batchNum).
+				Int("offset_id", offsetID).
+				Msg("scrape: failed to get messages")
 			result.Errors++
 			break
 		}
 
+		s.log.Info().
+			Int("batch", batchNum).
+			Int("messages_received", len(messages)).
+			Msg("scrape: received messages")
+
 		if len(messages) == 0 {
+			s.log.Info().Msg("scrape: no more messages, exiting loop")
 			break
 		}
 
@@ -161,6 +211,11 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 			msgIDs = append(msgIDs, int64(msg.ID))
 		}
 
+		s.log.Debug().
+			Int("batch", batchNum).
+			Int("msg_count", len(msgIDs)).
+			Msg("scrape: extracted message IDs")
+
 		// filter out already processed messages
 		newIDs := filter.FilterNew(msgIDs)
 		newIDSet := make(map[int64]bool)
@@ -168,7 +223,15 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 			newIDSet[id] = true
 		}
 
+		s.log.Info().
+			Int("batch", batchNum).
+			Int("total_messages", len(messages)).
+			Int("new_messages", len(newIDs)).
+			Int("already_processed", len(msgIDs)-len(newIDs)).
+			Msg("scrape: filtered messages")
+
 		// process new messages
+		processedInBatch := 0
 		for _, msg := range messages {
 			msgID := int64(msg.ID)
 
@@ -189,48 +252,87 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 			// skip empty messages
 			if msg.Text == "" {
 				result.SkippedEmpty++
+				s.log.Debug().Int64("msg_id", msgID).Msg("scrape: skipped empty message")
 				continue
 			}
 
 			// check until date
 			if opts.Until != nil && msg.Date.Before(*opts.Until) {
+				s.log.Debug().
+					Int64("msg_id", msgID).
+					Time("msg_date", msg.Date).
+					Time("until", *opts.Until).
+					Msg("scrape: skipped message older than until date")
 				continue
 			}
 
 			// create job
+			s.log.Debug().Int64("msg_id", msgID).Msg("scrape: creating job for message")
 			if err := s.createJob(ctx, target.ID, &msg); err != nil {
-				s.log.Error().Err(err).Int("message_id", msg.ID).Msg("failed to create job")
+				s.log.Error().Err(err).Int("message_id", msg.ID).Msg("scrape: failed to create job")
 				result.Errors++
 				continue
 			}
 
 			result.NewJobs++
+			processedInBatch++
 		}
 
+		s.log.Info().
+			Int("batch", batchNum).
+			Int("processed", processedInBatch).
+			Int("total_new_jobs", result.NewJobs).
+			Msg("scrape: batch processed")
+
 		// update offset for next batch
+		oldOffsetID := offsetID
 		if len(messages) > 0 {
 			offsetID = messages[len(messages)-1].ID
 		}
 
+		s.log.Info().
+			Int("batch", batchNum).
+			Int("old_offset", oldOffsetID).
+			Int("new_offset", offsetID).
+			Msg("scrape: updated offset for next batch")
+
 		// check if we've fetched enough
 		if opts.Limit > 0 && result.TotalFetched >= opts.Limit {
+			s.log.Info().
+				Int("total_fetched", result.TotalFetched).
+				Int("limit", opts.Limit).
+				Msg("scrape: reached fetch limit, exiting loop")
 			break
 		}
 
 		// small delay to avoid rate limiting
+		s.log.Debug().Msg("scrape: sleeping 100ms to avoid rate limiting")
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	// Check if we exited due to max batch limit
+	if batchNum >= maxBatches {
+		s.log.Warn().
+			Int("batches_processed", batchNum).
+			Int("max_batches", maxBatches).
+			Msg("scrape: reached maximum batch limit, stopping for safety")
+	}
+
 	// update parsed range
+	s.log.Info().
+		Int64("min_msg_id", minMsgID).
+		Int64("max_msg_id", maxMsgID).
+		Msg("scrape: updating parsed range")
+
 	if maxMsgID > 0 {
 		if err := s.ranges.UpdateRange(ctx, target.ID, minMsgID, maxMsgID); err != nil {
-			s.log.Warn().Err(err).Msg("failed to update parsed range")
+			s.log.Warn().Err(err).Msg("scrape: failed to update parsed range")
 		}
 	}
 
 	// update target last scraped
 	if err := s.targets.UpdateLastScraped(ctx, target.ID, maxMsgID); err != nil {
-		s.log.Warn().Err(err).Msg("failed to update last scraped")
+		s.log.Warn().Err(err).Msg("scrape: failed to update last scraped")
 	}
 
 	s.log.Info().
@@ -239,7 +341,7 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 		Int("skipped_old", result.SkippedOld).
 		Int("skipped_empty", result.SkippedEmpty).
 		Int("errors", result.Errors).
-		Msg("scrape completed")
+		Msg("scrape: completed successfully")
 
 	return result, nil
 }

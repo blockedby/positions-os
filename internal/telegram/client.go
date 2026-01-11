@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/celestix/gotgproto"
 	"github.com/gotd/td/tg"
 )
@@ -14,6 +15,7 @@ import (
 type Client struct {
 	client      *gotgproto.Client
 	rateLimiter *RateLimiter
+	log         *logger.Logger
 }
 
 // NewClient creates a new telegram client wrapper from gotgproto client
@@ -21,6 +23,7 @@ func NewClient(client *gotgproto.Client) *Client {
 	return &Client{
 		client:      client,
 		rateLimiter: DefaultRateLimiter(),
+		log:         logger.Get(),
 	}
 }
 
@@ -42,17 +45,22 @@ func (c *Client) ResolveChannel(ctx context.Context, username string) (*Channel,
 	// strip @ prefix if present
 	username = strings.TrimPrefix(username, "@")
 
+	c.log.Debug().Str("username", username).Msg("telegram: waiting for rate limiter")
 	if err := c.rateLimiter.Wait(ctx); err != nil {
+		c.log.Error().Err(err).Msg("telegram: rate limiter wait failed")
 		return nil, err
 	}
 
+	c.log.Info().Str("username", username).Msg("telegram: resolving channel username")
 	resolved, err := c.client.API().ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
 		Username: username,
 	})
 	if err != nil {
 		if wait := c.checkFloodWait(err); wait > 0 {
+			c.log.Warn().Int("wait_seconds", wait).Msg("telegram: FLOOD_WAIT detected, updating rate limiter")
 			c.rateLimiter.SetFloodWait(wait)
 		}
+		c.log.Error().Err(err).Str("username", username).Msg("telegram: failed to resolve username")
 		return nil, fmt.Errorf("resolve username %s: %w", username, err)
 	}
 
@@ -112,10 +120,13 @@ func (c *Client) GetMessages(ctx context.Context, channel *Channel, offsetID int
 		limit = 100 // telegram api limit
 	}
 
+	c.log.Debug().Int64("channel_id", channel.ID).Int("offset_id", offsetID).Int("limit", limit).Msg("telegram: waiting for rate limiter before GetMessages")
 	if err := c.rateLimiter.Wait(ctx); err != nil {
+		c.log.Error().Err(err).Msg("telegram: rate limiter wait failed")
 		return nil, err
 	}
 
+	c.log.Info().Int64("channel_id", channel.ID).Int("offset_id", offsetID).Int("limit", limit).Msg("telegram: calling MessagesGetHistory API")
 	history, err := c.client.API().MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer: &tg.InputPeerChannel{
 			ChannelID:  channel.ID,
@@ -126,8 +137,10 @@ func (c *Client) GetMessages(ctx context.Context, channel *Channel, offsetID int
 	})
 	if err != nil {
 		if wait := c.checkFloodWait(err); wait > 0 {
+			c.log.Warn().Int("wait_seconds", wait).Msg("telegram: FLOOD_WAIT detected in GetMessages, updating rate limiter")
 			c.rateLimiter.SetFloodWait(wait)
 		}
+		c.log.Error().Err(err).Int("offset_id", offsetID).Msg("telegram: MessagesGetHistory failed")
 		return nil, fmt.Errorf("get history: %w", err)
 	}
 
