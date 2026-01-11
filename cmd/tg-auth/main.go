@@ -24,7 +24,7 @@ import (
 
 func main() {
 	fmt.Println("=== Telegram QR Auth Tool ===")
-	fmt.Println("Generates a session string for Telegram API via QR code\n")
+	fmt.Println("Generates a session string for Telegram API via QR code")
 
 	// Load .env file if exists
 	_ = godotenv.Load()
@@ -97,7 +97,7 @@ func maskString(s string) string {
 
 // authWithQR performs QR code authentication with automatic retry on expiration
 func authWithQR(apiID int, apiHash string) {
-	fmt.Println("Initializing QR login...\n")
+	fmt.Println("Initializing QR login...")
 
 	memStorage := &session.StorageMemory{}
 	dispatcher := tg.NewUpdateDispatcher()
@@ -127,7 +127,7 @@ func authWithQR(apiID int, apiHash string) {
 				fmt.Println("║  SCAN THIS QR CODE WITH YOUR TELEGRAM APP            ║")
 				fmt.Println("║  Settings → Devices → Link Desktop Device            ║")
 				fmt.Printf("║  Expires in: %-40s ║\n", expires.String())
-				fmt.Println("╚═══════════════════════════════════════════════════════╝\n")
+				fmt.Println("╚═══════════════════════════════════════════════════════╝")
 
 				qrterminal.GenerateHalfBlock(token.URL(), qrterminal.L, os.Stdout)
 
@@ -139,7 +139,7 @@ func authWithQR(apiID int, apiHash string) {
 			if err != nil {
 				// Check if QR expired
 				if strings.Contains(err.Error(), "expired") || strings.Contains(err.Error(), "timeout") {
-					fmt.Println("\n⚠️  QR code expired. Generating a new one...\n")
+					fmt.Println("\n⚠️  QR code expired. Generating a new one...")
 					time.Sleep(1 * time.Second)
 					continue // Retry with new QR
 				}

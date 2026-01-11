@@ -19,8 +19,47 @@ type LLMClient interface {
 
 // JobsRepository defines required DB operations
 type JobsRepository interface {
-	UpdateStructuredData(ctx context.Context, id uuid.UUID, data []byte, status string) error
+	UpdateStructuredData(ctx context.Context, id uuid.UUID, data map[string]interface{}) error
 	GetByID(ctx context.Context, id uuid.UUID) (*repository.Job, error)
+}
+
+// ... (existing code)
+
+// ProcessJob analyzes a single job by ID
+func (p *Processor) ProcessJob(ctx context.Context, jobID uuid.UUID) error {
+	// 1. Fetch job
+	job, err := p.repo.GetByID(ctx, jobID)
+	if err != nil {
+		return fmt.Errorf("fetch job: %w", err)
+	}
+	if job == nil {
+		return fmt.Errorf("job not found: %s", jobID)
+	}
+
+	// 2. Prepare prompt
+	userPrompt := p.prompts.BuildUserPrompt(job.RawContent)
+
+	// 3. Call LLM
+	jsonStr, err := p.llm.ExtractJobData(ctx, job.RawContent, p.prompts.System, userPrompt)
+	if err != nil {
+		return fmt.Errorf("llm extraction: %w", err)
+	}
+
+	// 4. Clean and Validate JSON
+	cleaned := cleanJSON(jsonStr)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(cleaned), &data); err != nil {
+		return fmt.Errorf("invalid json received from llm: %w", err)
+	}
+
+	// 5. Update DB
+	if err := p.repo.UpdateStructuredData(ctx, jobID, data); err != nil {
+		return fmt.Errorf("update db: %w", err)
+	}
+
+	p.log.Info().Str("job_id", jobID.String()).Msg("job analyzed successfully")
+	return nil
 }
 
 // Processor handles the analysis of raw job data
@@ -44,44 +83,6 @@ func NewProcessor(
 		prompts: prompts,
 		log:     log,
 	}
-}
-
-// ProcessJob analyzes a single job by ID
-func (p *Processor) ProcessJob(ctx context.Context, jobID uuid.UUID) error {
-	// 1. Fetch job
-	job, err := p.repo.GetByID(ctx, jobID)
-	if err != nil {
-		return fmt.Errorf("fetch job: %w", err)
-	}
-	if job == nil {
-		return fmt.Errorf("job not found: %s", jobID)
-	}
-
-	// 2. Prepare prompt
-	userPrompt := p.prompts.BuildUserPrompt(job.RawContent)
-
-	// 3. Call LLM
-	jsonStr, err := p.llm.ExtractJobData(ctx, job.RawContent, p.prompts.System, userPrompt)
-	if err != nil {
-		return fmt.Errorf("llm extraction: %w", err)
-	}
-
-	// 4. Clean and Validate JSON
-	// LLMs sometimes wrap code in ```json ... ```
-	cleaned := cleanJSON(jsonStr)
-
-	if !json.Valid([]byte(cleaned)) {
-		// Attempt to recover or just fail? For now fail.
-		return fmt.Errorf("invalid json received from llm")
-	}
-
-	// 5. Update DB
-	if err := p.repo.UpdateStructuredData(ctx, jobID, []byte(cleaned), "ANALYZED"); err != nil {
-		return fmt.Errorf("update db: %w", err)
-	}
-
-	p.log.Info().Str("job_id", jobID.String()).Msg("job analyzed successfully")
-	return nil
 }
 
 // cleanJSON removes markdown code blocks if present

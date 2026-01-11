@@ -3,6 +3,7 @@ package analyzer
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/blockedby/positions-os/internal/llm"
@@ -14,10 +15,12 @@ import (
 // MockJobsRepo implements JobsRepository interface for testing
 type MockJobsRepo struct {
 	Jobs        map[uuid.UUID]*repository.Job
-	UpdatedData []byte
-	UpdatedStat string
+	UpdatedData map[string]interface{}
 	Err         error
+	mu          sync.Mutex
 }
+
+// ... (MockLLMClient stays same)
 
 // MockLLMClient implements LLMClient for testing
 type MockLLMClient struct {
@@ -32,19 +35,28 @@ func (m *MockLLMClient) ExtractJobData(ctx context.Context, rawContent, systemPr
 }
 
 func (m *MockJobsRepo) GetByID(ctx context.Context, id uuid.UUID) (*repository.Job, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	return m.Jobs[id], nil
 }
 
-func (m *MockJobsRepo) UpdateStructuredData(ctx context.Context, id uuid.UUID, data []byte, status string) error {
+func (m *MockJobsRepo) UpdateStructuredData(ctx context.Context, id uuid.UUID, data map[string]interface{}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.Err != nil {
 		return m.Err
 	}
 	m.UpdatedData = data
-	m.UpdatedStat = status
 	return nil
+}
+
+func (m *MockJobsRepo) GetUpdatedData() map[string]interface{} {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.UpdatedData
 }
 
 func TestProcessor_ProcessJob(t *testing.T) {
@@ -93,11 +105,8 @@ func TestProcessor_ProcessJob(t *testing.T) {
 		}
 
 		// Verify
-		if mockRepo.UpdatedStat != "ANALYZED" {
-			t.Errorf("Expected status ANALYZED, got %s", mockRepo.UpdatedStat)
-		}
-		if string(mockRepo.UpdatedData) != `{"title": "Go Developer"}` {
-			t.Errorf("Unexpected data: %s", string(mockRepo.UpdatedData))
+		if mockRepo.UpdatedData["title"] != "Go Developer" {
+			t.Errorf("Unexpected data: %v", mockRepo.UpdatedData)
 		}
 	})
 
@@ -146,8 +155,8 @@ func TestProcessor_ProcessJob(t *testing.T) {
 			t.Fatalf("Failed to process markdown json: %v", err)
 		}
 
-		if string(mockRepo.UpdatedData) != `{"key": "val"}` {
-			t.Errorf("JSON cleanup failed. Got: %s", string(mockRepo.UpdatedData))
+		if mockRepo.UpdatedData["key"] != "val" {
+			t.Errorf("JSON cleanup failed. Got: %v", mockRepo.UpdatedData)
 		}
 	})
 }

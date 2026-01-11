@@ -407,26 +407,26 @@ positions-os/
 
 ### Этап 4: Repository Updates
 
-- [ ] 2.4.1 — GetByID
-- [ ] 2.4.2 — UpdateStructuredData
-- [ ] 2.4.3 — UpdateStatus
+- [x] 2.4.1 — GetByID
+- [x] 2.4.2 — UpdateStructuredData
+- [x] 2.4.3 — UpdateStatus
 
 ### Этап 5: NATS Consumer
 
-- [ ] 2.5.1 — `internal/analyzer/consumer.go`
-- [ ] 2.5.2 — Subscribe to jobs.new
-- [ ] 2.5.3 — Error handling & retry
+- [x] 2.5.1 — `internal/analyzer/consumer.go`
+- [x] 2.5.2 — Subscribe to jobs.new
+- [x] 2.5.3 — Error handling & retry
 
 ### Этап 6: Main Service
 
-- [ ] 2.6.1 — `cmd/analyzer/main.go`
-- [ ] 2.6.2 — Graceful shutdown
-- [ ] 2.6.3 — Dockerfile
+- [x] 2.6.1 — `cmd/analyzer/main.go`
+- [x] 2.6.2 — Graceful shutdown
+- [x] 2.6.3 — Dockerfile
 
 ### Этап 7: Testing
 
-- [ ] 2.7.1 — Integration test script
-- [ ] 2.7.2 — Manual E2E test
+- [x] 2.7.1 — Integration test script
+- [ ] 2.7.2 — Manual E2E test (deferred to Phase 3)
 
 ---
 

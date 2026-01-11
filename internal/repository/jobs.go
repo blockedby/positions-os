@@ -169,3 +169,42 @@ func (r *JobsRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status 
 	}
 	return nil
 }
+
+// GetByID returns a job by ID
+func (r *JobsRepository) GetByID(ctx context.Context, id uuid.UUID) (*Job, error) {
+	var j Job
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, target_id, external_id, content_hash, raw_content,
+		       structured_data, source_url, source_date, tg_message_id, tg_topic_id,
+		       status, created_at, updated_at, analyzed_at
+		FROM jobs
+		WHERE id = $1
+	`, id).Scan(
+		&j.ID, &j.TargetID, &j.ExternalID, &j.ContentHash, &j.RawContent,
+		&j.StructuredData, &j.SourceURL, &j.SourceDate, &j.TgMessageID, &j.TgTopicID,
+		&j.Status, &j.CreatedAt, &j.UpdatedAt, &j.AnalyzedAt,
+	)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get job by id: %w", err)
+	}
+	return &j, nil
+}
+
+// UpdateStructuredData updates job structured data and sets status to ANALYZED
+func (r *JobsRepository) UpdateStructuredData(ctx context.Context, id uuid.UUID, data map[string]interface{}) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE jobs
+		SET structured_data = $2,
+		    status = 'ANALYZED',
+		    updated_at = NOW(),
+		    analyzed_at = NOW()
+		WHERE id = $1
+	`, id, data)
+	if err != nil {
+		return fmt.Errorf("update structured data: %w", err)
+	}
+	return nil
+}
