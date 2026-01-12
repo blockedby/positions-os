@@ -1,0 +1,32 @@
+{{ define "target-row" }}
+<div
+  id="target-{{ .Target.ID }}"
+  class="card flex justify-between items-center p-4"
+>
+  <div>
+    <div class="font-bold flex items-center gap-2">
+      {{ .Target.Name }}
+      <span class="text-xs bg-tertiary px-2 py-1 rounded text-secondary"
+        >{{ .Target.Type }}</span
+      >
+      {{ if not .Target.IsActive }}
+      <span class="text-xs bg-red-900/50 text-red-200 px-2 py-1 rounded"
+        >Paused</span
+      >
+      {{ end }}
+    </div>
+    <div class="text-sm text-secondary">{{ .Target.URL }}</div>
+  </div>
+  <div>
+    <button
+      class="text-red-400 hover:text-red-300 p-2"
+      hx-delete="/api/v1/targets/{{ .Target.ID }}"
+      hx-target="#target-{{ .Target.ID }}"
+      hx-swap="outerHTML"
+      hx-confirm="Delete target?"
+    >
+      Delete
+    </button>
+  </div>
+</div>
+{{ end }}

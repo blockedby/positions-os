@@ -179,3 +179,54 @@ func (r *TargetsRepository) UpdateTelegramInfo(ctx context.Context, id uuid.UUID
 	}
 	return nil
 }
+
+// List returns all targets (active and inactive)
+func (r *TargetsRepository) List(ctx context.Context) ([]ScrapingTarget, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT id, name, type, url, tg_access_hash, tg_channel_id, 
+		       metadata, last_scraped_at, last_message_id, is_active, 
+		       created_at, updated_at
+		FROM scraping_targets
+		ORDER BY name
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list targets: %w", err)
+	}
+	defer rows.Close()
+
+	var targets []ScrapingTarget
+	for rows.Next() {
+		var t ScrapingTarget
+		if err := rows.Scan(
+			&t.ID, &t.Name, &t.Type, &t.URL, &t.TgAccessHash, &t.TgChannelID,
+			&t.Metadata, &t.LastScrapedAt, &t.LastMessageID, &t.IsActive,
+			&t.CreatedAt, &t.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan target: %w", err)
+		}
+		targets = append(targets, t)
+	}
+	return targets, nil
+}
+
+// Update updates a target
+func (r *TargetsRepository) Update(ctx context.Context, t *ScrapingTarget) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE scraping_targets
+		SET name = $2, type = $3, url = $4, metadata = $5, is_active = $6, updated_at = NOW()
+		WHERE id = $1
+	`, t.ID, t.Name, t.Type, t.URL, t.Metadata, t.IsActive)
+	if err != nil {
+		return fmt.Errorf("update target: %w", err)
+	}
+	return nil
+}
+
+// Delete deletes a target
+func (r *TargetsRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM scraping_targets WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("delete target: %w", err)
+	}
+	return nil
+}

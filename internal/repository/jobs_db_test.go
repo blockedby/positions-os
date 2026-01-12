@@ -129,3 +129,112 @@ func setupSchema(t *testing.T, db *database.DB) {
 		}
 	}
 }
+
+func TestJobsRepository_List(t *testing.T) {
+	if os.Getenv("INTEGRATION_TEST") == "" {
+		t.Skip("Skipping integration test; set INTEGRATION_TEST=1 to run")
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		t.Skip("DATABASE_URL not set")
+	}
+
+	ctx := context.Background()
+	db, err := database.New(ctx, dbURL)
+	if err != nil {
+		t.Fatalf("failed to connect to db: %v", err)
+	}
+	defer db.Close()
+
+	setupSchema(t, db)
+	repo := NewJobsRepository(db.Pool)
+
+	// Create a target
+	targetID := uuid.New()
+	_, err = db.Pool.Exec(ctx, "INSERT INTO scraping_targets (id, name, url, type, is_active, created_at, updated_at) VALUES ($1, $2, $3, 'TG_CHANNEL', true, NOW(), NOW())", targetID, "Test Channel 2", "http://t.me/test2")
+	requireNoError(t, err)
+
+	// Helper to create job
+	createJob := func(extID, status, raw, title string, salary string, tech []string) {
+		job := &Job{
+			TargetID:   targetID,
+			ExternalID: extID,
+			RawContent: raw,
+			Status:     status,
+			SourceDate: func() *time.Time { t := time.Now(); return &t }(),
+			StructuredData: map[string]interface{}{
+				"title":        title,
+				"salary":       salary,
+				"technologies": tech,
+			},
+		}
+
+		err := repo.Create(ctx, job)
+		requireNoError(t, err)
+
+		// For numeric salary filter test
+		if salary != "" {
+			job.StructuredData["salary_min"] = 100000
+		}
+
+		err = repo.UpdateStructuredData(ctx, job.ID, job.StructuredData)
+		requireNoError(t, err)
+
+		if status != "ANALYZED" {
+			err = repo.UpdateStatus(ctx, job.ID, status)
+			requireNoError(t, err)
+		}
+	}
+
+	createJob("j1", "RAW", "Go developer needed", "Go Dev", "", []string{"go"})
+	createJob("j2", "ANALYZED", "Python developer", "Python Dev", "100k", []string{"python"})
+	createJob("j3", "INTERESTED", "Senior Go", "Senior Go", "200k", []string{"go", "k8s"})
+
+	// Test 1: List All
+	jobs, total, err := repo.List(ctx, JobFilter{Limit: 10})
+	requireNoError(t, err)
+	if total != 3 {
+		t.Errorf("expected 3 jobs, got %d", total)
+	}
+	if len(jobs) != 3 {
+		t.Errorf("expected 3 jobs in page, got %d", len(jobs))
+	}
+
+	// Test 2: Filter by Status
+	jobs, total, err = repo.List(ctx, JobFilter{Status: "RAW", Limit: 10})
+	requireNoError(t, err)
+	if total != 1 {
+		t.Errorf("expected 1 RAW job, got %d", total)
+	}
+	if jobs[0].ExternalID != "j1" {
+		t.Errorf("expected job j1, got %s", jobs[0].ExternalID)
+	}
+
+	// Test 3: Filter by Text Search (Query)
+	jobs, total, err = repo.List(ctx, JobFilter{Query: "Senior", Limit: 10})
+	requireNoError(t, err)
+	if total != 1 {
+		t.Errorf("expected 1 'Senior' job, got %d", total)
+	}
+	if jobs[0].ExternalID != "j3" {
+		t.Errorf("expected job j3, got %s", jobs[0].ExternalID)
+	}
+
+	// Test 4: Pagination
+	jobs, total, err = repo.List(ctx, JobFilter{Limit: 1, Page: 1})
+	requireNoError(t, err)
+	if total != 3 {
+		t.Errorf("expected total 3, got %d", total)
+	}
+	if len(jobs) != 1 {
+		t.Errorf("expected 1 job on page 1, got %d", len(jobs))
+	}
+}
+
+func requireNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

@@ -12,7 +12,7 @@ import (
 
 // Client wraps nats connection and jetstream context.
 type Client struct {
-	conn *nats.Conn
+	Conn *nats.Conn
 	js   jetstream.JetStream
 }
 
@@ -29,7 +29,7 @@ func New(ctx context.Context, natsURL string) (*Client, error) {
 		return nil, fmt.Errorf("create jetstream context: %w", err)
 	}
 
-	return &Client{conn: conn, js: js}, nil
+	return &Client{Conn: conn, js: js}, nil
 }
 
 // EnsureStream creates a stream if it doesn't exist.
@@ -84,10 +84,10 @@ func (c *Client) Subscribe(ctx context.Context, stream, consumer, subject string
 
 // Close closes the nats connection.
 func (c *Client) Close() {
-	c.conn.Close()
+	c.Conn.Close()
 }
 
 // IsConnected returns true if connected to nats.
 func (c *Client) IsConnected() bool {
-	return c.conn.IsConnected()
+	return c.Conn.IsConnected()
 }

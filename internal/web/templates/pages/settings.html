@@ -1,0 +1,67 @@
+{{ define "content" }}
+<div class="flex flex-col h-full max-w-4xl mx-auto">
+  <h1 class="mb-6">Settings</h1>
+
+  <!-- Add Target Form -->
+  <div class="card mb-6">
+    <h2 class="mb-4">Add New Target</h2>
+    <form
+      hx-post="/api/v1/targets"
+      hx-target="#targets-list"
+      hx-swap="beforeend"
+      class="space-y-4"
+    >
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-secondary mb-1">Name</label>
+          <input
+            type="text"
+            name="name"
+            required
+            class="w-full bg-primary border border-gray-700 rounded p-2 text-white"
+          />
+        </div>
+        <div>
+          <label class="block text-sm text-secondary mb-1">Type</label>
+          <select
+            name="type"
+            class="w-full bg-primary border border-gray-700 rounded p-2 text-white"
+          >
+            <option value="TG_CHANNEL">Telegram Channel</option>
+            <option value="TG_FORUM">Telegram Forum</option>
+            <option value="HH_SEARCH">HH Search</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm text-secondary mb-1"
+            >URL / ID / Username</label
+          >
+          <input
+            type="text"
+            name="url"
+            required
+            class="w-full bg-primary border border-gray-700 rounded p-2 text-white"
+            placeholder="@username or https://..."
+          />
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="btn-primary">Add Target</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Targets List -->
+  <div class="space-y-4">
+    <h2>Scraping Targets</h2>
+    <div
+      id="targets-list"
+      class="space-y-2"
+      hx-get="/api/v1/targets"
+      hx-trigger="load"
+    >
+      <div class="text-center text-secondary py-4">Loading targets...</div>
+    </div>
+  </div>
+</div>
+{{ end }}

@@ -30,16 +30,28 @@ Automated job search system: vacancy scraping, AI analysis, and application auto
 3. **Start Infrastructure**:
 
    ```powershell
+   # Start core infra (Postgres, NATS)
    docker compose up -d
-   # Apply migrations (requires migrate tool or use docker profile if configured in Makefile)
-   # For Windows without 'make', you can run:
+
+   # OR start full application (including Collector and Analyzer)
+   docker compose --profile app up -d
+   ```
+
+   **Apply migrations**:
+
+   ```powershell
    docker compose --profile tools run --rm migrate
    ```
 
-4. **Launch Service**:
+4. **Launch Unified Service**:
+   The collector now serves both the Scraping API and the Web UI.
+
    ```powershell
    go run cmd/collector/main.go
    ```
+
+5. **Access Web UI**:
+   Open your browser at [http://localhost:3100](http://localhost:3100)
 
 ## Project Structure
 
@@ -108,31 +120,39 @@ go test ./...
 
 ## Services
 
-| Service       | Port | Description                |
-| ------------- | ---- | -------------------------- |
-| PostgreSQL    | 5432 | Main database              |
-| NATS          | 4222 | Message broker             |
-| NATS Monitor  | 8222 | NATS monitoring            |
-| Collector API | 3100 | Scraping service (Phase 1) |
-
-## Commands (PowerShell on Windows)
+| Service          | Port | Description                      |
+| ---------------- | ---- | -------------------------------- |
+| PostgreSQL       | 5432 | Main database                    |
+| NATS             | 4222 | Message broker                   |
+| NATS Monitor     | 8222 | NATS monitoring                  |
+| **Web UI & API** | 3100 | Dashboard and Scraping (Unified) |
+| Analyzer         | -    | Background AI Analysis service   |
 
 ```powershell
 # install dependencies
 go mod tidy
 
-# run migrations (requires migrate cli)
-migrate -path migrations -database "postgres://jhos:jhos_secret@localhost:5432/jhos?sslmode=disable" up
+# run migrations (via Docker if migrate CLI is not installed)
+docker compose --profile tools run --rm migrate
+
+# start core infrastructure
+docker compose up -d
+
+# start full app (Collector + Analyzer)
+docker compose --profile app up -d
 
 # build all services
 go build -o bin/ ./cmd/...
 
 # run tests
 go test -v ./...
-
-# format code
-go fmt ./...
 ```
+
+### Windows-Specific Notes
+
+- **LM Studio**: If using LM Studio on the host, ensure "CORS" is allowed or set `LLM_BASE_URL=http://localhost:1234/v1`. For Docker compatibility, use `http://host.docker.internal:1234/v1`.
+- **Make on Windows**: If you don't have `make`, use the direct `docker compose` or `go run` commands shown above.
+- **Log Files**: Logs are stored in `./logs/`. Ensure the directory exists or the service has permissions to create it.
 
 ## API Endpoints (Phase 1: Collector)
 
@@ -207,9 +227,9 @@ POST /api/v1/targets
 
 ## Environment Variables
 
-See `.env.example` for all available configuration options.
+For a complete guide on how data flows through the system and detailed descriptions of all variables, see **[Environment Variables Reference](docs/environment-variables.md)**.
 
-Key variables:
+Key setup requirements:
 
 - `TG_API_ID` - Telegram API ID (from https://my.telegram.org)
 - `TG_API_HASH` - Telegram API Hash
@@ -224,9 +244,9 @@ Key variables:
 
 - [x] **Phase 0**: Infrastructure (PostgreSQL, NATS, migrations)
 - [x] **Phase 1**: Collector (Telegram scraping, REST API)
-- [~] **Phase 2**: Analyzer (LLM-based job analysis) - _In Progress_
-- [ ] **Phase 3**: Brain (Resume tailoring, application automation)
-- [ ] **Phase 4**: Web UI (User interface)
+- [x] **Phase 2**: Analyzer (LLM-based job analysis)
+- [x] **Phase 3**: Web UI (User interface, Unified Service)
+- [ ] **Phase 4**: Brain (Resume tailoring, PDF generation)
 
 ## License
 

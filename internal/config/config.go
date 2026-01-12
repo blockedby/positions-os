@@ -28,7 +28,9 @@ type Config struct {
 	TGSessionStr string
 
 	// server
-	HTTPPort int
+	HTTPPort     int
+	StaticDir    string
+	TemplatesDir string
 
 	// logging
 	LogLevel string
@@ -50,6 +52,8 @@ func Load() (*Config, error) {
 		LogLevel:      getEnv("LOG_LEVEL", "info"),
 		LogFile:       getEnv("LOG_FILE", "./logs/app.log"),
 		HTTPPort:      getEnvInt("HTTP_PORT", 3100),
+		StaticDir:     getEnv("STATIC_DIR", "./static"),
+		TemplatesDir:  getEnv("TEMPLATES_DIR", "./internal/web/templates"),
 		TGApiID:       getEnvInt("TG_API_ID", 0),
 	}
 

@@ -2,77 +2,62 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/celestix/gotgproto"
 	"github.com/celestix/gotgproto/sessionMaker"
-	"github.com/joho/godotenv"
-	"github.com/nats-io/nats.go"
 
 	"github.com/blockedby/positions-os/internal/collector"
+	"github.com/blockedby/positions-os/internal/config"
 	"github.com/blockedby/positions-os/internal/database"
 	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/nats"
 	"github.com/blockedby/positions-os/internal/publisher"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
+	"github.com/blockedby/positions-os/internal/web"
+	"github.com/blockedby/positions-os/internal/web/handlers"
 )
 
 func main() {
-	// load .env file
-	_ = godotenv.Load()
+	// 1. Load config
+	cfg, err := config.Load()
+	if err != nil {
+		panic("failed to load config: " + err.Error())
+	}
 
-	// initialize logger
-	logLevel := getEnv("COLLECTOR_LOG_LEVEL", "info")
-	logFile := getEnv("COLLECTOR_LOG_FILE", "./logs/collector.log")
-	if err := logger.Init(logLevel, logFile); err != nil {
-		fmt.Printf("failed to init logger: %v\n", err)
-		os.Exit(1)
+	// 2. Initialize logger
+	if err := logger.Init(cfg.LogLevel, cfg.LogFile); err != nil {
+		panic("failed to init logger: " + err.Error())
 	}
 	log := logger.Get()
+	log.Info().Msg("starting unified collector & web service")
 
-	log.Info().Msg("starting collector service")
+	// 3. Setup context with graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// load config
-	dbURL := getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/positions_os")
-	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	tgAppIDStr := getEnv("TG_API_ID", "")
-	tgAppHash := getEnv("TG_API_HASH", "")
-	tgSession := getEnv("TG_SESSION_STRING", "")
+	go func() {
+		<-sigChan
+		log.Info().Msg("received shutdown signal")
+		cancel()
+	}()
 
-	if tgAppIDStr == "" || tgAppHash == "" || tgSession == "" {
-		log.Fatal().Msg("TG_API_ID, TG_API_HASH and TG_SESSION_STRING are required")
-	}
-
-	log.Info().Int("session_len", len(tgSession)).Str("session_prefix", tgSession[:10]).Msg("loaded session string")
-
-	tgAppID, err := strconv.Atoi(tgAppIDStr)
-	if err != nil {
-		log.Fatal().Err(err).Msg("invalid TG_API_ID")
-	}
-
-	// connect to database
-	log.Info().Msg("connecting to database...")
-	db, err := database.New(context.Background(), dbURL)
+	// 4. Connect to database
+	db, err := database.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 	defer db.Close()
 
-	// initialize repositories
-	targetsRepo := repository.NewTargetsRepository(db.Pool)
-	jobsRepo := repository.NewJobsRepository(db.Pool)
-	rangesRepo := repository.NewRangesRepository(db.Pool)
-
-	// connect to nats
-	log.Info().Msg("connecting to nats...")
-	nc, err := nats.Connect(natsURL)
+	// 5. Connect to NATS
+	nc, err := nats.New(ctx, cfg.NatsURL)
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to connect to nats, publishing disabled")
 	} else {
@@ -81,17 +66,27 @@ func main() {
 
 	var pub collector.EventPublisher
 	if nc != nil {
-		pub = publisher.NewNATSPublisher(nc)
+		pub = publisher.NewNATSPublisher(nc.Conn)
 	}
 
-	// initialize telegram client
+	// 6. Initialize repositories
+	targetsRepo := repository.NewTargetsRepository(db.Pool)
+	jobsRepo := repository.NewJobsRepository(db.Pool)
+	rangesRepo := repository.NewRangesRepository(db.Pool)
+	statsRepo := repository.NewStatsRepository(db.Pool)
+
+	// 7. Initialize telegram client
+	if cfg.TGApiID == 0 || cfg.TGApiHash == "" || cfg.TGSessionStr == "" {
+		log.Fatal().Msg("TG_API_ID, TG_API_HASH and TG_SESSION_STRING are required")
+	}
+
 	log.Info().Msg("initializing telegram client...")
 	tgProtoClient, err := gotgproto.NewClient(
-		tgAppID,
-		tgAppHash,
-		gotgproto.ClientTypePhone(""), // empty for session auth
+		cfg.TGApiID,
+		cfg.TGApiHash,
+		gotgproto.ClientTypePhone(""),
 		&gotgproto.ClientOpts{
-			Session:          sessionMaker.StringSession(tgSession),
+			Session:          sessionMaker.StringSession(cfg.TGSessionStr),
 			DisableCopyright: true,
 			InMemory:         true,
 		},
@@ -103,7 +98,7 @@ func main() {
 	tgClient := telegram.NewClient(tgProtoClient)
 	defer tgClient.Close()
 
-	// create service
+	// 8. Initialize Collector Service & Manager
 	svc := collector.NewService(
 		tgClient,
 		targetsRepo,
@@ -112,58 +107,56 @@ func main() {
 		pub,
 		log,
 	)
+	scrapeManager := collector.NewScrapeManager(svc)
+	collectorHandler := collector.NewHandler(scrapeManager, targetsRepo)
 
-	// create manager and handler
-	manager := collector.NewScrapeManager(svc) // inject service as scraper
-	handler := collector.NewHandler(manager, targetsRepo)
-	router := collector.NewRouter(handler)
+	// 9. Initialize Web UI & WebSocket Hub
+	hub := web.NewHub()
+	go hub.Run()
 
-	// get port from env
-	port := getEnv("COLLECTOR_PORT", "3100")
-	addr := ":" + port
-
-	// create server
-	srv := &http.Server{
-		Addr:         addr,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	tmpl := web.NewTemplateEngine(cfg.TemplatesDir, true) // reload = true for dev
+	if err := tmpl.Load(); err != nil {
+		log.Fatal().Err(err).Msg("failed to load templates")
 	}
 
-	// start server in goroutine
+	// 10. Initialize Web Handlers
+	pagesHandler := handlers.NewPagesHandler(tmpl, jobsRepo, statsRepo)
+	jobsAPIHandler := handlers.NewJobsHandler(jobsRepo, hub)
+	targetsAPIHandler := handlers.NewTargetsHandler(targetsRepo, tmpl)
+	statsAPIHandler := handlers.NewStatsHandler(statsRepo)
+
+	// 11. Initialize Server
+	webCfg := &web.Config{
+		Port:         cfg.HTTPPort,
+		StaticDir:    cfg.StaticDir,
+		TemplatesDir: cfg.TemplatesDir,
+	}
+	server := web.NewServer(webCfg, nil, hub)
+
+	// 12. Register all handlers
+	server.RegisterPagesHandler(pagesHandler)
+	server.RegisterJobsHandler(jobsAPIHandler)
+	server.RegisterTargetsHandler(targetsAPIHandler)
+	server.RegisterStatsHandler(statsAPIHandler)
+	server.RegisterCollectorHandler(collectorHandler)
+
+	// 13. Start Server
+	log.Info().Int("port", cfg.HTTPPort).Msg("starting web server")
 	go func() {
-		log.Info().Str("addr", addr).Msg("listening")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal().Err(err).Msg("failed to start server")
+		if err := server.Start(); err != nil {
+			log.Fatal().Err(err).Msg("server error")
 		}
 	}()
 
-	// wait for shutdown signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	// 14. Wait for shutdown
+	<-ctx.Done()
+	log.Info().Msg("shutting down services...")
 
-	log.Info().Msg("shutting down server...")
+	scrapeManager.Stop()
 
-	// stop any running scrape job
-	manager.Stop()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	server.Stop(shutdownCtx)
 
-	// graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error().Err(err).Msg("server forced to shutdown")
-	}
-
-	log.Info().Msg("server stopped")
-}
-
-// getEnv returns env variable or default value
-func getEnv(key, defaultVal string) string {
-	if val := os.Getenv(key); val != "" {
-		return val
-	}
-	return defaultVal
+	log.Info().Msg("shutdown complete")
 }

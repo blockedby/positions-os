@@ -1,0 +1,41 @@
+{{ define "content" }}
+<div class="overflow-x-auto">
+  <table class="w-full text-left">
+    <thead>
+      <tr class="text-secondary text-sm">
+        <th class="py-2">Status</th>
+        <th class="py-2">Title</th>
+        <th class="py-2">Company</th>
+        <th class="py-2">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Jobs }}
+      <tr
+        class="border-t border-gray-800 hover:bg-white/5 transition-colors cursor-pointer"
+        hx-get="/jobs/{{ .ID }}"
+        hx-target="#job-panel"
+        hx-swap="innerHTML"
+      >
+        <td class="py-3">
+          <span class="status-badge status-{{ .Status | lower }}"
+            >{{ .Status }}</span
+          >
+        </td>
+        <td class="py-3 font-medium">{{ .Title }}</td>
+        <td class="py-3 text-secondary">{{ .Company }}</td>
+        <td class="py-3 text-secondary text-sm">
+          {{ .CreatedAt.Format "Jan 02" }}
+        </td>
+      </tr>
+      {{ else }}
+      <tr>
+        <td colspan="4" class="py-8 text-center text-secondary">
+          No recent jobs found
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}

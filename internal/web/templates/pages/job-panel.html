@@ -1,0 +1,49 @@
+{{ define "content" }}
+<div class="space-y-6">
+  <div class="flex justify-between items-start">
+    <h2 class="text-xl font-bold">{{ .Job.Title }}</h2>
+    <span class="status-badge status-{{ .Job.Status | lower }}"
+      >{{ .Job.Status }}</span
+    >
+  </div>
+
+  <div class="flex gap-2">
+    <button
+      class="btn-success flex-1"
+      hx-patch="/api/v1/jobs/{{ .Job.ID }}/status"
+      hx-vals='{"status": "INTERESTED"}'
+    >
+      Interested
+    </button>
+    <button
+      class="btn-danger flex-1"
+      hx-patch="/api/v1/jobs/{{ .Job.ID }}/status"
+      hx-vals='{"status": "REJECTED"}'
+    >
+      Reject
+    </button>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <span class="text-secondary text-sm">Company</span>
+      <p>{{ .Job.Company }}</p>
+    </div>
+    <div>
+      <span class="text-secondary text-sm">Source</span>
+      <p>
+        <a
+          href="{{ .Job.SourceURL }}"
+          target="_blank"
+          class="text-accent hover:underline"
+          >{{ .Job.SourceURL }}</a
+        >
+      </p>
+    </div>
+  </div>
+
+  <div class="prose prose-invert max-w-none whitespace-pre-wrap">
+    {{ .Job.RawContent }}
+  </div>
+</div>
+{{ end }}

@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ============================================================
 # job-hunter-os - docker compose configuration
 # ============================================================
@@ -83,10 +81,35 @@ services:
       TG_API_ID: ${TG_API_ID}
       TG_API_HASH: ${TG_API_HASH}
       TG_SESSION_STRING: ${TG_SESSION_STRING}
-      COLLECTOR_PORT: 3100
-      COLLECTOR_LOG_LEVEL: debug
+      HTTP_PORT: 3100
+      LOG_LEVEL: info
+      STATIC_DIR: /root/static
+      TEMPLATES_DIR: /root/internal/web/templates
     profiles:
-      - app # Add profile so it doesn't start by default with tests if not needed
+      - app
+
+  analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile.analyzer
+    container_name: jhos-analyzer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
+      NATS_URL: nats://nats:4222
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:1234/v1}
+      LLM_MODEL: ${LLM_MODEL:-local-model}
+      LLM_TEMPERATURE: 0.1
+      LOG_LEVEL: debug
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    profiles:
+      - app
 
   # --------------------------------------------------------
   # tests

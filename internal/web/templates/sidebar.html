@@ -1,0 +1,27 @@
+{{ define "sidebar" }}
+<nav id="sidebar" class="h-full flex flex-col">
+    <div>
+        <h1>Job Hunter OS</h1>
+    </div>
+    <ul class="flex-1 space-y-2">
+        <li>
+            <a href="/" class="{{ if eq .ActivePage "dashboard" }}active{{ end }}">
+                Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="/jobs" class="{{ if eq .ActivePage "jobs" }}active{{ end }}">
+                Jobs
+            </a>
+        </li>
+        <li>
+            <a href="/settings" class="{{ if eq .ActivePage "settings" }}active{{ end }}">
+                Settings
+            </a>
+        </li>
+    </ul>
+    <div class="p-4 border-t border-gray-700 text-sm text-secondary">
+        v0.1.0
+    </div>
+</nav>
+{{ end }}

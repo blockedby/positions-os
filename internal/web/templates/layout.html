@@ -1,0 +1,72 @@
+{{ define "layout" }}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ .Title }} | Job Hunter OS</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/ws.js"></script>
+  </head>
+  <body>
+    <div class="flex h-screen overflow-hidden">
+      {{ template "sidebar" . }}
+      <main
+        id="main-content"
+        class="flex-1 overflow-auto bg-primary text-primary p-6 relative"
+      >
+        {{ block "content" . }}{{ end }}
+      </main>
+    </div>
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50"></div>
+
+    <script>
+      // WebSocket Connection
+      (function () {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = protocol + "//" + window.location.host + "/ws";
+        var conn;
+
+        function connect() {
+          conn = new WebSocket(wsUrl);
+
+          conn.onclose = function (evt) {
+            console.log("WS closed, retrying in 2s");
+            setTimeout(connect, 2000);
+          };
+
+          conn.onmessage = function (evt) {
+            try {
+              var msg = JSON.parse(evt.data);
+              console.log("WS msg:", msg);
+
+              if (msg.type === "job.updated") {
+                var id = msg.payload.job_id;
+                // Refresh the row if it exists
+                var row = document.getElementById("job-" + id);
+                if (row && window.htmx) {
+                  htmx.ajax("GET", "/partials/jobs/row/" + id, {
+                    target: "#job-" + id,
+                    swap: "outerHTML",
+                  });
+                }
+
+                // Also refresh panel if it's open and showing this job?
+                // Not strictly necessary as "Update" usually happens FROM the panel,
+                // preventing race conditions or UI jumps.
+              }
+            } catch (e) {
+              console.error("WS error:", e);
+            }
+          };
+        }
+
+        if (window.WebSocket) {
+          connect();
+        }
+      })();
+    </script>
+  </body>
+</html>
+{{ end }}

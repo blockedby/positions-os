@@ -23,9 +23,13 @@ migrate-reset:
 migrate-create:
 	migrate create -ext sql -dir migrations -seq $(name)
 
-# start docker services
+# start docker services (infrastructure only)
 docker-up:
-	docker compose up -d
+	docker compose up -d postgres nats
+
+# start full application in docker
+docker-app:
+	docker compose --profile app up -d
 
 # stop docker services
 docker-down:

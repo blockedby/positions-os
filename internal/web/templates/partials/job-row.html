@@ -1,0 +1,22 @@
+{{ define "job-row" }}
+<tr
+  id="job-{{ .ID }}"
+  class="table-row cursor-pointer hover:bg-white/5 transition-colors"
+  hx-get="/jobs/{{ .ID }}"
+  hx-target="#job-panel"
+  hx-swap="innerHTML"
+>
+  <td class="px-4 py-2">
+    <span
+      class="status-badge status-{{ .Status | lower }} px-2 py-1 rounded text-xs font-bold"
+      >{{ .Status }}</span
+    >
+  </td>
+  <td class="px-4 py-2 font-bold">{{ .Title }}</td>
+  <td class="px-4 py-2 text-secondary">{{ .Company }}</td>
+  <td class="px-4 py-2">{{ .Salary }}</td>
+  <td class="px-4 py-2 text-sm text-secondary">
+    {{ .CreatedAt.Format "Jan 02" }}
+  </td>
+</tr>
+{{ end }}
