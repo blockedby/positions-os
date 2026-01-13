@@ -1,6 +1,7 @@
 # ============================================================
 # job-hunter-os - docker compose configuration
 # ============================================================
+# syntax=docker/dockerfile:1.7
 
 services:
   # --------------------------------------------------------
@@ -84,8 +85,6 @@ services:
       LOG_LEVEL: info
       STATIC_DIR: /root/static
       TEMPLATES_DIR: /root/internal/web/templates
-    profiles:
-      - app
 
   analyzer:
     build:
@@ -107,8 +106,6 @@ services:
       LOG_LEVEL: debug
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    profiles:
-      - app
 
   # --------------------------------------------------------
   # tests
