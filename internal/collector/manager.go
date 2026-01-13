@@ -135,3 +135,13 @@ func (m *ScrapeManager) ListTopics(ctx context.Context, channelURL string) ([]te
 	}
 	return m.scraper.ListTopics(ctx, channelURL)
 }
+
+// GetTelegramStatus returns the current Telegram connection status
+func (m *ScrapeManager) GetTelegramStatus() telegram.Status {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.scraper == nil {
+		return "UNKNOWN"
+	}
+	return m.scraper.GetTelegramStatus()
+}

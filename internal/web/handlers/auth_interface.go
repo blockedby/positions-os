@@ -10,4 +10,6 @@ import (
 type TelegramClient interface {
 	StartQR(ctx context.Context, onQRCode func(url string)) error
 	GetStatus() telegram.Status
+	IsQRInProgress() bool
+	CancelQR()
 }

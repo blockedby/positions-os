@@ -29,6 +29,18 @@ func (m *MockTelegramClient) GetStatus() telegram.Status {
 	return args.Get(0).(telegram.Status)
 }
 
+func (m *MockTelegramClient) IsQRInProgress() bool {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return false
+	}
+	return args.Get(0).(bool)
+}
+
+func (m *MockTelegramClient) CancelQR() {
+	m.Called()
+}
+
 func TestAuthHandler_StartQR_Success(t *testing.T) {
 	// Setup
 	mockClient := new(MockTelegramClient)
@@ -40,6 +52,7 @@ func TestAuthHandler_StartQR_Success(t *testing.T) {
 	// but rather spawn it and return success "Flow started".
 	// The QR code comes via WebSocket.
 
+	mockClient.On("IsQRInProgress").Return(false)
 	mockClient.On("StartQR", mock.Anything, mock.Anything).Return(nil)
 	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
 
@@ -80,6 +93,26 @@ func TestAuthHandler_StartQR_AlreadyLoggedIn(t *testing.T) {
 	assert.JSONEq(t, `{"error":"already logged in"}`, rr.Body.String())
 }
 
+func TestAuthHandler_StartQR_AlreadyInProgress(t *testing.T) {
+	// Setup
+	mockClient := new(MockTelegramClient)
+
+	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
+	mockClient.On("IsQRInProgress").Return(true)
+
+	h := NewAuthHandler(mockClient, nil)
+
+	req, _ := http.NewRequest("POST", "/api/v1/auth/qr", nil)
+	rr := httptest.NewRecorder()
+
+	// Act
+	h.StartQR(rr, req)
+
+	// Assert
+	assert.Equal(t, http.StatusAccepted, rr.Code)
+	assert.JSONEq(t, `{"status":"already in progress"}`, rr.Body.String())
+}
+
 type MockHub struct {
 	mock.Mock
 }
@@ -94,23 +127,21 @@ func TestAuthHandler_StartQR_BroadcastsQRCode(t *testing.T) {
 	mockHub := new(MockHub)
 
 	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
+	mockClient.On("IsQRInProgress").Return(false)
 
 	h := NewAuthHandler(mockClient, mockHub)
+
+	// Capture broadcasts
+	var broadcasts []interface{}
+	mockHub.On("Broadcast", mock.Anything).Run(func(args mock.Arguments) {
+		broadcasts = append(broadcasts, args.Get(0))
+	}).Return()
 
 	// Single expectation with Run to trigger callback
 	mockClient.On("StartQR", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		onQRCode := args.Get(1).(func(string))
 		onQRCode("http://t.me/auth/test_token")
 	}).Return(nil)
-
-	// Expect Broadcast to be called with the QR code
-	mockHub.On("Broadcast", mock.MatchedBy(func(msg interface{}) bool {
-		m, ok := msg.(map[string]string)
-		if !ok {
-			return false
-		}
-		return m["type"] == "tg_qr" && m["url"] == "http://t.me/auth/test_token"
-	})).Return()
 
 	req, _ := http.NewRequest("POST", "/api/v1/auth/qr", nil)
 	rr := httptest.NewRecorder()
@@ -123,7 +154,13 @@ func TestAuthHandler_StartQR_BroadcastsQRCode(t *testing.T) {
 
 	// Wait for async broadcast
 	time.Sleep(50 * time.Millisecond)
-	mockHub.AssertExpectations(t)
+
+	// Assert QR was broadcast
+	assert.GreaterOrEqual(t, len(broadcasts), 1, "expected at least 1 broadcast")
+	qrMsg, ok := broadcasts[0].(map[string]string)
+	assert.True(t, ok, "broadcast should be map[string]string")
+	assert.Equal(t, "tg_qr", qrMsg["type"])
+	assert.Equal(t, "http://t.me/auth/test_token", qrMsg["url"])
 }
 
 func TestAuthHandler_StartQR_BroadcastsError(t *testing.T) {
@@ -132,20 +169,18 @@ func TestAuthHandler_StartQR_BroadcastsError(t *testing.T) {
 	mockHub := new(MockHub)
 
 	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
-	
+	mockClient.On("IsQRInProgress").Return(false)
+
 	h := NewAuthHandler(mockClient, mockHub)
+
+	// Capture broadcasts
+	var broadcasts []interface{}
+	mockHub.On("Broadcast", mock.Anything).Run(func(args mock.Arguments) {
+		broadcasts = append(broadcasts, args.Get(0))
+	}).Return()
 
 	// Mock StartQR to return an error
 	mockClient.On("StartQR", mock.Anything, mock.Anything).Return(errors.New("auth failed"))
-
-	// Expect Broadcast to be called with the error
-	mockHub.On("Broadcast", mock.MatchedBy(func(msg interface{}) bool {
-		m, ok := msg.(map[string]string)
-		if !ok {
-			return false
-		}
-		return m["type"] == "error" && m["message"] == "auth failed"
-	})).Return()
 
 	req, _ := http.NewRequest("POST", "/api/v1/auth/qr", nil)
 	rr := httptest.NewRecorder()
@@ -158,7 +193,13 @@ func TestAuthHandler_StartQR_BroadcastsError(t *testing.T) {
 
 	// Wait for async broadcast
 	time.Sleep(50 * time.Millisecond)
-	mockHub.AssertExpectations(t)
+
+	// Assert error was broadcast
+	assert.Equal(t, 1, len(broadcasts), "expected 1 broadcast: error")
+	errMsg, ok := broadcasts[0].(map[string]string)
+	assert.True(t, ok, "broadcast should be map[string]string")
+	assert.Equal(t, "error", errMsg["type"])
+	assert.Equal(t, "auth failed", errMsg["message"])
 }
 
 func TestAuthHandler_StartQR_ConcurrentCalls(t *testing.T) {
@@ -166,7 +207,10 @@ func TestAuthHandler_StartQR_ConcurrentCalls(t *testing.T) {
 	mockHub := new(MockHub)
 
 	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
+	mockClient.On("IsQRInProgress").Return(false)
 	mockClient.On("StartQR", mock.Anything, mock.Anything).Return(nil)
+	// Allow any number of broadcasts in concurrent test
+	mockHub.On("Broadcast", mock.Anything).Return()
 
 	h := NewAuthHandler(mockClient, mockHub)
 
@@ -195,20 +239,18 @@ func TestAuthHandler_StartQR_BroadcastsSuccessOnSuccessfulAuth(t *testing.T) {
 	mockHub := new(MockHub)
 
 	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
+	mockClient.On("IsQRInProgress").Return(false)
 
 	h := NewAuthHandler(mockClient, mockHub)
 
+	// Capture broadcasts
+	var broadcasts []interface{}
+	mockHub.On("Broadcast", mock.Anything).Run(func(args mock.Arguments) {
+		broadcasts = append(broadcasts, args.Get(0))
+	}).Return()
+
 	// Mock StartQR to return nil (success)
 	mockClient.On("StartQR", mock.Anything, mock.Anything).Return(nil)
-
-	// Expect success broadcast when auth completes
-	mockHub.On("Broadcast", mock.MatchedBy(func(msg interface{}) bool {
-		m, ok := msg.(map[string]string)
-		if !ok {
-			return false
-		}
-		return m["type"] == "tg_auth_success"
-	})).Return()
 
 	req, _ := http.NewRequest("POST", "/api/v1/auth/qr", nil)
 	rr := httptest.NewRecorder()
@@ -224,7 +266,10 @@ func TestAuthHandler_StartQR_BroadcastsSuccessOnSuccessfulAuth(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Assert success was broadcast
-	mockHub.AssertExpectations(t)
+	assert.Equal(t, 1, len(broadcasts), "expected 1 broadcast: success")
+	successMsg, ok := broadcasts[0].(map[string]string)
+	assert.True(t, ok, "broadcast should be map[string]string")
+	assert.Equal(t, "tg_auth_success", successMsg["type"])
 	mockClient.AssertExpectations(t)
 }
 
@@ -238,6 +283,7 @@ func TestAuthHandler_StartQR_QRHiddenAfterSuccess(t *testing.T) {
 	mockHub := new(MockHub)
 
 	mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
+	mockClient.On("IsQRInProgress").Return(false)
 
 	h := NewAuthHandler(mockClient, mockHub)
 

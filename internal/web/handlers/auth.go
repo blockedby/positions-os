@@ -36,16 +36,16 @@ func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Start QR flow in background
-	// We create a background context or use one linked to server?
-	// If request context dies, we might stop?
-	// Usually auth flow should persist a bit or be tied to a session.
-	// For simplicity, let's use a detached background context, OR keep it until successful.
-	// Ideally, if the user leaves the page, we might want to cancel?
-	// But Manager.StartQR takes a context.
+	// 2. Check if QR flow is already in progress
+	if h.client.IsQRInProgress() {
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]string{"status": "already in progress"})
+		return
+	}
 
+	// 3. Start QR flow in background
 	go func() {
-		ctx := context.Background() // TODO: Handle cancellation
+		ctx := context.Background()
 		err := h.client.StartQR(ctx, func(url string) {
 			// Send QR code to WebSocket
 			if h.hub != nil {
@@ -57,8 +57,8 @@ func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err != nil {
-			// Broadcast error
-			if h.hub != nil {
+			// Broadcast error (but not for context cancellation, which is normal)
+			if err != context.Canceled && h.hub != nil {
 				h.hub.Broadcast(map[string]string{
 					"type":    "error",
 					"message": err.Error(),

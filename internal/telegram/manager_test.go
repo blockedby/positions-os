@@ -121,10 +121,17 @@ func TestConvertToGotgprotoSession_RoundTrip(t *testing.T) {
 	result, err := ConvertToGotgprotoSession(input)
 	require.NoError(t, err)
 
-	// In a real round trip we'd save to DB and load back, 
-	// but here we just verify the JSON contains expected fields.
+	// Verify gotgproto wrapped format: {"Version":1,"Data":{...}}
 	var parsed map[string]interface{}
 	err = json.Unmarshal(result.Data, &parsed)
 	require.NoError(t, err)
-	assert.Equal(t, float64(2), parsed["DC"])
+
+	// Check wrapper structure
+	assert.Equal(t, float64(1), parsed["Version"], "Should have Version=1")
+	dataObj, ok := parsed["Data"].(map[string]interface{})
+	require.True(t, ok, "Data should be a nested object")
+
+	// Check session data is inside the Data wrapper
+	assert.Equal(t, float64(2), dataObj["DC"], "DC should be in nested Data")
+	assert.Equal(t, "1.2.3.4:443", dataObj["Addr"], "Addr should be in nested Data")
 }

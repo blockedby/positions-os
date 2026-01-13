@@ -45,6 +45,16 @@ func (c *Client) StartQR(ctx context.Context, onQRCode func(url string)) error {
 	return c.manager.StartQR(ctx, onQRCode)
 }
 
+// IsQRInProgress returns true if a QR login flow is currently in progress.
+func (c *Client) IsQRInProgress() bool {
+	return c.manager.IsQRInProgress()
+}
+
+// CancelQR cancels any ongoing QR login flow.
+func (c *Client) CancelQR() {
+	c.manager.CancelQR()
+}
+
 // getProto returns the current protocol client if available.
 func (c *Client) getProto() (*gotgproto.Client, error) {
 	proto := c.manager.GetClient()

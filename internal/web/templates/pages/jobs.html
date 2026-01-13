@@ -5,7 +5,12 @@
     <div class="flex justify-between items-center mb-6">
       <h1>Jobs</h1>
       <div class="flex gap-2">
-        <button class="btn-primary" hx-post="/api/v1/jobs/sync" hx-swap="none">
+        <button
+          hx-post="/api/v1/jobs/sync"
+          hx-swap="none"
+          class="contrast"
+          aria-label="Sync jobs now"
+        >
           Sync Now
         </button>
       </div>
@@ -17,32 +22,34 @@
       hx-get="/jobs"
       hx-target="#jobs-table-body"
       hx-trigger="change delay:500ms, search"
+      role="search"
     >
-      <input
-        type="text"
-        name="q"
-        placeholder="Search..."
-        class="p-2 bg-tertiary border border border-gray-700 rounded text-primary"
-      />
-      <select
-        name="status"
-        class="p-2 bg-tertiary border border-gray-700 rounded text-primary"
-      >
-        <option value="">All Statuses</option>
-        <option value="RAW">Raw</option>
-        <option value="INTERESTED">Interested</option>
-        <option value="ANALYZED">Analyzed</option>
-        <option value="REJECTED">Rejected</option>
-      </select>
+      <div>
+        <label for="search-input" class="hidden">Search</label>
+        <input
+          type="text"
+          id="search-input"
+          name="q"
+          placeholder="Search..."
+        />
+      </div>
+      <div>
+        <label for="status-filter" class="hidden">Status</label>
+        <select id="status-filter" name="status">
+          <option value="">All Statuses</option>
+          <option value="RAW">Raw</option>
+          <option value="INTERESTED">Interested</option>
+          <option value="ANALYZED">Analyzed</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
       <!-- More filters -->
     </form>
 
     <!-- Table -->
-    <div
-      class="bg-tertiary rounded border border-gray-700 flex-1 overflow-auto"
-    >
-      <table>
-        <thead class="sticky top-0 bg-secondary">
+    <div class="card flex-1 overflow-auto">
+      <table class="striped" role="table">
+        <thead>
           <tr>
             <th>Status</th>
             <th>Title</th>
@@ -58,21 +65,21 @@
     </div>
 
     <!-- Pagination -->
-    <div class="mt-4 flex justify-between items-center text-sm text-secondary">
-      <span>Total: {{ .Total }} jobs</span>
+    <div class="mt-4 flex justify-between items-center text-secondary">
+      <small>Total: {{ .Total }} jobs</small>
     </div>
   </div>
 
   <!-- Job Detail Panel -->
-  <div
+  <aside
     id="job-detail-container"
-    class="w-1/3 bg-secondary border-l border-gray-700 flex flex-col rounded"
+    class="w-1/3 border-left flex flex-col"
   >
     <div id="job-panel" class="h-full overflow-auto p-6">
       <div class="flex items-center justify-center h-full text-secondary">
-        Select a job to view details
+        <small>Select a job to view details</small>
       </div>
     </div>
-  </div>
+  </aside>
 </div>
 {{ end }}

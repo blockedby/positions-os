@@ -178,3 +178,22 @@ func (h *PagesHandler) RecentJobs(w http.ResponseWriter, r *http.Request) {
 
 	h.templates.RenderContent(w, "recent-jobs", map[string]interface{}{"Jobs": jobs})
 }
+
+// DesignTest renders the design system test page
+func (h *PagesHandler) DesignTest(w http.ResponseWriter, r *http.Request) {
+	data := map[string]interface{}{
+		"Title":      "Design Test",
+		"ActivePage": "design-test",
+	}
+
+	if r.Header.Get("HX-Request") == "true" {
+		if err := h.templates.RenderContent(w, "design-test", data); err != nil {
+			http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if err := h.templates.Render(w, "design-test", data); err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+	}
+}

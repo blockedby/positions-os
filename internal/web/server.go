@@ -120,6 +120,7 @@ func (s *Server) RegisterPagesHandler(handler interface{}) {
 		JobRow(w http.ResponseWriter, r *http.Request)
 		StatsCards(w http.ResponseWriter, r *http.Request)
 		RecentJobs(w http.ResponseWriter, r *http.Request)
+		DesignTest(w http.ResponseWriter, r *http.Request)
 	}
 
 	if h, ok := handler.(pagesHandler); ok {
@@ -127,6 +128,7 @@ func (s *Server) RegisterPagesHandler(handler interface{}) {
 		s.router.Get("/jobs", h.Jobs)
 		s.router.Get("/jobs/{id}", h.JobDetail)
 		s.router.Get("/settings", h.Settings)
+		s.router.Get("/design-test", h.DesignTest)
 
 		s.router.Get("/partials/jobs/row/{id}", h.JobRow)
 		s.router.Get("/partials/stats-cards", h.StatsCards)

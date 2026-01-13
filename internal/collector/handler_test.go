@@ -188,6 +188,47 @@ func TestHandler_Status(t *testing.T) {
 			t.Errorf("Status() status = %d, want %d", rec.Code, http.StatusOK)
 		}
 	})
+
+	t.Run("returns telegram_status READY when connected", func(t *testing.T) {
+		// RED Phase: This test expects telegram_status to be returned
+		// Currently it will fail because the Status handler doesn't return telegram_status
+		mockScraper := &MockScraper{
+			// MockScraper already returns StatusReady from GetTelegramStatus()
+		}
+		handler := NewHandler(NewScrapeManager(mockScraper), nil)
+		router := NewRouter(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/scrape/status", nil)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status() status = %d, want %d", rec.Code, http.StatusOK)
+		}
+
+		var resp map[string]interface{}
+		if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		// This will fail because telegram_status is not returned
+		telegramStatus, ok := resp["telegram_status"]
+		if !ok {
+			t.Error("RED FAIL: telegram_status key is missing from response. Current keys:", keys(resp))
+		}
+		if ok && telegramStatus != "READY" {
+			t.Errorf("telegram_status = %v, want READY", telegramStatus)
+		}
+	})
+}
+
+func keys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 // test list topics endpoint

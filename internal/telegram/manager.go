@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/blockedby/positions-os/internal/config"
@@ -41,6 +42,11 @@ type Manager struct {
 
 	clientFactory   ClientFactory
 	qrClientFactory QRClientFactory
+
+	// QR flow state management
+	qrInProgress atomic.Bool
+	qrCancel     context.CancelFunc
+	qrMu         sync.Mutex
 }
 
 func NewManager(cfg *config.Config, db *gorm.DB) *Manager {
@@ -122,15 +128,47 @@ func (m *Manager) Init(ctx context.Context) error {
 	return nil
 }
 
+// IsQRInProgress returns true if a QR login flow is currently in progress.
+func (m *Manager) IsQRInProgress() bool {
+	return m.qrInProgress.Load()
+}
+
 // StartQR starts the QR login flow.
 // This function blocks until login is successful or context is canceled.
+// If a QR flow is already in progress, returns an error immediately.
 func (m *Manager) StartQR(ctx context.Context, onQRCode func(url string)) error {
+	// Check if already logged in
 	m.mu.Lock()
 	if m.status == StatusReady {
 		m.mu.Unlock()
 		return fmt.Errorf("already logged in")
 	}
 	m.mu.Unlock()
+
+	// Check if QR flow is already in progress
+	m.qrMu.Lock()
+	if m.qrInProgress.Load() {
+		m.qrMu.Unlock()
+		m.log.Info().Msg("telegram: QR flow already in progress, ignoring new request")
+		return fmt.Errorf("QR login already in progress")
+	}
+
+	// Create a cancellable context for this QR flow
+	qrCtx, cancel := context.WithCancel(ctx)
+	m.qrCancel = cancel
+	m.qrInProgress.Store(true)
+	m.qrMu.Unlock()
+
+	// Ensure cleanup on exit
+	defer func() {
+		m.qrInProgress.Store(false)
+		m.qrMu.Lock()
+		if m.qrCancel != nil {
+			m.qrCancel()
+			m.qrCancel = nil
+		}
+		m.qrMu.Unlock()
+	}()
 
 	m.log.Info().Time("now", time.Now()).Msg("telegram: starting QR flow, creating QR client")
 
@@ -145,7 +183,7 @@ func (m *Manager) StartQR(ctx context.Context, onQRCode func(url string)) error 
 
 	// Run the client connection
 	// client.Run blocks until the context is canceled or the function returns
-	err = bundle.Client.Run(ctx, func(ctx context.Context) error {
+	err = bundle.Client.Run(qrCtx, func(ctx context.Context) error {
 		qr := bundle.Client.QR()
 		loggedIn := qrlogin.OnLoginToken(&bundle.Dispatcher)
 
@@ -187,6 +225,19 @@ func (m *Manager) StartQR(ctx context.Context, onQRCode func(url string)) error 
 	// Reinitialize manager with the new session (this creates the persistent gotgproto client)
 	m.log.Info().Msg("telegram: re-initializing manager with new session")
 	return m.Init(ctx)
+}
+
+// CancelQR cancels any ongoing QR login flow.
+func (m *Manager) CancelQR() {
+	m.qrMu.Lock()
+	defer m.qrMu.Unlock()
+
+	if m.qrCancel != nil {
+		m.log.Info().Msg("telegram: canceling ongoing QR flow")
+		m.qrCancel()
+		m.qrCancel = nil
+	}
+	m.qrInProgress.Store(false)
 }
 
 func (m *Manager) saveSessionToDB(data *session.Data) error {

@@ -17,7 +17,7 @@
       <p style="margin-bottom: 1rem; color: #000;">Scan with Telegram App</p>
       <div id="qr-code" style="padding: 1rem; display: inline-block; background: #fff; border: 4px solid #000;"></div>
       <p id="qr-timer" style="margin-top: 1rem;">
-        <small>Expires in <span id="qr-timeout">60</span>s</small>
+        <small>Expires in <span id="qr-timeout">30</span>s</small>
       </p>
       <p style="margin-top: 0.5rem;"><small>QR code expires automatically</small></p>
     </figure>
@@ -27,7 +27,6 @@
         id="connect-btn"
         hx-post="/api/v1/auth/qr"
         hx-swap="none"
-        hx-trigger="load"
       >
         Connect Telegram
       </button>
@@ -36,16 +35,13 @@
 
   <script src="https://unpkg.com/qrcodejs/qrcode.min.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const socket = new WebSocket(
-        (location.protocol === "https:" ? "wss://" : "ws://") +
-          location.host +
-          "/ws"
-      );
+    (function () {
       const qrContainer = document.getElementById("qr-container");
       const qrCodeDiv = document.getElementById("qr-code");
       const statusSpan = document.getElementById("connection-status");
       const connectBtn = document.getElementById("connect-btn");
+      let currentQRTimer = null;
+      let lastQRUrl = null;
 
       // Check initial status
       fetch("/api/v1/scrape/status")
@@ -61,57 +57,90 @@
           }
         });
 
-      socket.onmessage = function (event) {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "tg_qr") {
-          qrContainer.hidden = false;
-          qrCodeDiv.innerHTML = "";
-          new QRCode(qrCodeDiv, msg.url);
-          statusSpan.textContent = "Scan QR Code...";
-          statusSpan.style.color = "var(--warning)";
-
-          // Start QR expiration timer (60 seconds)
-          let timeLeft = 60;
-          const timerSpan = document.getElementById("qr-timeout");
-          const timerInterval = setInterval(function () {
-            timeLeft--;
-            if (timerSpan) timerSpan.textContent = timeLeft;
-            if (timeLeft <= 0) {
-              clearInterval(timerInterval);
-              qrContainer.hidden = true;
-              qrCodeDiv.innerHTML = "";
-              statusSpan.textContent = "QR expired. Try again.";
-              statusSpan.style.color = "var(--error)";
-            }
-          }, 1000);
-
-          qrContainer.dataset.timerInterval = timerInterval;
-        } else if (msg.type === "tg_auth_success") {
-          const timerInterval = qrContainer.dataset.timerInterval;
-          if (timerInterval) {
-            clearInterval(parseInt(timerInterval));
-            delete qrContainer.dataset.timerInterval;
-          }
-
-          qrContainer.hidden = true;
-          qrCodeDiv.innerHTML = "";
-          statusSpan.textContent = "Connected";
-          statusSpan.style.color = "var(--success)";
-          connectBtn.hidden = true;
-        } else if (msg.type === "error") {
-          const timerInterval = qrContainer.dataset.timerInterval;
-          if (timerInterval) {
-            clearInterval(parseInt(timerInterval));
-            delete qrContainer.dataset.timerInterval;
-          }
-
-          alert("Error: " + msg.message);
-          qrContainer.hidden = true;
-          statusSpan.textContent = "Disconnected";
-          statusSpan.style.color = "var(--error)";
+      // Add click debouncing to the connect button
+      connectBtn.addEventListener("click", function () {
+        if (connectBtn.disabled) {
+          return;
         }
-      };
-    });
+        connectBtn.disabled = true;
+        connectBtn.textContent = "Connecting...";
+
+        // Re-enable after a delay
+        setTimeout(() => {
+          connectBtn.disabled = false;
+          connectBtn.textContent = "Connect Telegram";
+        }, 3000);
+      });
+
+      // Listen for custom QR events from global WebSocket
+      document.addEventListener("tg_qr", function (e) {
+        const url = e.detail.url;
+        // Skip if this is the same QR we already displayed
+        if (url === lastQRUrl) {
+          return;
+        }
+        lastQRUrl = url;
+
+        // Clear any existing timer
+        if (currentQRTimer) {
+          clearInterval(currentQRTimer);
+        }
+
+        qrContainer.hidden = false;
+        qrCodeDiv.innerHTML = "";
+        new QRCode(qrCodeDiv, url);
+        statusSpan.textContent = "Scan QR Code...";
+        statusSpan.style.color = "var(--warning)";
+
+        // Start QR expiration timer (30 seconds - Telegram's default QR expiration)
+        let timeLeft = 30;
+        const timerSpan = document.getElementById("qr-timeout");
+        currentQRTimer = setInterval(function () {
+          timeLeft--;
+          if (timerSpan) timerSpan.textContent = timeLeft;
+          if (timeLeft <= 0) {
+            clearInterval(currentQRTimer);
+            currentQRTimer = null;
+            lastQRUrl = null;
+            qrContainer.hidden = true;
+            qrCodeDiv.innerHTML = "";
+            statusSpan.textContent = "QR expired. Try again.";
+            statusSpan.style.color = "var(--error)";
+          }
+        }, 1000);
+      });
+
+      document.addEventListener("tg_auth_success", function () {
+        // Clear timer
+        if (currentQRTimer) {
+          clearInterval(currentQRTimer);
+          currentQRTimer = null;
+        }
+        lastQRUrl = null;
+
+        qrContainer.hidden = true;
+        qrCodeDiv.innerHTML = "";
+        statusSpan.textContent = "Connected";
+        statusSpan.style.color = "var(--success)";
+        connectBtn.hidden = true;
+      });
+
+      document.addEventListener("tg_auth_error", function (e) {
+        // Clear timer
+        if (currentQRTimer) {
+          clearInterval(currentQRTimer);
+          currentQRTimer = null;
+        }
+        lastQRUrl = null;
+
+        console.error("Auth error:", e.detail.message);
+        qrContainer.hidden = true;
+        statusSpan.textContent = "Disconnected";
+        statusSpan.style.color = "var(--error)";
+        connectBtn.disabled = false;
+        connectBtn.textContent = "Connect Telegram";
+      });
+    })();
   </script>
 
   <!-- Add Target Form -->

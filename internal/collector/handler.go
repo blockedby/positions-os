@@ -88,28 +88,22 @@ func (h *Handler) StopScrape(w http.ResponseWriter, r *http.Request) {
 // Status handles GET /api/v1/scrape/status
 func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 	current := h.manager.Current()
+	tgStatus := h.manager.GetTelegramStatus()
+
 	if current == nil {
-		respondJSON(w, http.StatusOK, map[string]string{
-			"status": "idle",
-			// We need to access manager's client status.
-			// But ScrapeManager wrapper might not expose it directly or we need to access handlers.manager.GetClientStatus()?
-			// ScrapeManager has 'service', 'service' has 'client'.
-			// Let's assume we can get it or just leave it for now if complex.
-			// For now, let's keep it simple and skip this enhancement to avoid breaking encapsulation too much,
-			// OR we can add GetTelegramStatus to ScrapeManager.
-			// Let's assume we can't easily get it here without refactoring ScrapeManager.
-			// BUT the frontend expects "telegram_status".
-			// Let's skip it here and handle it separate or just let the frontend default to 'Wait...'.
-			// Actually, let's add it. ScrapeManager -> Service -> Client -> Manager -> Status.
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"status":          "idle",
+			"telegram_status": string(tgStatus),
 		})
 		return
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"status":     "running",
-		"scrape_id":  current.ID.String(),
-		"started_at": current.StartedAt.Format(time.RFC3339),
-		"channel":    current.Options.Channel,
+		"status":          "running",
+		"scrape_id":       current.ID.String(),
+		"started_at":      current.StartedAt.Format(time.RFC3339),
+		"channel":         current.Options.Channel,
+		"telegram_status": string(tgStatus),
 	})
 }
 

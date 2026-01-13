@@ -58,9 +58,9 @@ func TestTelegramAuth_SessionInDB_StatusReady(t *testing.T) {
 	require.NoError(t, err)
 
 	db.Exec("CREATE TABLE sessions (version integer primary key, data blob)")
-	// Seed a mock session
+	// Seed a mock session in gotgproto format: {"Version":1,"Data":{...}}
 	db.Exec("INSERT INTO sessions (version, data) VALUES (1, ?)",
-		[]byte(`{"DC":2,"AuthKey":"dGVzdA=="}`))
+		[]byte(`{"Version":1,"Data":{"DC":2,"AuthKey":"dGVzdA=="}}`))
 
 	cfg := &config.Config{
 		TGApiID:   12345,
@@ -142,9 +142,9 @@ func TestTelegramAuth_SessionPersistence_Restart(t *testing.T) {
 	require.NoError(t, m1.Init(context.Background()))
 	assert.Equal(t, telegram.StatusUnauthorized, m1.GetStatus())
 
-	// 3. Simulate successful login by saving session directly
+	// 3. Simulate successful login by saving session directly in gotgproto format
 	// (In real life this happens inside StartQR)
-	sessionData := []byte(`{"DC":2,"Addr":"1.2.3.4:443","AuthKey":"dGVzdA=="}`)
+	sessionData := []byte(`{"Version":1,"Data":{"DC":2,"Addr":"1.2.3.4:443","AuthKey":"dGVzdA=="}}`)
 	db.Exec("INSERT INTO sessions (version, data) VALUES (1, ?)", sessionData)
 
 	// 4. "Restart" - Create new manager instance
