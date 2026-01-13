@@ -23,9 +23,8 @@ type Config struct {
 	LLMTimeoutSec  int
 
 	// telegram
-	TGApiID      int
-	TGApiHash    string
-	TGSessionStr string
+	TGApiID   int
+	TGApiHash string
 
 	// server
 	HTTPPort     int
@@ -48,7 +47,6 @@ func Load() (*Config, error) {
 		LLMMaxTokens:  getEnvInt("LLM_MAX_TOKENS", 2048),
 		LLMTimeoutSec: getEnvInt("LLM_TIMEOUT_SECONDS", 60),
 		TGApiHash:     getEnv("TG_API_HASH", ""),
-		TGSessionStr:  getEnv("TG_SESSION_STRING", ""),
 		LogLevel:      getEnv("LOG_LEVEL", "info"),
 		LogFile:       getEnv("LOG_FILE", "./logs/app.log"),
 		HTTPPort:      getEnvInt("HTTP_PORT", 3100),

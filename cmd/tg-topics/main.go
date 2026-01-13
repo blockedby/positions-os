@@ -47,7 +47,7 @@ func main() {
 		&gotgproto.ClientOpts{
 			Session:          sessionMaker.StringSession(sessionString),
 			DisableCopyright: true,
-			InMemory:         true, // don't write to disk
+			InMemory:         false, // write to disk to save auth key updates
 		},
 	)
 	if err != nil {

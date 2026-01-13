@@ -7,19 +7,26 @@ Automated job search system: vacancy scraping, AI analysis, and application auto
 ### Requirements
 
 - Docker & Docker Compose
-- Go 1.21+
+- Go 1.23+
+- Task (Go-native task runner: `go install github.com/go-task/task/v3/cmd/task@latest`)
 - Telegram API credentials (get from https://my.telegram.org)
 
-### Setup
+  Using standard Go tooling:
 
-1. **Prepare Environment**:
+  ```powershell
+  go install github.com/go-task/task/v3/cmd/task@latest
+  go install github.com/evilmartians/lefthook@latest
+  go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5
+  ```
+
+2. **Prepare Settings**:
 
    ```powershell
    copy .env.example .env
    # Fill TG_API_ID and TG_API_HASH from https://my.telegram.org
    ```
 
-2. **Generate Session**:
+3. **Generate Session**:
 
    ```powershell
    go run cmd/tg-auth/main.go
@@ -27,7 +34,7 @@ Automated job search system: vacancy scraping, AI analysis, and application auto
    # Copy the result string to TG_SESSION_STRING in .env
    ```
 
-3. **Start Infrastructure**:
+4. **Start Infrastructure**:
 
    ```powershell
    # Start core infra (Postgres, NATS)
@@ -43,14 +50,14 @@ Automated job search system: vacancy scraping, AI analysis, and application auto
    docker compose --profile tools run --rm migrate
    ```
 
-4. **Launch Unified Service**:
+5. **Launch Unified Service**:
    The collector now serves both the Scraping API and the Web UI.
 
    ```powershell
    go run cmd/collector/main.go
    ```
 
-5. **Access Web UI**:
+6. **Access Web UI**:
    Open your browser at [http://localhost:3100](http://localhost:3100)
 
 ## Project Structure
@@ -128,30 +135,64 @@ go test ./...
 | **Web UI & API** | 3100 | Dashboard and Scraping (Unified) |
 | Analyzer         | -    | Background AI Analysis service   |
 
-```powershell
 # install dependencies
+
 go mod tidy
 
-# run migrations (via Docker if migrate CLI is not installed)
-docker compose --profile tools run --rm migrate
+# install development tools (Linter & Lefthook)
+
+# (install Task first: go install github.com/go-task/task/v3/cmd/task@latest)
+
+task lint-install
+
+# run migrations
+
+task migrate-up
 
 # start core infrastructure
-docker compose up -d
 
-# start full app (Collector + Analyzer)
-docker compose --profile app up -d
-
-# build all services
-go build -o bin/ ./cmd/...
+task docker-up
 
 # run tests
-go test -v ./...
+
+task test
+
+# run linter
+
+task lint
+
+````
+
+## Code Quality
+
+We use `golangci-lint v2` for static analysis and `Lefthook` for local workflow automation.
+
+### 1. Linter Setup
+
+The project is pre-configured with `.golangci.yml`. It is recommended to use the **Golangci-lint v2** series.
+
+To run manually:
+
+```powershell
+task lint
+````
+
+### 2. VS Code / Cursor Integration
+
+Settings are provided in `.vscode/settings.json`. The linter will run automatically on save in "workspace" mode with the `--fast` flag for immediate feedback.
+
+### 3. Git Hooks (Lefthook)
+
+Everything is pre-configured. If you haven't run the setup script yet, do it now:
+
+```powershell
+go run scripts/setup.go
 ```
 
 ### Windows-Specific Notes
 
 - **LM Studio**: If using LM Studio on the host, ensure "CORS" is allowed or set `LLM_BASE_URL=http://localhost:1234/v1`. For Docker compatibility, use `http://host.docker.internal:1234/v1`.
-- **Make on Windows**: If you don't have `make`, use the direct `docker compose` or `go run` commands shown above.
+- **Make on Windows**: If you don't have `make` installed, we highly recommend **[Task](https://taskfile.dev/)** (Go-native). You can install it via `go install github.com/go-task/task/v3/cmd/task@latest`. It is a zero-dependency alternative that works identically on Windows, WSL, and Linux. For now, you can also use the direct `docker compose` or `go run` commands shown above.
 - **Log Files**: Logs are stored in `./logs/`. Ensure the directory exists or the service has permissions to create it.
 
 ## API Endpoints (Phase 1: Collector)

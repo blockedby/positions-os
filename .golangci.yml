@@ -1,0 +1,57 @@
+# golangci-lint v2 configuration
+# See: https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  # v2 defaults to relative-path-mode: config-file
+  # issues are found relative to this file
+  relative-path-mode: config-file
+
+linters:
+  # In v2, we specify the default set. 'fast' is a good baseline for IDE performance.
+  default: fast
+  enable:
+    # --- Fundamentals ---
+    - errcheck # Checks for unhandled errors
+    - gosimple # Suggests code simplifications
+    - govet # Standard Go analysis tool
+    - staticcheck # Advanced static analysis
+    - unused # Identifies dead code
+
+    # --- Extended Best Practices ---
+    - revive # Flexible replacement for golint
+    - gocritic # Opinionated code quality checks
+    - gosec # Security scanner
+    - bodyclose # Ensures HTTP response bodies are closed
+    - nilnil # Catches confusing (nil, nil) returns
+    - unparam # Finds unused function parameters
+    - gci # Enforces import grouping and order
+    - misspell # Finds commonly misspelled English words
+
+linters-settings:
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+  gci:
+    sections:
+      - standard # Standard package.
+      - default # Default section: contains all unknown packages.
+      - prefix(github.com/blockedby/positions-os) # Internal packages.
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment # Often too noisy for non-performance critical code
+
+issues:
+  # Maximize visibility during setup
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  # Allow some common patterns that aren't bugs
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - unparam

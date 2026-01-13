@@ -2,6 +2,85 @@
 <div class="flex flex-col h-full max-w-4xl mx-auto">
   <h1 class="mb-6">Settings</h1>
 
+  <!-- Telegram Auth -->
+  <div class="card mb-6" id="telegram-auth-card">
+    <h2 class="mb-4">Telegram Connection</h2>
+    <div id="auth-status" class="mb-4">
+      <div class="flex items-center gap-2">
+        Status:
+        <span id="connection-status" class="font-bold text-yellow-500"
+          >Wait...</span
+        >
+      </div>
+    </div>
+
+    <div
+      id="qr-container"
+      class="hidden flex flex-col items-center p-4 bg-white rounded"
+    >
+      <p class="text-black mb-2">Scan with Telegram App</p>
+      <div id="qr-code"></div>
+    </div>
+
+    <div class="mt-4">
+      <button
+        id="connect-btn"
+        hx-post="/api/v1/auth/qr"
+        hx-swap="none"
+        class="btn-primary"
+      >
+        Connect Telegram
+      </button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/qrcodejs/qrcode.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const socket = new WebSocket(
+        (location.protocol === "https:" ? "wss://" : "ws://") +
+          location.host +
+          "/ws"
+      );
+      const qrContainer = document.getElementById("qr-container");
+      const qrCodeDiv = document.getElementById("qr-code");
+      const statusSpan = document.getElementById("connection-status");
+      const connectBtn = document.getElementById("connect-btn");
+
+      // Check initial status
+      fetch("/api/v1/scrape/status")
+        .then((r) => r.json())
+        .then((data) => {
+          // We need to exposing telegram status in scrape status or separate endpoint.
+          // Assuming scrape status might have it, or we infer from behavior.
+          // Re-using the /scrape/status endpoint?
+          // Let's assume generic status or check if we are unauthorized.
+          if (data.telegram_status === "READY") {
+            statusSpan.textContent = "Connected";
+            statusSpan.classList.replace("text-yellow-500", "text-green-500");
+            connectBtn.classList.add("hidden");
+          } else {
+            statusSpan.textContent = "Disconnected";
+            statusSpan.classList.replace("text-yellow-500", "text-red-500");
+          }
+        });
+
+      socket.onmessage = function (event) {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "tg_qr") {
+          qrContainer.classList.remove("hidden");
+          qrCodeDiv.innerHTML = ""; // clear previous
+          new QRCode(qrCodeDiv, msg.url);
+          statusSpan.textContent = "Scan QR Code...";
+          statusSpan.classList.replace("text-red-500", "text-yellow-500");
+        } else if (msg.type === "error") {
+          alert("Error: " + msg.message);
+        }
+        // Listen for "tg_auth_success" if we implement it
+      };
+    });
+  </script>
+
   <!-- Add Target Form -->
   <div class="card mb-6">
     <h2 class="mb-4">Add New Target</h2>

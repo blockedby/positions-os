@@ -36,6 +36,7 @@ type ScrapeJob struct {
 type Scraper interface {
 	Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult, error)
 	ListTopics(ctx context.Context, channelURL string) ([]telegram.Topic, error)
+	GetTelegramStatus() telegram.Status
 }
 
 // ScrapeManager manages active scrape jobs

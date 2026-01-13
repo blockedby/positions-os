@@ -197,3 +197,16 @@ func (s *Server) RegisterCollectorHandler(handler interface{}) {
 		})
 	}
 }
+
+// RegisterAuthHandler registers auth API handlers
+func (s *Server) RegisterAuthHandler(handler interface{}) {
+	type authHandler interface {
+		StartQR(w http.ResponseWriter, r *http.Request)
+	}
+
+	if h, ok := handler.(authHandler); ok {
+		s.router.Route("/api/v1/auth", func(r chi.Router) {
+			r.Post("/qr", h.StartQR)
+		})
+	}
+}

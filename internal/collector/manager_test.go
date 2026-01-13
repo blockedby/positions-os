@@ -34,6 +34,11 @@ func (m *MockScraper) ListTopics(ctx context.Context, channelURL string) ([]tele
 	return m.TopicsToReturn, nil
 }
 
+// GetTelegramStatus stub
+func (m *MockScraper) GetTelegramStatus() telegram.Status {
+	return telegram.StatusReady
+}
+
 // test manager start
 func TestScrapeManager_Start(t *testing.T) {
 	t.Run("starts job successfully", func(t *testing.T) {

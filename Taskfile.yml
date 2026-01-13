@@ -1,0 +1,118 @@
+version: '3'
+
+vars:
+  DB_URL: '{{.DB_URL | default "postgres://jhos:jhos_secret@localhost:5432/jhos?sslmode=disable"}}'
+  BIN_DIR: bin
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  deps:
+    desc: Install Go dependencies
+    cmds:
+      - go mod tidy
+
+  migrate-up:
+    desc: Run all migrations
+    cmds:
+      - migrate -path migrations -database "{{.DB_URL}}" up
+
+  migrate-down:
+    desc: Rollback last migration
+    cmds:
+      - migrate -path migrations -database "{{.DB_URL}}" down 1
+
+  migrate-reset:
+    desc: Rollback all migrations
+    cmds:
+      - migrate -path migrations -database "{{.DB_URL}}" down -all
+
+  migrate-create:
+    desc: Create new migration (usage: task migrate-create name=create_users)
+    cmds:
+      - migrate create -ext sql -dir migrations -seq {{.name}}
+
+  docker-up:
+    desc: Start core infrastructure (Postgres, NATS)
+    cmds:
+      - docker compose up -d postgres nats
+
+  docker-app:
+    desc: Start full application in Docker
+    cmds:
+      - docker compose --profile app up -d
+
+  docker-down:
+    desc: Stop Docker services
+    cmds:
+      - docker compose down
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test -v ./...
+
+  test-unit:
+    desc: Run unit tests only
+    cmds:
+      - go test -v -race ./internal/...
+
+  test-coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test -cover ./...
+
+  build:
+    desc: Build all binaries
+    cmds:
+      - go build -o {{.BIN_DIR}}/ ./cmd/...
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run
+
+  setup:
+    desc: Install all development tools (Linter, Task, Lefthook)
+    cmds:
+      - go run scripts/setup/main.go
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+      - goimports -w .
+
+  check:
+    desc: Verify compilation
+    cmds:
+      - go build ./...
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - |
+        {{if eq OS "windows"}}
+        if (Test-Path {{.BIN_DIR}}) { Remove-Item -Recurse -Force {{.BIN_DIR}} }
+        {{else}}
+        rm -rf {{.BIN_DIR}}
+        {{end}}
+      - go clean
+
+  collector:
+    desc: Run collector service
+    cmds:
+      - go run ./cmd/collector/main.go
+
+  tg-auth:
+    desc: Run telegram auth tool
+    cmds:
+      - go run ./cmd/tg-auth/main.go
+
+  tg-topics:
+    desc: Run telegram topics lister (usage: task tg-topics channel=@forum)
+    cmds:
+      - go run ./cmd/tg-topics/main.go {{.channel}}

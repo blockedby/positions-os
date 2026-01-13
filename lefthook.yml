@@ -1,0 +1,15 @@
+# Lefthook - Modern Git Hooks for Go Projects
+# See: https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    linter:
+      run: golangci-lint run --fast
+      glob: "*.go"
+    format:
+      run: gofmt -w {staged_files}
+      glob: "*.go"
+    yaml-check:
+      run: go run scripts/validate_yaml/main.go {all_files}
+      glob: "*.{yml,yaml}"

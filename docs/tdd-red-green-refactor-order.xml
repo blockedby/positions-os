@@ -1,0 +1,60 @@
+<tdd_pattern name="Red-Green-Refactor">
+
+  <overview>
+    The Red-Green-Refactor pattern is the cornerstone of Test-Driven Development (TDD).
+    It is a disciplined, iterative workflow that shifts the focus from writing large blocks
+    of production code to writing small, verifiable increments driven by tests.
+  </overview>
+
+  <phases>
+    <phase name="RED" order="1">
+      <action>Write a unit test for functionality that does not yet exist.</action>
+      <requirement>The test MUST fail.</requirement>
+      <purpose>
+        A failing test proves the test is valid and defines the "what" of the problem.
+      </purpose>
+    </phase>
+
+    <phase name="GREEN" order="2">
+      <action>Write the minimum amount of code to make the failing test pass.</action>
+      <requirement>Any hack is acceptable (e.g., hardcoded values).</requirement>
+      <purpose>
+        Focus on functionality. Confirm your understanding matches the implementation.
+      </purpose>
+    </phase>
+
+    <phase name="REFACTOR" order="3">
+      <action>Improve the internal structure of the code without changing its behavior.</action>
+      <requirement>All tests must stay green throughout this process.</requirement>
+      <scope>Remove duplication, improve naming, extract methods, clean design.</scope>
+      <purpose>
+        This is where "good code" happens. Refactor with confidence using passing tests as a safety
+        net.
+      </purpose>
+    </phase>
+  </phases>
+
+  <strict_rules source="Robert C. Martin (Uncle Bob)">
+    <law order="1">
+      You are not allowed to write any production code unless it is to make a failing unit test
+      pass.
+    </law>
+    <law order="2">
+      You are not allowed to write any more of a unit test than is sufficient to fail;
+      and compilation failures are failures.
+    </law>
+    <law order="3">
+      You are not allowed to write any more production code than is sufficient to pass
+      the one failing unit test.
+    </law>
+  </strict_rules>
+
+  <benefits>
+    <benefit>Near-100% test coverage: every line of production code is demanded by a test.</benefit>
+    <benefit>Minimal waste: you never write code that isn't needed for the current requirement.</benefit>
+    <benefit>Instant feedback: the cycle is so fast you always know where a bug was introduced.</benefit>
+    <benefit>Better design: writing the test first forces you to think about the interface, not the
+      implementation.</benefit>
+  </benefits>
+
+</tdd_pattern>

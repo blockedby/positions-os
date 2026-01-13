@@ -74,15 +74,34 @@ help:
 	@echo "  test           - run tests"
 	@echo "  build          - build binaries"
 	@echo "  lint           - run linter"
+	@echo "  lint-install   - install golangci-lint (Windows)"
 	@echo "  fmt            - format code"
 	@echo "  check          - verify compilation"
 	@echo "  clean          - clean build artifacts"
 	@echo "  collector      - run collector service"
 	@echo "  tg-auth        - run telegram auth tool"
+	@echo "  tg-topics      - run topics lister"
 
 # run collector service
 collector:
 	go run ./cmd/collector/main.go
+
+# Determine OS
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+else
+    DETECTED_OS := $(shell uname -s)
+endif
+
+# install linter and git hooks (Universal)
+lint-install:
+ifeq ($(DETECTED_OS),Windows)
+	powershell -ExecutionPolicy ByPass -Command "iwr -Uri https://raw.githubusercontent.com/golangci/golangci-lint/master/install.ps1 -OutFile install.ps1; .\install.ps1 -b (go env GOPATH)/bin v2.8.0; rm install.ps1"
+else
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.8.0
+endif
+	go install github.com/evilmartians/lefthook@latest
+	lefthook install
 
 # run telegram auth tool
 tg-auth:

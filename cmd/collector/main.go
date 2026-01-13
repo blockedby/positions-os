@@ -7,9 +7,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/celestix/gotgproto"
-	"github.com/celestix/gotgproto/sessionMaker"
-
 	"github.com/blockedby/positions-os/internal/collector"
 	"github.com/blockedby/positions-os/internal/config"
 	"github.com/blockedby/positions-os/internal/database"
@@ -20,6 +17,8 @@ import (
 	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/blockedby/positions-os/internal/web"
 	"github.com/blockedby/positions-os/internal/web/handlers"
+	// "github.com/celestix/gotgproto"
+	// "github.com/celestix/gotgproto/sessionMaker"
 )
 
 func main() {
@@ -75,27 +74,27 @@ func main() {
 	rangesRepo := repository.NewRangesRepository(db.Pool)
 	statsRepo := repository.NewStatsRepository(db.Pool)
 
-	// 7. Initialize telegram client
-	if cfg.TGApiID == 0 || cfg.TGApiHash == "" || cfg.TGSessionStr == "" {
-		log.Fatal().Msg("TG_API_ID, TG_API_HASH and TG_SESSION_STRING are required")
+	// 7. Initialize telegram manager
+	if cfg.TGApiID == 0 || cfg.TGApiHash == "" {
+		log.Fatal().Msg("TG_API_ID and TG_API_HASH are required")
 	}
 
-	log.Info().Msg("initializing telegram client...")
-	tgProtoClient, err := gotgproto.NewClient(
-		cfg.TGApiID,
-		cfg.TGApiHash,
-		gotgproto.ClientTypePhone(""),
-		&gotgproto.ClientOpts{
-			Session:          sessionMaker.StringSession(cfg.TGSessionStr),
-			DisableCopyright: true,
-			InMemory:         true,
-		},
-	)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to create telegram client")
+	tgManager := telegram.NewManager(cfg, db.GORM)
+	// Initialize manager (will check DB and set status)
+	// We run this in a goroutine if it blocks? Init says "tries to restore".
+	// The implementation of Manager.Init calls NewPersistentClient which might connect.
+	// But we want it to be fast.
+	// The current Manager.Init logic does: check DB -> if empty return Unauthorized (Silent Start).
+	// If not empty -> NewPersistentClient -> Connect.
+
+	// Let's call Init.
+	if err := tgManager.Init(ctx); err != nil {
+		log.Error().Err(err).Msg("telegram manager init failed")
+		// We continue, status will be Error/Unauthorized
 	}
 
-	tgClient := telegram.NewClient(tgProtoClient)
+	// Create the high-level Client wrapper
+	tgClient := telegram.NewClient(tgManager)
 	defer tgClient.Close()
 
 	// 8. Initialize Collector Service & Manager
@@ -124,6 +123,8 @@ func main() {
 	jobsAPIHandler := handlers.NewJobsHandler(jobsRepo, hub)
 	targetsAPIHandler := handlers.NewTargetsHandler(targetsRepo, tmpl)
 	statsAPIHandler := handlers.NewStatsHandler(statsRepo)
+	// Create Auth Handler
+	authHandler := handlers.NewAuthHandler(tgClient, hub)
 
 	// 11. Initialize Server
 	webCfg := &web.Config{
@@ -139,6 +140,7 @@ func main() {
 	server.RegisterTargetsHandler(targetsAPIHandler)
 	server.RegisterStatsHandler(statsAPIHandler)
 	server.RegisterCollectorHandler(collectorHandler)
+	server.RegisterAuthHandler(authHandler)
 
 	// 13. Start Server
 	log.Info().Int("port", cfg.HTTPPort).Msg("starting web server")

@@ -1,0 +1,34 @@
+package telegram
+
+import (
+	"github.com/blockedby/positions-os/internal/config"
+	"github.com/gotd/td/session"
+	"github.com/gotd/td/telegram"
+	"github.com/gotd/td/tg"
+)
+
+// QRClientBundle contains all components needed for QR authentication
+type QRClientBundle struct {
+	Client     *telegram.Client
+	Dispatcher *tg.UpdateDispatcher
+	Storage    *session.StorageMemory
+}
+
+// NewQRClient creates a raw td/telegram client suitable for QR authentication.
+// Unlike gotgproto's NewClient, this does NOT attempt interactive CLI auth.
+func NewQRClient(cfg *config.Config) (*QRClientBundle, error) {
+	memStorage := &session.StorageMemory{}
+	// Use a pointer to dispatcher from the start to avoid copies
+	dispatcher := &tg.UpdateDispatcher{}
+
+	client := telegram.NewClient(cfg.TGApiID, cfg.TGApiHash, telegram.Options{
+		SessionStorage: memStorage,
+		UpdateHandler:  dispatcher,
+	})
+
+	return &QRClientBundle{
+		Client:     client,
+		Dispatcher: dispatcher,
+		Storage:    memStorage,
+	}, nil
+}

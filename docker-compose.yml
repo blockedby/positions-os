@@ -80,7 +80,6 @@ services:
       NATS_URL: nats://nats:4222
       TG_API_ID: ${TG_API_ID}
       TG_API_HASH: ${TG_API_HASH}
-      TG_SESSION_STRING: ${TG_SESSION_STRING}
       HTTP_PORT: 3100
       LOG_LEVEL: info
       STATIC_DIR: /root/static

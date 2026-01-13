@@ -39,6 +39,10 @@ func (m *MockTGClient) GetTopics(ctx context.Context, channel *telegram.Channel)
 	return []telegram.Topic{}, nil
 }
 
+func (m *MockTGClient) GetStatus() telegram.Status {
+	return telegram.StatusReady
+}
+
 // MockPublisher mocks event publisher
 type MockPublisher struct {
 	Events []collector.JobNewEvent

@@ -17,6 +17,7 @@ type TelegramClient interface {
 	ResolveChannel(ctx context.Context, username string) (*telegram.Channel, error)
 	GetMessages(ctx context.Context, channel *telegram.Channel, offsetID int, limit int) ([]telegram.Message, error)
 	GetTopics(ctx context.Context, channel *telegram.Channel) ([]telegram.Topic, error)
+	GetStatus() telegram.Status
 }
 
 // Service orchestrates the scraping process
@@ -421,6 +422,14 @@ func (s *Service) createJob(ctx context.Context, targetID uuid.UUID, msg *telegr
 	}
 
 	return nil
+}
+
+// GetTelegramStatus returns the current status of the telegram connection
+func (s *Service) GetTelegramStatus() telegram.Status {
+	// If the client wrapper exposes status, we use it.
+	// Otherwise, we might need to cast or if the interface changes.
+	// The TelegramClient interface in service.go needs update too.
+	return s.tgClient.GetStatus()
 }
 
 // helper function

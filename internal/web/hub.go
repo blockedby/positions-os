@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -90,8 +91,20 @@ func (h *Hub) Run() {
 }
 
 // Broadcast sends a message to all connected clients.
-func (h *Hub) Broadcast(message []byte) {
-	h.broadcast <- message
+func (h *Hub) Broadcast(message interface{}) {
+	var payload []byte
+	if b, ok := message.([]byte); ok {
+		payload = b
+	} else {
+		// Try JSON encoding
+		var err error
+		payload, err = json.Marshal(message)
+		if err != nil {
+			log.Printf("hub: failed to marshal message: %v", err)
+			return
+		}
+	}
+	h.broadcast <- payload
 }
 
 // writePump pumps messages from the hub to the websocket connection.
@@ -172,7 +185,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 1024)}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
