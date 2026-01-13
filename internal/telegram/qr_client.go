@@ -10,7 +10,7 @@ import (
 // QRClientBundle contains all components needed for QR authentication
 type QRClientBundle struct {
 	Client     *telegram.Client
-	Dispatcher *tg.UpdateDispatcher
+	Dispatcher tg.UpdateDispatcher
 	Storage    *session.StorageMemory
 }
 
@@ -18,12 +18,12 @@ type QRClientBundle struct {
 // Unlike gotgproto's NewClient, this does NOT attempt interactive CLI auth.
 func NewQRClient(cfg *config.Config) (*QRClientBundle, error) {
 	memStorage := &session.StorageMemory{}
-	// Use a pointer to dispatcher from the start to avoid copies
-	dispatcher := &tg.UpdateDispatcher{}
+	// Create dispatcher with initialized map to avoid "assignment to entry in nil map" panic
+	dispatcher := tg.NewUpdateDispatcher()
 
 	client := telegram.NewClient(cfg.TGApiID, cfg.TGApiHash, telegram.Options{
 		SessionStorage: memStorage,
-		UpdateHandler:  dispatcher,
+		UpdateHandler:  &dispatcher,
 	})
 
 	return &QRClientBundle{

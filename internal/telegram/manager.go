@@ -147,7 +147,7 @@ func (m *Manager) StartQR(ctx context.Context, onQRCode func(url string)) error 
 	// client.Run blocks until the context is canceled or the function returns
 	err = bundle.Client.Run(ctx, func(ctx context.Context) error {
 		qr := bundle.Client.QR()
-		loggedIn := qrlogin.OnLoginToken(bundle.Dispatcher)
+		loggedIn := qrlogin.OnLoginToken(&bundle.Dispatcher)
 
 		_, authErr = qr.Auth(ctx, loggedIn, func(ctx context.Context, token qrlogin.Token) error {
 			m.log.Info().Str("url", token.URL()).Msg("telegram: QR token generated")

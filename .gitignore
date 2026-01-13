@@ -55,3 +55,4 @@ session.txt
 tmp/
 temp/
 *.tmp
+.playwright-mcp-artifacts/
