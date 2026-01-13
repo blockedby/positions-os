@@ -206,15 +206,15 @@ NATS используется как message broker для event-driven архи
 
 **Цель**: Интерфейс для просмотра вакансий и управления.
 
-| #   | Компонент              | Описание                                      | Приоритет |
-| --- | ---------------------- | --------------------------------------------- | --------- |
-| 3.1 | API Server             | Go HTTP API (Chi/Echo)                        | P0        |
-| 3.2 | Jobs List              | Таблица вакансий с фильтрами                  | P0        |
-| 3.3 | Job Detail             | Просмотр полной вакансии                      | P0        |
-| 3.4 | Status Actions         | Кнопки: Interesting / Reject                  | P0        |
-| 3.5 | Targets Config         | CRUD для `scraping_targets`                   | P1        |
-| 3.6 | WebSocket Events       | Лента событий в реальном времени              | P2        |
-| 3.7 | Pico.css Refactor      | Унификация стилей: semantic HTML, grid, forms  | P1        |
+| #   | Компонент              | Описание                                      | Приоритет | Статус    |
+| --- | ---------------------- | --------------------------------------------- | --------- | --------- |
+| 3.1 | API Server             | Go HTTP API (Chi/Echo)                        | P0        | ✅ Готово |
+| 3.2 | Jobs List              | Таблица вакансий с фильтрами                  | P0        | ✅ Готово |
+| 3.3 | Job Detail             | Просмотр полной вакансии                      | P0        | ✅ Готово |
+| 3.4 | Status Actions         | Кнопки: Interesting / Reject                  | P0        | ✅ Готово |
+| 3.5 | Targets Config         | CRUD для `scraping_targets`                   | P1        | ✅ Готово |
+| 3.6 | WebSocket Events       | Лента событий в реальном времени              | P2        | ✅ Готово |
+| 3.7 | Pico.css Refactor      | Унификация стилей: semantic HTML, grid, forms  | P1        | ✅ Готово |
 
 **Стек**:
 
@@ -222,7 +222,7 @@ NATS используется как message broker для event-driven архи
 - Frontend: **HTMX + Pico.css**
 - Theme: **Dark mode only**
 
-**Deliverable**: Веб-интерфейс на `localhost:3100` показывает вакансии.
+**Deliverable**: Веб-интерфейс на `localhost:3100` показывает вакансии. ✅ **ГОТОВО**
 
 ---
 
