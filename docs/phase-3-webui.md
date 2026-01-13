@@ -2261,18 +2261,17 @@ func (h *Hub) NotifyNewJob(job *models.Job) {
 
 ### Этап 6: Settings Page (3.6) [COMPLETED]
 
-**Цель**: Реализовать CRUD для scraping targets с валидацией и HTMX формами.
+**Цель**: Реализовать CRUD для scraping targets с валидацией и HTMX формами. Plus Telegram QR auth с авто-стартом.
 
 **Файлы для создания**:
 
 ```
 internal/web/handlers/
 ├── targets.go           # CRUD handlers
-└── targets_test.go      # Handler tests
-internal/repository/
-└── targets.go           # DB operations (если ещё нет)
+├── auth.go              # Telegram QR auth handler
+└── auth_test.go         # Auth tests
 internal/web/templates/
-├── pages/settings.html  # Settings page
+├── pages/settings.html  # Settings page with QR auth
 └── partials/
     ├── target_form.html # Add/Edit form
     └── target_row.html  # Target list item
@@ -2280,7 +2279,286 @@ internal/web/templates/
 
 ---
 
-#### 3.6.1 — List Targets
+#### 3.6.1 — Telegram QR Auth
+
+**Цель**: Реализовать QR код авторизацию Telegram с авто-стартом при отсутствии коннекта.
+
+**Test**: `TestAuth_AutoStartsWhenDisconnected` (TDD: RED→GREEN→REFACTOR)
+
+```go
+func TestAuth_AutoStartsWhenDisconnected(t *testing.T) {
+    // When Telegram is not connected (UNAUTHORIZED)
+    mockClient := new(MockTelegramClient)
+    mockClient.On("GetStatus").Return(telegram.StatusUnauthorized)
+
+    handler := NewAuthHandler(mockClient, mockHub)
+    req := httptest.NewRequest("POST", "/api/v1/auth/qr", nil)
+    rec := httptest.NewRecorder()
+
+    // Act
+    handler.StartQR(rec, req)
+
+    // Assert QR code is broadcast via WebSocket
+    select {
+    case msg := <-mockHub.broadcast:
+        var msg map[string]string
+        json.Unmarshal(msg, &msg)
+        assert.Equal(t, "tg_qr", msg["type"])
+        assert.NotEmpty(t, msg["url"])
+    case <-time.After(100 * time.Millisecond):
+        t.Fatal("no QR broadcast")
+    }
+}
+```
+
+**Implementation** (`handlers/auth.go`):
+
+```go
+func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
+    // Check if already connected
+    if h.client.GetStatus() == telegram.StatusReady {
+        http.Error(w, "already logged in", http.StatusBadRequest)
+        return
+    }
+
+    // Start QR flow in background
+    go func() {
+        ctx := context.Background()
+        err := h.client.StartQR(ctx, func(url string) {
+            if h.hub != nil {
+                h.hub.Broadcast(map[string]string{
+                    "type": "tg_qr",
+                    "url":  url,
+                })
+            }
+        })
+
+        if err != nil {
+            if h.hub != nil {
+                h.hub.Broadcast(map[string]string{
+                    "type":    "error",
+                    "message": err.Error(),
+                })
+            }
+            return
+        }
+
+        // Broadcast success when auth completes
+        if h.hub != nil {
+            h.hub.Broadcast(map[string]string{
+                "type": "tg_auth_success",
+            })
+        }
+    }()
+
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(map[string]string{"status": "started"})
+}
+```
+
+**Template** (`pages/settings.html`):
+
+```html
+{{ define "content" }}
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+  <h1>Settings</h1>
+
+  <!-- Telegram Auth -->
+  <article id="telegram-auth-card" aria-label="Telegram Connection">
+    <header>
+      <h2>Telegram Connection</h2>
+    </header>
+
+    <div id="auth-status" role="status" aria-live="polite">
+      <small>Status:</small>
+      <span id="connection-status">Wait...</span>
+    </div>
+
+    <figure id="qr-container" hidden style="text-align: center; padding: 2rem; background: #fff; border-radius: 8px;">
+      <p style="margin-bottom: 1rem; color: #000;">Scan with Telegram App</p>
+      <div id="qr-code" style="padding: 1rem; display: inline-block; background: #fff; border: 4px solid #000;"></div>
+      <p id="qr-timer" style="margin-top: 1rem; color: #000;">
+        <small>Expires in <span id="qr-timeout">60</span>s</small>
+      </p>
+    </figure>
+
+    <div id="connect-btn-container">
+      <button
+        id="connect-btn"
+        hx-post="/api/v1/auth/qr"
+        hx-swap="none"
+        hx-trigger="load"
+      >
+        Connect Telegram
+      </button>
+    </div>
+  </article>
+
+  <script src="https://unpkg.com/qrcodejs/qrcode.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const socket = new WebSocket(
+        (location.protocol === "https:" ? "wss:" : "ws://") +
+          location.host + "/ws"
+      );
+      const qrContainer = document.getElementById("qr-container");
+      const qrCodeDiv = document.getElementById("qr-code");
+      const statusSpan = document.getElementById("connection-status");
+      const connectBtn = document.getElementById("connect-btn");
+
+      socket.onmessage = function (event) {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "tg_qr") {
+          qrContainer.hidden = false;
+          qrCodeDiv.innerHTML = "";
+          new QRCode(qrCodeDiv, msg.url);
+          statusSpan.textContent = "Scan QR Code...";
+          statusSpan.style.color = "var(--warning)";
+
+          // 60 second timer
+          let timeLeft = 60;
+          const timerSpan = document.getElementById("qr-timeout");
+          const timerInterval = setInterval(function () {
+            timeLeft--;
+            if (timerSpan) timerSpan.textContent = timeLeft;
+            if (timeLeft <= 0) {
+              clearInterval(timerInterval);
+              qrContainer.hidden = true;
+              qrCodeDiv.innerHTML = "";
+              statusSpan.textContent = "QR expired. Try again.";
+              statusSpan.style.color = "var(--error)";
+            }
+          }, 1000);
+
+          qrContainer.dataset.timerInterval = timerInterval;
+        } else if (msg.type === "tg_auth_success") {
+          const timerInterval = qrContainer.dataset.timerInterval;
+          if (timerInterval) {
+            clearInterval(parseInt(timerInterval));
+            delete qrContainer.dataset.timerInterval;
+          }
+
+          qrContainer.hidden = true;
+          qrCodeDiv.innerHTML = "";
+          statusSpan.textContent = "Connected";
+          statusSpan.style.color = "var(--success)";
+          connectBtn.hidden = true;
+        } else if (msg.type === "error") {
+          const timerInterval = qrContainer.dataset.timerInterval;
+          if (timerInterval) {
+            clearInterval(parseInt(timerInterval));
+            delete qr-container.dataset.timerInterval;
+          }
+
+          alert("Error: " + msg.message);
+          qrContainer.hidden = true;
+          statusSpan.textContent = "Disconnected";
+          statusSpan.style.color = "var(--error)";
+        }
+      };
+    });
+  </script>
+
+  <!-- Add Target Form -->
+  <article aria-label="Add New Target">
+    <header>
+      <h2>Add New Target</h2>
+    </header>
+
+    <form hx-post="/api/v1/targets" hx-target="#targets-list" hx-swap="beforeend">
+      <div class="grid">
+        <label for="target-name">Name</label>
+        <input type="text" id="target-name" name="name" required>
+
+        <label for="target-type">Type</label>
+        <select id="target-type" name="type">
+          <option value="TG_CHANNEL">Telegram Channel</option>
+          <option value="TG_FORUM">Telegram Forum</option>
+          <option value="HH_SEARCH">HH Search</option>
+        </select>
+
+        <label for="target-url">URL / ID / Username</label>
+        <input type="text" id="target-url" name="url" required placeholder="@username or https://...">
+      </div>
+
+      <button type="submit">Add Target</button>
+    </form>
+  </article>
+
+  <!-- Targets List -->
+  <section aria-label="Scraping Targets">
+    <h2>Scraping Targets</h2>
+    <div
+      id="targets-list"
+      hx-get="/api/v1/targets"
+      hx-trigger="load"
+    >
+      <small>Loading targets...</small>
+    </div>
+  </section>
+</div>
+{{ end }}
+```
+
+**Acceptance Criteria**:
+- [ ] GET /settings → QR код появляется автоматически если не подключен
+- [ ] QR код имеет белый фон и чёрную рамку для контраста
+- [ ] Таймер 60 секунд с авто-скрытием
+- [ ] При успешном логине QR скрывается, статус меняется на "Connected"
+- [ ] Pico.css semantic HTML (`<article>`, `<figure>`, `<label>`, `<mark>`)
+- [ ] Стили через `style` атрибуты для dark theme compatibility
+
+---
+
+#### 3.6.2 — Pico.css Semantic HTML Refactor
+
+**Цель**: Унифицировать все шаблоны используя Pico.css semantic HTML вместо Tailwind классов.
+
+| Компонент                | Текущий (Tailwind)              | Target (Pico.css)                    |
+| ------------------------- | -------------------------------- | ---------------------------------------- |
+| **Settings page**          | `class="flex flex-col"`           | `<div class="container">`                   |
+| **Forms**                   | `class="w-full bg-bg-primary"`     | Bare `<input>`, `<select>` с Pico.css        |
+| **Buttons**                 | `class="btn-primary"`              | `<button>` + `[aria-label]`            |
+| **Status badges**             | `class="text-success text-danger"`   | `<mark>` или `<small>`                   |
+| **Side panel**               | `class="w-96 bg-bg-secondary"`    | `<aside>` или `<details>`                 |
+| **Tables**                   | `class="w-full"`                  | `<table role="grid">`                       |
+| **Articles/Cards**             | `class="card p-6"`               | `<article>`                                  |
+
+**Pico.css Patterns**:
+
+```html
+<!-- Form с semantic HTML -->
+<div class="grid">
+  <label for="name">Name</label>
+  <input id="name" name="name" required placeholder="Your name">
+</div>
+
+<!-- Кнопки с aria-label -->
+<button hx-post="/api/v1/jobs/{{ .ID }}/status"
+        aria-label="Mark as interested">
+  ✓ Interested
+</button>
+
+<!-- Статусы через <mark> -->
+<mark>{{ .Status }}</mark>
+
+<!-- Side panel с collapsible -->
+<details open>
+  <summary>Job Details</summary>
+  <article>
+    <!-- content -->
+  </article>
+</details>
+```
+
+**Acceptance Criteria**:
+- [ ] Tailwind классы заменены на semantic HTML
+- [ ] Pico.css стили (без кастомных классов)
+- [] Dark theme через CSS переменные
+- [ ] Таблицы используют `<table role="grid">`
+- [] Формы используют `<div class="grid">` для раскладки
+
+---
 
 **Test**: `TestTargetsAPI_List`
 
