@@ -1,38 +1,38 @@
 {{ define "content" }}
-<div class="flex flex-col h-full max-w-4xl mx-auto">
-  <h1 class="mb-6">Settings</h1>
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+  <h1>Settings</h1>
 
   <!-- Telegram Auth -->
-  <div class="card mb-6" id="telegram-auth-card">
-    <h2 class="mb-4">Telegram Connection</h2>
-    <div id="auth-status" class="mb-4">
-      <div class="flex items-center gap-2">
-        Status:
-        <span id="connection-status" class="font-bold text-yellow-500"
-          >Wait...</span
-        >
-      </div>
+  <article id="telegram-auth-card" aria-label="Telegram Connection">
+    <header>
+      <h2>Telegram Connection</h2>
+    </header>
+
+    <div id="auth-status" role="status" aria-live="polite">
+      <small>Status:</small>
+      <span id="connection-status" data-initial="true">Wait...</span>
     </div>
 
-    <div
-      id="qr-container"
-      class="hidden flex flex-col items-center p-4 bg-white rounded"
-    >
-      <p class="text-black mb-2">Scan with Telegram App</p>
-      <div id="qr-code"></div>
-    </div>
+    <figure id="qr-container" hidden class="center-align" style="text-align: center; padding: 2rem; background: #fff; border-radius: 8px; border: 1px solid var(--muted-border-color);">
+      <p style="margin-bottom: 1rem; color: #000;">Scan with Telegram App</p>
+      <div id="qr-code" style="padding: 1rem; display: inline-block; background: #fff; border: 4px solid #000;"></div>
+      <p id="qr-timer" style="margin-top: 1rem;">
+        <small>Expires in <span id="qr-timeout">60</span>s</small>
+      </p>
+      <p style="margin-top: 0.5rem;"><small>QR code expires automatically</small></p>
+    </figure>
 
-    <div class="mt-4">
+    <div id="connect-btn-container">
       <button
         id="connect-btn"
         hx-post="/api/v1/auth/qr"
         hx-swap="none"
-        class="btn-primary"
+        hx-trigger="load"
       >
         Connect Telegram
       </button>
     </div>
-  </div>
+  </article>
 
   <script src="https://unpkg.com/qrcodejs/qrcode.min.js"></script>
   <script>
@@ -51,96 +51,109 @@
       fetch("/api/v1/scrape/status")
         .then((r) => r.json())
         .then((data) => {
-          // We need to exposing telegram status in scrape status or separate endpoint.
-          // Assuming scrape status might have it, or we infer from behavior.
-          // Re-using the /scrape/status endpoint?
-          // Let's assume generic status or check if we are unauthorized.
           if (data.telegram_status === "READY") {
             statusSpan.textContent = "Connected";
-            statusSpan.classList.replace("text-yellow-500", "text-green-500");
-            connectBtn.classList.add("hidden");
+            statusSpan.style.color = "var(--success)";
+            connectBtn.hidden = true;
           } else {
             statusSpan.textContent = "Disconnected";
-            statusSpan.classList.replace("text-yellow-500", "text-red-500");
+            statusSpan.style.color = "var(--error)";
           }
         });
 
       socket.onmessage = function (event) {
         const msg = JSON.parse(event.data);
         if (msg.type === "tg_qr") {
-          qrContainer.classList.remove("hidden");
-          qrCodeDiv.innerHTML = ""; // clear previous
+          qrContainer.hidden = false;
+          qrCodeDiv.innerHTML = "";
           new QRCode(qrCodeDiv, msg.url);
           statusSpan.textContent = "Scan QR Code...";
-          statusSpan.classList.replace("text-red-500", "text-yellow-500");
+          statusSpan.style.color = "var(--warning)";
+
+          // Start QR expiration timer (60 seconds)
+          let timeLeft = 60;
+          const timerSpan = document.getElementById("qr-timeout");
+          const timerInterval = setInterval(function () {
+            timeLeft--;
+            if (timerSpan) timerSpan.textContent = timeLeft;
+            if (timeLeft <= 0) {
+              clearInterval(timerInterval);
+              qrContainer.hidden = true;
+              qrCodeDiv.innerHTML = "";
+              statusSpan.textContent = "QR expired. Try again.";
+              statusSpan.style.color = "var(--error)";
+            }
+          }, 1000);
+
+          qrContainer.dataset.timerInterval = timerInterval;
+        } else if (msg.type === "tg_auth_success") {
+          const timerInterval = qrContainer.dataset.timerInterval;
+          if (timerInterval) {
+            clearInterval(parseInt(timerInterval));
+            delete qrContainer.dataset.timerInterval;
+          }
+
+          qrContainer.hidden = true;
+          qrCodeDiv.innerHTML = "";
+          statusSpan.textContent = "Connected";
+          statusSpan.style.color = "var(--success)";
+          connectBtn.hidden = true;
         } else if (msg.type === "error") {
+          const timerInterval = qrContainer.dataset.timerInterval;
+          if (timerInterval) {
+            clearInterval(parseInt(timerInterval));
+            delete qrContainer.dataset.timerInterval;
+          }
+
           alert("Error: " + msg.message);
+          qrContainer.hidden = true;
+          statusSpan.textContent = "Disconnected";
+          statusSpan.style.color = "var(--error)";
         }
-        // Listen for "tg_auth_success" if we implement it
       };
     });
   </script>
 
   <!-- Add Target Form -->
-  <div class="card mb-6">
-    <h2 class="mb-4">Add New Target</h2>
+  <article aria-label="Add New Target">
+    <header>
+      <h2>Add New Target</h2>
+    </header>
+
     <form
       hx-post="/api/v1/targets"
       hx-target="#targets-list"
       hx-swap="beforeend"
-      class="space-y-4"
     >
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm text-secondary mb-1">Name</label>
-          <input
-            type="text"
-            name="name"
-            required
-            class="w-full bg-primary border border-gray-700 rounded p-2 text-white"
-          />
-        </div>
-        <div>
-          <label class="block text-sm text-secondary mb-1">Type</label>
-          <select
-            name="type"
-            class="w-full bg-primary border border-gray-700 rounded p-2 text-white"
-          >
-            <option value="TG_CHANNEL">Telegram Channel</option>
-            <option value="TG_FORUM">Telegram Forum</option>
-            <option value="HH_SEARCH">HH Search</option>
-          </select>
-        </div>
-        <div class="col-span-2">
-          <label class="block text-sm text-secondary mb-1"
-            >URL / ID / Username</label
-          >
-          <input
-            type="text"
-            name="url"
-            required
-            class="w-full bg-primary border border-gray-700 rounded p-2 text-white"
-            placeholder="@username or https://..."
-          />
-        </div>
+      <div class="grid">
+        <label for="target-name">Name</label>
+        <input type="text" id="target-name" name="name" required>
+
+        <label for="target-type">Type</label>
+        <select id="target-type" name="type">
+          <option value="TG_CHANNEL">Telegram Channel</option>
+          <option value="TG_FORUM">Telegram Forum</option>
+          <option value="HH_SEARCH">HH Search</option>
+        </select>
+
+        <label for="target-url">URL / ID / Username</label>
+        <input type="text" id="target-url" name="url" required placeholder="@username or https://...">
       </div>
-      <div class="flex justify-end">
-        <button type="submit" class="btn-primary">Add Target</button>
-      </div>
+
+      <button type="submit">Add Target</button>
     </form>
-  </div>
+  </article>
 
   <!-- Targets List -->
-  <div class="space-y-4">
+  <section aria-label="Scraping Targets">
     <h2>Scraping Targets</h2>
     <div
       id="targets-list"
-      class="space-y-2"
       hx-get="/api/v1/targets"
       hx-trigger="load"
     >
-      <div class="text-center text-secondary py-4">Loading targets...</div>
+      <small>Loading targets...</small>
     </div>
-  </div>
+  </section>
 </div>
 {{ end }}

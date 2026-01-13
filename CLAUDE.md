@@ -60,7 +60,7 @@ go test ./...                     # Run tests
 
 2. **Analyzer Service** (`cmd/analyzer/`): Background worker that subscribes to NATS `jobs.new` events, processes raw job content through an LLM, and extracts structured data (title, salary, skills, etc.).
 
-3. **Web UI** (`internal/web/`): Dashboard for viewing jobs, managing targets, and monitoring scraping status. Uses Go templates + HTMX + Tailwind CSS (dark mode).
+3. **Web UI** (`internal/web/`): Dashboard for viewing jobs, managing targets, and monitoring scraping status. Uses Go templates + HTMX + Pico.css (dark mode).
 
 ### Data Flow
 

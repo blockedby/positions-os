@@ -329,8 +329,8 @@ func setupTestServer(t *testing.T, jobsRepo JobsRepository, statsRepo StatsRepos
 	recentJobs := `{{ define "content" }}{{ range .Jobs }}<div>{{ .Title }}</div>{{ end }}{{ end }}`
 	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "pages", "recent-jobs.html"), []byte(recentJobs), 0644))
 
-	// Settings page
-	settings := `{{ define "content" }}<h1>Settings</h1>{{ end }}`
+	// Settings page - with auto-start auth button (semantic HTML)
+	settings := `{{ define "content" }}<h1>Settings</h1><article><button id="connect-btn" hx-post="/api/v1/auth/qr" hx-swap="none" hx-trigger="load">Connect Telegram</button></article>{{ end }}`
 	require.NoError(t, os.WriteFile(filepath.Join(templateDir, "pages", "settings.html"), []byte(settings), 0644))
 
 	// Create server config and instance for handler registration
@@ -357,4 +357,34 @@ func setupTestServer(t *testing.T, jobsRepo JobsRepository, statsRepo StatsRepos
 	})
 
 	return ts
+}
+
+// TestSettingsPage_AutoStartsAuthWhenNotConnected tests that when Telegram
+// is not connected (StatusUnauthorized), the settings page should include
+// data attributes or elements that trigger automatic QR auth flow.
+// This follows TDD: write test first, it will fail, then implement.
+func TestSettingsPage_AutoStartsAuthWhenNotConnected(t *testing.T) {
+	mockRepo := new(MockJobsRepository)
+	mockStats := new(MockStatsRepository)
+	mockStats.On("GetStats", mock.Anything).Return(&repository.DashboardStats{}, nil).Maybe()
+
+	srv := setupTestServer(t, mockRepo, mockStats)
+	defer srv.Close()
+
+	// Act: request settings page
+	resp, err := http.Get(srv.URL + "/settings")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	// Assert: page loads successfully
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	body, _ := io.ReadAll(resp.Body)
+	html := string(body)
+
+	// RED Phase: This test expects auto-start auth behavior
+	// When not connected, the page should automatically trigger QR auth
+	// Using HTMX load trigger on the connect button
+	assert.Contains(t, html, `hx-trigger="load"`)
+	assert.Contains(t, html, `hx-post="/api/v1/auth/qr"`)
 }

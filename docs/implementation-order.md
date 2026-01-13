@@ -218,7 +218,7 @@ NATS используется как message broker для event-driven архи
 **Стек**:
 
 - Backend: Go + Chi router
-- Frontend: **HTMX + Tailwind CSS**
+- Frontend: **HTMX + Pico.css**
 - Theme: **Dark mode only**
 
 **Deliverable**: Веб-интерфейс на `localhost:3100` показывает вакансии.
@@ -345,7 +345,7 @@ Infra    Collector   Analyzer    Web UI    Brain    Dispatcher   Email    HH Par
 
 | Вопрос            | Решение                                      |
 | ----------------- | -------------------------------------------- |
-| Frontend Stack    | Go + HTMX + Tailwind CSS                     |
+| Frontend Stack    | Go + HTMX + Pico.css                         |
 | Theme             | Dark mode only                               |
 | Port              | localhost:3100                               |
 | PDF Template      | Собственный HTML+CSS шаблон                  |

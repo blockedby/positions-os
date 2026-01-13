@@ -1,0 +1,263 @@
+<pattern name="MD-Indexer">
+
+  <overview>
+    Template for creating index markdown files that document project structure.
+    Each folder gets an index file linking to subfolder indexes and individual file documentation.
+  </overview>
+
+  <templates>
+
+    <template name="folder-with-subfolders" type="folder">
+      <description>Use for folders containing subfolders</description>
+      <structure>
+        <line># foldername</line>
+        <line></line>
+        <line>Brief one-line description.</line>
+        <line></line>
+        <line>## Structure</line>
+        <line></line>
+        <line>- **subfolder/** — Description → [subfolder.md](subfolder.md)</line>
+      </structure>
+      <example>
+        <file>static/README.md</file>
+        <content>
+          # static
+
+          Static assets for the web UI.
+
+          ## Structure
+
+          - **css/** — Stylesheets → [css.md](css.md)
+          - **js/** — JavaScript files → [js.md](js.md)
+        </content>
+      </example>
+    </template>
+
+    <template name="folder-with-files" type="folder">
+      <description>Use for folders containing only files (no subfolders)</description>
+      <structure>
+        <line># foldername</line>
+        <line></line>
+        <line>Brief one-line description.</line>
+        <line></line>
+        <line>## Files</line>
+        <line></line>
+        <line>- **filename.ext** → [filename.ext.md](filename.ext.md)</line>
+      </structure>
+      <example>
+        <file>static/js.md</file>
+        <content>
+          # js
+
+          JavaScript files for the web UI.
+
+          ## Files
+
+          - **htmx.min.js** → [htmx.min.js.md](htmx.min.js.md)
+          - **ws.js** → [ws.js.md](ws.js.md)
+        </content>
+      </example>
+    </template>
+
+    <template name="file-documentation" type="file">
+      <description>Use for individual file documentation</description>
+      <structure>
+        <line># filename.ext</line>
+        <line></line>
+        <line>One-line summary.</line>
+        <line></line>
+        <line>Optional bullet points:</line>
+        <line>- Feature 1</line>
+        <line>- Feature 2</line>
+      </structure>
+      <example>
+        <file>static/css/pico.css.md</file>
+        <content>
+          # pico.css
+
+          Pico.css — minimal, semantic CSS framework.
+
+          - ~10kb minified
+          - Zero classes needed — just semantic HTML
+          - Built-in dark mode (auto + manual toggle)
+          - Perfect for HTMX/SSR
+
+          Docs: https://picocss.com
+        </content>
+      </example>
+    </template>
+
+    <!-- BUSINESS LOGIC PACKAGE -->
+
+    <template name="business-logic-package" type="folder">
+      <description>Use for business logic packages with service/manager/handler pattern</description>
+      <structure>
+        <line># packagename</line>
+        <line></line>
+        <line>Brief description of what this package does.</line>
+        <line></line>
+        <line>## Core</line>
+        <line>- **service.go** → [service.go.md](service.go.md) — Core business logic</line>
+        <line>- **manager.go** → [manager.go.md](manager.go.md) — Workflow coordination</line>
+        <line></line>
+        <line>## API</line>
+        <line>- **handler.go** → [handler.go.md](handler.go.md) — HTTP handlers</line>
+        <line>- **router.go** → [router.go.md](router.go.md) — Route configuration</line>
+        <line>- **validation.go** → [validation.go.md](validation.go.md) — Input validation</line>
+        <line></line>
+        <line>## Tests</line>
+        <line>- ***_test.go** — Unit and integration tests</line>
+      </structure>
+      <example>
+        <file>internal/collector.md</file>
+        <content>
+          # collector
+
+          Telegram scraping service — fetches job postings from channels and forums.
+
+          ## Core
+          - **service.go** → [service.go.md](service.go.md) — Scraping orchestration
+          - **manager.go** → [manager.go.md](manager.go.md) — Scrape job lifecycle
+
+          ## API
+          - **handler.go** → [handler.go.md](handler.go.md) — HTTP endpoints
+          - **router.go** → [router.go.md](router.go.md) — Route setup
+          - **validation.go** → [validation.go.md](validation.go.md) — Request validation
+
+          ## Tests
+          - **service_test.go**, **handler_test.go**, **validation_test.go**
+        </content>
+      </example>
+    </template>
+
+    <!-- REPOSITORY / DATABASE LAYER -->
+
+    <template name="repository-layer" type="folder">
+      <description>Use for data access layer with repository pattern</description>
+      <structure>
+        <line># repository</line>
+        <line></line>
+        <line>Data access layer — CRUD operations for each entity.</line>
+        <line></line>
+        <line>## Repositories</line>
+        <line>- **entity.go** → [entity.go.md](entity.go.md) — Entity CRUD + queries</line>
+        <line></line>
+        <line>## Tests</line>
+        <line>- **entity_test.go** — Unit tests</line>
+        <line>- **entity_db_test.go** — DB integration tests</line>
+      </structure>
+      <example>
+        <file>internal/repository.md</file>
+        <content>
+          # repository
+
+          Data access layer — PostgreSQL CRUD operations via GORM.
+
+          ## Repositories
+          - **jobs.go** → [jobs.go.md](jobs.go.md) — Job CRUD, filtering by status/target
+          - **targets.go** → [targets.go.md](targets.go.md) — Scraping target management
+          - **ranges.go** → [ranges.go.md](ranges.go.md) — Parsed range tracking
+          - **stats.go** → [stats.go.md](stats.go.md) — Statistics queries
+
+          ## Tests
+          - **jobs_test.go**, **jobs_db_test.go** — Jobs tests
+          - **targets_test.go**, **ranges_test.go** — Entity tests
+        </content>
+      </example>
+    </template>
+
+    <!-- API HANDLERS PACKAGE -->
+
+    <template name="api-handlers-package" type="folder">
+      <description>Use for HTTP handlers/API endpoints package</description>
+      <structure>
+        <line># handlers</line>
+        <line></line>
+        <line>HTTP handlers for resource endpoints.</line>
+        <line></line>
+        <line>## Handlers</line>
+        <line>- **resource.go** → [resource.go.md](resource.go.md) — Resource CRUD endpoints</line>
+        <line>- **auth.go** → [auth.go.md](auth.go.md) — Authentication</line>
+        <line></line>
+        <line>## Interfaces</line>
+        <line>- **interfaces.go** → [interfaces.go.md](interfaces.go.md) — Handler contracts</line>
+        <line></line>
+        <line>## Tests</line>
+        <line>- ***_test.go** — Handler tests</line>
+      </structure>
+      <example>
+        <file>internal/web/handlers.md</file>
+        <content>
+          # handlers
+
+          HTTP request handlers for the web API.
+
+          ## Handlers
+          - **jobs.go** → [jobs.go.md](jobs.go.md) — Job list, get, update status
+          - **targets.go** → [targets.go.md](targets.go.md) — Target CRUD
+          - **auth.go** → [auth.go.md](auth.go.md) — Telegram authentication
+          - **stats.go** → [stats.go.md](stats.go.md) — Metrics endpoints
+          - **pages.go** → [pages.go.md](pages.go.md) — Page rendering
+
+          ## Interfaces
+          - **interfaces.go** → [interfaces.go.md](interfaces.go.md) — Handler interfaces
+
+          ## Tests
+          - **jobs_test.go**, **auth_test.go**, **pages_test.go**
+        </content>
+      </example>
+    </template>
+
+    <!-- MODELS PACKAGE -->
+
+    <template name="models-package" type="folder">
+      <description>Use for domain models/entities package</description>
+      <structure>
+        <line># models</line>
+        <line></line>
+        <line>Domain entities and data structures.</line>
+        <line></line>
+        <line>## Entities</line>
+        <line>- **entity.go** → [entity.go.md](entity.go.md) — Entity definition + enums</line>
+      </structure>
+      <example>
+        <file>internal/models.md</file>
+        <content>
+          # models
+
+          Domain entities and data structures.
+
+          ## Entities
+          - **job.go** → [job.go.md](job.go.md) — Job entity + JobStatus enum
+          - **target.go** → [target.go.md](target.go.md) — Scraping target entity
+          - **application.go** → [application.go.md](application.go.md) — Application settings
+        </content>
+      </example>
+    </template>
+
+  </templates>
+
+  <rules>
+    <rule order="1">Folder index: named `foldername.md` or `README.md` if inside the folder</rule>
+    <rule order="2">File docs: named `filename.ext.md` (e.g., `main.go.md`)</rule>
+    <rule order="3">Links use relative paths: `[target](target.md)</rule>
+    <rule order="4">Subfolders noted with trailing slash: **subfolder/**</rule>
+    <rule order="5">Arrows `→` separate item from documentation link</rule>
+  </rules>
+
+  <linking>
+    <pattern>
+      <source>folder.md</source>
+      <target>[folder](folder.md)</target>
+    </pattern>
+    <pattern>
+      <source>subfolder/</source>
+      <target>[subfolder/](subfolder.md)</target>
+    </pattern>
+    <pattern>
+      <source>filename.ext</source>
+      <target>[filename.ext](filename.ext.md)</target>
+    </pattern>
+  </linking>
+
+</pattern>

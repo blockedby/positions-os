@@ -57,14 +57,21 @@ func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err != nil {
-			// log error? Handlers don't usually have logger injected explicitly yet?
-			// Maybe broadcast error?
+			// Broadcast error
 			if h.hub != nil {
 				h.hub.Broadcast(map[string]string{
 					"type":    "error",
 					"message": err.Error(),
 				})
 			}
+			return
+		}
+
+		// Broadcast success on nil error
+		if h.hub != nil {
+			h.hub.Broadcast(map[string]string{
+				"type": "tg_auth_success",
+			})
 		}
 	}()
 
