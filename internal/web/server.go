@@ -121,6 +121,13 @@ func (s *Server) RegisterPagesHandler(handler interface{}) {
 		StatsCards(w http.ResponseWriter, r *http.Request)
 		RecentJobs(w http.ResponseWriter, r *http.Request)
 		DesignTest(w http.ResponseWriter, r *http.Request)
+		JobApplications(w http.ResponseWriter, r *http.Request)
+		ApplicationSendModal(w http.ResponseWriter, r *http.Request)
+		ChannelInfo(w http.ResponseWriter, r *http.Request)
+		CloseModal(w http.ResponseWriter, r *http.Request)
+		ApplicationProgress(w http.ResponseWriter, r *http.Request)
+		ApplicationSuccess(w http.ResponseWriter, r *http.Request)
+		ApplicationError(w http.ResponseWriter, r *http.Request)
 	}
 
 	if h, ok := handler.(pagesHandler); ok {
@@ -133,6 +140,15 @@ func (s *Server) RegisterPagesHandler(handler interface{}) {
 		s.router.Get("/partials/jobs/row/{id}", h.JobRow)
 		s.router.Get("/partials/stats-cards", h.StatsCards)
 		s.router.Get("/partials/recent-jobs", h.RecentJobs)
+
+		// Applications partials
+		s.router.Get("/partials/applications", h.JobApplications)
+		s.router.Get("/partials/applications/send", h.ApplicationSendModal)
+		s.router.Get("/partials/applications/channels", h.ChannelInfo)
+		s.router.Get("/partials/close-modal", h.CloseModal)
+		s.router.Get("/partials/application/progress", h.ApplicationProgress)
+		s.router.Get("/partials/application/success", h.ApplicationSuccess)
+		s.router.Get("/partials/application/error", h.ApplicationError)
 	}
 }
 
@@ -210,5 +226,37 @@ func (s *Server) RegisterAuthHandler(handler interface{}) {
 		s.router.Route("/api/v1/auth", func(r chi.Router) {
 			r.Post("/qr", h.StartQR)
 		})
+	}
+}
+
+// RegisterApplicationsHandler registers applications API handlers
+func (s *Server) RegisterApplicationsHandler(handler interface{}) {
+	type applicationsHandler interface {
+		List(w http.ResponseWriter, r *http.Request)
+		GetByID(w http.ResponseWriter, r *http.Request)
+		Create(w http.ResponseWriter, r *http.Request)
+		Send(w http.ResponseWriter, r *http.Request)
+		UpdateDeliveryStatus(w http.ResponseWriter, r *http.Request)
+	}
+
+	if h, ok := handler.(applicationsHandler); ok {
+		s.router.Route("/api/v1/applications", func(r chi.Router) {
+			r.Get("/", h.List)
+			r.Post("/", h.Create)
+			r.Get("/{id}", h.GetByID)
+			r.Post("/{id}/send", h.Send)
+			r.Patch("/{id}/delivery", h.UpdateDeliveryStatus)
+		})
+	}
+}
+
+// RegisterDispatcherHandler registers dispatcher service status handler
+func (s *Server) RegisterDispatcherHandler(handler interface{}) {
+	type dispatcherHandler interface {
+		Status(w http.ResponseWriter, r *http.Request)
+	}
+
+	if h, ok := handler.(dispatcherHandler); ok {
+		s.router.Get("/api/v1/dispatcher/status", h.Status)
 	}
 }

@@ -1,0 +1,178 @@
+{{ define "job-applications" }}
+<div class="job-applications" id="job-applications-{{ .JobID }}">
+  <h3>Applications</h3>
+
+  {{ if .Applications }}
+  <table class="table applications-table">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Channel</th>
+        <th>Recipient</th>
+        <th>Sent</th>
+        <th>Delivered</th>
+        <th>Read</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Applications }}
+      <tr id="application-{{ .ID }}" class="application-row"
+          hx-get="/api/v1/applications/{{ .ID }}"
+          hx-trigger="dispatcher.status_changed from:body"
+          hx-swap="outerHTML">
+        <td>
+          <mark class="status-badge status-{{ .DeliveryStatus | lower }}">
+            {{ .DeliveryStatus }}
+          </mark>
+        </td>
+        <td>{{ if .DeliveryChannel }}{{ .DeliveryChannel }}{{ else }}—{{ end }}</td>
+        <td>{{ if .Recipient }}{{ .Recipient }}{{ else }}—{{ end }}</td>
+        <td>{{ if .SentAt }}{{ .SentAt.Format "Jan 02 15:04" }}{{ else }}—{{ end }}</td>
+        <td>{{ if .DeliveredAt }}{{ .DeliveredAt.Format "Jan 02 15:04" }}{{ else }}—{{ end }}</td>
+        <td>{{ if .ReadAt }}{{ .ReadAt.Format "Jan 02 15:04" }}{{ else }}—{{ end }}</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+  {{ else }}
+  <div class="empty-state">
+    <p>No applications yet for this job.</p>
+    <small>Create an application to send your tailored resume.</small>
+  </div>
+  {{ end }}
+
+  <div class="flex gap-2 mt-4">
+    <button
+      class="primary"
+      hx-get="/partials/applications/send?job_id={{ .JobID }}"
+      hx-target="#modal-dialog"
+      hx-swap="innerHTML"
+      data-modal-trigger>
+      Send Application
+    </button>
+  </div>
+</div>
+{{ end }}
+
+{{ define "application-send-modal" }}
+<div class="modal-overlay" id="modal-dialog">
+  <div class="modal" role="dialog" aria-labelledby="modal-title">
+    <div class="flex justify-between items-center mb-4">
+      <h3 id="modal-title">Send Application</h3>
+      <button
+        class="close"
+        hx-get="/partials/close-modal"
+        hx-target="#modal-dialog"
+        hx-swap="outerHTML"
+        aria-label="Close modal">
+        &times;
+      </button>
+    </div>
+
+    <form
+      hx-post="/api/v1/applications"
+      hx-target="#modal-dialog"
+      hx-swap="outerHTML">
+      <input type="hidden" name="job_id" value="{{ .JobID }}" required>
+
+      <div class="form-group mb-4">
+        <label for="delivery_channel">Delivery Channel</label>
+        <select
+          id="delivery_channel"
+          name="delivery_channel"
+          required
+          hx-get="/partials/applications/channels"
+          hx-target="#channel-info"
+          hx-swap="innerHTML">
+          <option value="">Select channel...</option>
+          <option value="TG_DM">Telegram DM</option>
+          <option value="EMAIL" disabled>Email (not configured)</option>
+          <option value="HH_RESPONSE" disabled>HH Response (not configured)</option>
+        </select>
+        <small>Choose how to send your application.</small>
+      </div>
+
+      <div id="channel-info" class="mb-4"></div>
+
+      <div class="form-group mb-4">
+        <label for="recipient">Recipient</label>
+        <input
+          type="text"
+          id="recipient"
+          name="recipient"
+          placeholder="@username for Telegram"
+          required>
+        <small>For Telegram: enter @username. For Email: enter email address.</small>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="secondary"
+          hx-get="/partials/close-modal"
+          hx-target="#modal-dialog"
+          hx-swap="outerHTML">
+          Cancel
+        </button>
+        <button type="submit" class="primary">
+          Send Application
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{{ end }}
+
+{{ define "close-modal" }}
+{{ end }}
+
+{{ define "channel-info-tgdm" }}
+<div class="card" style="padding: 1rem; margin-top: 0.5rem;">
+  <small>Telegram DM</small>
+  <p>Your resume PDF will be sent as a file attachment via direct message.</p>
+  <p><strong>Rate limit:</strong> 1 message per 10 seconds to avoid Telegram FloodWait errors.</p>
+</div>
+{{ end }}
+
+{{ define "channel-info-email" }}
+<div class="card" style="padding: 1rem; margin-top: 0.5rem;">
+  <small>Email</small>
+  <p>Email delivery is not yet configured.</p>
+</div>
+{{ end }}
+
+{{ define "application-progress" }}
+<div class="application-progress" id="progress-{{ .ApplicationID }}">
+  <div class="flex items-center gap-2">
+    <div class="spinner" aria-hidden="true"></div>
+    <span>{{ .Message }}</span>
+  </div>
+  {{ if .Progress }}
+  <progress value="{{ .Progress }}" max="100" aria-label="Send progress"></progress>
+  {{ end }}
+</div>
+{{ end }}
+
+{{ define "application-success" }}
+<div class="notification success" role="alert">
+  <strong>Success!</strong> Application sent successfully.
+  <button
+    class="close"
+    hx-get="/partials/close-notification"
+    hx-target="this"
+    hx-swap="outerHTML"
+    aria-label="Close">&times;</button>
+</div>
+{{ end }}
+
+{{ define "application-error" }}
+<div class="notification error" role="alert">
+  <strong>Error:</strong> {{ .Error }}
+  <button
+    class="close"
+    hx-get="/partials/close-notification"
+    hx-target="this"
+    hx-swap="outerHTML"
+    aria-label="Close">&times;</button>
+</div>
+{{ end }}
