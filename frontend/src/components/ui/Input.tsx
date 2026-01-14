@@ -1,4 +1,5 @@
-import { forwardRef, InputHTMLAttributes, useId } from 'react'
+import { forwardRef, useId } from 'react'
+import type { InputHTMLAttributes } from 'react'
 
 export type InputVariant = 'text' | 'search' | 'email' | 'password' | 'number'
 export type InputSize = 'sm' | 'md' | 'lg'
