@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{.name}} - Resume</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+        .title {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        h2 {
+            font-size: 16px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            color: #2c5282;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        p {
+            margin: 5px 0;
+        }
+        .date {
+            color: #718096;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{.name}}</h1>
+    <div class="title">{{.title}}</div>
+
+    <h2>Summary</h2>
+    <p>{{.summary}}</p>
+
+    <h2>Skills</h2>
+    <p>{{.skills}}</p>
+
+    <h2>Experience</h2>
+    <p>{{.experience}}</p>
+
+    <h2>Education</h2>
+    <p>{{.education}}</p>
+
+    <p class="date">Updated: {{.date}}</p>
+</body>
+</html>

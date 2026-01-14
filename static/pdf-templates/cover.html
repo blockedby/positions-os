@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Cover Letter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            color: #333;
+            line-height: 1.8;
+        }
+        .header {
+            margin-bottom: 40px;
+        }
+        .date {
+            color: #718096;
+            margin-bottom: 20px;
+        }
+        .recipient {
+            margin-bottom: 30px;
+        }
+        .content {
+            white-space: pre-wrap;
+            margin-bottom: 30px;
+        }
+        .closing {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="date">{{.date}}</div>
+    </div>
+
+    <div class="recipient">
+        {{.recipient}}<br>
+        {{.company}}
+    </div>
+
+    <div class="content">{{.content}}</div>
+
+    <div class="closing">
+        {{.closing}}<br><br>
+        {{.name}}
+    </div>
+</body>
+</html>
