@@ -1,4 +1,5 @@
-import { forwardRef, SelectHTMLAttributes, useId } from 'react'
+import { forwardRef, useId } from 'react'
+import type { SelectHTMLAttributes } from 'react'
 
 export type SelectSize = 'sm' | 'md' | 'lg'
 

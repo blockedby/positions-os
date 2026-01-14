@@ -4,7 +4,7 @@ import { Badge } from './Badge'
 
 describe('Badge', () => {
   it('should render a badge element', () => {
-    render(<Badge>RAW</Badge>)
+    render(<Badge status="raw">RAW</Badge>)
     expect(screen.getByText('RAW')).toBeInTheDocument()
   })
 

@@ -1,4 +1,5 @@
-import { forwardRef, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react'
+import { forwardRef } from 'react'
+import type { ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger'
 export type ButtonSize = 'sm' | 'md' | 'lg'
