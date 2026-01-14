@@ -78,9 +78,8 @@ storage/
 └── outputs/
     └── {job_id}/
         ├── resume_tailored.md
-        ├── resume_tailored.pdf
-        ├── cover_letter.md
-        └── cover_letter.pdf
+        └── resume_tailored.pdf  # только resume PDF (для attachment)
+# cover_letter остаётся как TEXT для email/сообщения, не PDF
 ```
 
 **Псевдо-код:**
@@ -207,18 +206,17 @@ func TailorResume(job_id) -> TailoredResult:
 
     ws.Send(job_id, { step: "pdf_rendering", progress: 75 })
     resume_pdf = RenderPDF(tailored_md, "resume")
-    cover_pdf = RenderPDF(cover_md, "cover")
 
     repo.UpdateJobOutputs(job_id, {
         tailored_resume_path: resume_pdf,
-        cover_letter_path: cover_pdf,
+        cover_letter_text: cover_md,  # TEXT для email/сообщения
         status: "PREPARED"
     })
 
     ws.Send(job_id, { step: "complete", progress: 100 })
     log.Info("tailoring complete", job_id=job_id)
 
-    return { resume_pdf, cover_pdf }
+    return { resume_pdf, cover_text }
 ```
 
 ---
@@ -392,13 +390,10 @@ POST /api/v1/jobs/{id}/prepare
   → returns { status: "processing", ws_channel: "brain.{job_id}" }
 
 GET /api/v1/jobs/{id}/documents
-  → returns { resume_pdf, cover_pdf, status }
+  → returns { resume_pdf_url, cover_letter_text, status }
 
 GET /api/v1/jobs/{id}/documents/resume.pdf
-  → file download
-
-GET /api/v1/jobs/{id}/documents/cover.pdf
-  → file download
+  → file download (resume PDF для attachment)
 ```
 
 ### WebSocket Events:
@@ -556,7 +551,7 @@ Real-time события для всего UI. Все компоненты пу�
 { "type": "brain.progress", "job_id": "uuid-123", "step": "pdf_rendering", "progress": 75, "message": "Создаю PDF..." }
 
 // Completed
-{ "type": "brain.completed", "job_id": "uuid-123", "resume_url": "/api/v1/jobs/uuid-123/documents/resume.pdf", "cover_url": "..." }
+{ "type": "brain.completed", "job_id": "uuid-123", "resume_url": "/api/v1/jobs/uuid-123/documents/resume.pdf", "cover_letter_text": "..." }
 
 // Error
 { "type": "brain.error", "job_id": "uuid-123", "step": "tailoring", "error": "LLM timeout" }
@@ -686,7 +681,7 @@ func (h *Hub) Notify(level, message string) {
 
       case "brain.completed":
         showToast("success", "Documents ready!");
-        showDownloadButtons(data.resume_url, data.cover_url);
+        showDownloadButtons(data.resume_url, data.cover_letter_text);
         break;
 
       case "notification":
@@ -814,10 +809,11 @@ positions-os/
 
 **Acceptance Criteria:**
 
-- [ ] `TailorResume()` выполняет полный pipeline (tailor → cover → PDF)
+- [ ] `TailorResume()` выполняет полный pipeline (tailor → cover TEXT → resume PDF)
 - [ ] WebSocket отправляет события на каждом этапе (25%, 50%, 75%, 100%)
 - [ ] Job status обновляется на `PREPARED`
-- [ ] Пути к PDF сохраняются в БД (`tailored_resume_path`, `cover_letter_path`)
+- [ ] Resume PDF путь сохраняется в БД (`tailored_resume_path`)
+- [ ] Cover letter TEXT сохраняется в БД (`cover_letter_text`)
 - [ ] Ошибки обрабатываются и логируются
 - [ ] Тесты покрывают весь pipeline
 
@@ -825,7 +821,7 @@ positions-os/
 
 - [ ] 4.6.1 — `POST /api/v1/jobs/{id}/prepare` → публикует в NATS
 - [ ] 4.6.2 — `GET /api/v1/jobs/{id}/documents`
-- [ ] 4.6.3 — File download endpoints (resume.pdf, cover.pdf)
+- [ ] 4.6.3 — Resume PDF download endpoint
 - [ ] 4.6.4 — NATS event `jobs.prepared`
 - [ ] 4.6.5 — Логирование всех requests
 
@@ -833,8 +829,8 @@ positions-os/
 
 - [ ] POST /prepare публикует job_id в NATS `brain.jobs.prepare`
 - [ ] POST /prepare возвращает ws_channel для подписки
-- [ ] GET /documents возвращает URLs и статус
-- [ ] Download endpoints отдают PDF файлы с правильными headers
+- [ ] GET /documents возвращает resume_pdf_url, cover_letter_text, статус
+- [ ] Download endpoint отдаёт resume PDF с правильными headers
 - [ ] NATS event `jobs.prepared` публикуется после завершения
 - [ ] Все endpoints логируются (request, response, errors)
 
@@ -864,7 +860,8 @@ positions-os/
 - [ ] Кнопка "Prepare" появляется только для INTERESTED jobs
 - [ ] Progress bar обновляется в real-time
 - [ ] После завершения показываются preview и download кнопки
-- [ ] Download кнопки открывают PDF в новой вкладке
+- [ ] Resume PDF download открывает в новой вкладке
+- [ ] Cover letter copy-to-clipboard работает
 - [ ] Ошибки показываются в toast notifications
 - [ ] UI логирует WebSocket события
 
@@ -896,7 +893,7 @@ positions-os/
 
 ```sql
 ALTER TABLE jobs ADD COLUMN tailored_resume_path TEXT;
-ALTER TABLE jobs ADD COLUMN cover_letter_path TEXT;
+ALTER TABLE jobs ADD COLUMN cover_letter_text TEXT;  -- TEXT для email, не путь к файлу
 ALTER TABLE jobs ADD COLUMN prepared_at TIMESTAMPTZ;
 ```
 
@@ -965,8 +962,8 @@ RAW → ANALYZED → INTERESTED → PREPARED → SENT
   - Syntax highlighting для Markdown
 
 - **Download section**
-  - Кнопки для скачивания PDF (resume + cover)
-  - Preview PDF в браузере (embed или modal)
+  - Resume PDF download кнопка (для attachment)
+  - Cover letter copy-to-clipboard кнопка (для email/сообщения)
   - Timestamp генерации
 
 ### 2. WebSocket UI Integration (см. Phase 3.5)
@@ -1015,3 +1012,159 @@ RAW → ANALYZED → INTERESTED → PREPARED → SENT
 ## 🔮 Следующий шаг
 
 После Brain переходим к **Фазе 5: Dispatcher** — автоматическая отправка откликов в Telegram/Email.
+
+---
+
+## 📝 Implementation Notes & Decisions
+
+### Completed Implementation (Stages 1-7)
+
+All core brain functionality has been implemented in the `phase-4-brain` worktree using TDD:
+
+| Stage | Component | Tests | Status |
+|-------|-----------|-------|--------|
+| 1 | Storage (`internal/brain/storage.go`) | 3 | ✅ |
+| 2 | LLM Integration with rate limiting (`internal/brain/llm.go`) | 3 | ✅ |
+| 3 | Prompts with XML templates (`internal/brain/prompts.go`) | 2 | ✅ |
+| 4 | PDF Rendering with chromedp (`internal/brain/pdf.go`) | 1 | ✅ |
+| 5 | Service Layer pipeline (`internal/brain/service.go`) | 3 | ✅ |
+| 6 | API Handlers (`internal/brain/api.go`) | 8 | ✅ |
+| 7 | WebSocket Events (`internal/web/events.go`) | 4 | ✅ |
+
+**Total: 24 tests passing**
+
+### Key Design Decisions
+
+1. **Cover letters are TEXT, not PDF** — Critical spec correction during implementation. Cover letters are generated as plain text for email/messaging, only resumes become PDF attachments.
+
+2. **Rate limiting is hardcoded** — 1 req/sec via `time.Ticker` in the LLM client. This is intentional for simplicity; can be made configurable later if needed.
+
+3. **WebSocket events at every step** — Pipeline emits progress at 0%, 25%, 50%, 75%, 100% with meaningful step names ("tailoring", "cover_letter", "pdf_rendering").
+
+4. **Async processing pattern** — POST /prepare returns immediately (202 Accepted) with a `ws_channel` for clients to subscribe to updates.
+
+5. **Interface-based design** — All components use interfaces (Storage, LLM, Renderer, Broadcaster) for testability.
+
+### Files Created (Worktree: `../positions-os-phase4-brain`)
+
+```
+internal/brain/
+├── storage.go           # File storage for resume/outputs
+├── llm.go               # OpenAI-compatible client with rate limiting
+├── prompts.go           # XML prompt loader via embed
+├── pdf.go               # chromedp PDF renderer (resume only)
+├── service.go           # Pipeline orchestrator with WS events
+├── api.go               # HTTP handlers for /prepare, /documents, /download
+├── integration.go       # Repository wrapper for service
+├── *_test.go            # TDD tests (24 total)
+└── *.go.md              # md-indexer documentation
+
+docs/prompts/
+├── resume-tailoring.xml
+└── cover-letter.xml
+
+static/pdf-templates/
+├── resume.html          # Used for PDF generation
+└── cover.html           # Exists but unused (cover is TEXT)
+```
+
+### Files Modified (Main Repo)
+
+```
+internal/web/events.go           # Added brain event helpers
+internal/web/events_brain_test.go # Tests for brain events
+docs/phase-4-brain.md             # This file (spec corrections)
+```
+
+### Pending Integration Work
+
+To fully integrate Brain into the main application:
+
+1. **Database Migration** — Add columns to `jobs` table:
+   ```sql
+   ALTER TABLE jobs ADD COLUMN tailored_resume_path TEXT;
+   ALTER TABLE jobs ADD COLUMN cover_letter_text TEXT;
+   ALTER TABLE jobs ADD COLUMN prepared_at TIMESTAMPTZ;
+   ```
+
+2. **Repository Implementation** — Implement `BrainJobRepository` interface that wraps existing `JobsRepository` and adds:
+   - `GetJobData(id uuid.UUID) (map[string]string, error)` — Returns structured_data for LLM
+   - `UpdateBrainOutputs(id, resumePath, coverText)` — Saves PDF path and cover text
+
+3. **NATS Consumer** — Create consumer for `brain.jobs.prepare` subject that calls the prepare service.
+
+4. **Main Service Integration** — Wire up brain handlers in `cmd/collector/main.go`:
+   ```go
+   brainService := brain.NewService(storage, llm, pdf)
+   brainService.SetBroadcaster(hub)
+   brainHandler := brain.NewHandler(brainRepo, brainSvc)
+   server.RegisterBrainHandler(brainHandler)
+   ```
+
+5. **RegisterRoutes helper** — Add `RegisterBrainHandler` to `internal/web/server.go` following the existing pattern.
+
+### Git Strategy Recommendations
+
+**Current Situation:**
+- Main repo (`main` branch): Has brain event changes in `internal/web/events.go`
+- Worktree (`phase-4-brain` branch): Has complete brain package implementation
+
+**Recommended Approach:**
+
+Option A — **Merge worktree into main first** (Recommended):
+```bash
+# 1. Commit worktree changes
+cd ../positions-os-phase4-brain
+git add .
+git commit -m "feat: implement phase-4 brain (resume tailoring, PDF, events)
+
+- Storage layer for base resume and outputs
+- LLM integration with rate limiting (1 req/s)
+- XML prompt templates for resume/cover generation
+- PDF rendering via chromedp (resume only, cover is TEXT)
+- Service layer with WebSocket progress events
+- REST API: POST /prepare, GET /documents, download resume.pdf
+- Brain WebSocket events: started, progress, completed, error
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+
+# 2. Switch to main, merge worktree branch
+cd ../positions-os
+git merge phase-4-brain --no-ff -m "Merge phase-4-brain: Brain service implementation"
+
+# 3. Commit main repo changes together
+git add internal/web/events.go internal/web/events_brain_test.go
+git commit -m "feat(web): add brain WebSocket events"
+```
+
+Option B — **Create stacked PRs**:
+1. PR for main repo changes (events.go) — small, focused
+2. PR for worktree (brain package) — larger, independent
+3. Merge events PR first, then brain PR
+
+**My Recommendation:** Option A. The brain events in `events.go` are tightly coupled with the brain package. Merge them together to avoid merge conflicts and ensure consistency.
+
+### Testing Before PR
+
+```bash
+# Run all tests
+go test ./...
+
+# Run brain package specifically
+go test ./internal/brain/... -v
+
+# Test with Chrome (for PDF)
+go test ./internal/brain/... -v -run TestPDF
+
+# Short mode (no Chrome)
+go test ./internal/brain/... -v -short
+```
+
+### Open Questions / TODO
+
+- [ ] Should rate limit be configurable via env var?
+- [ ] Should we store cover letters in DB or only as files?
+- [ ] Should PDF generation be retryable on failure?
+- [ ] Should we add a "regenerate" endpoint for re-tailoring?
+- [ ] Should brain events support wildcard subscriptions (e.g., `brain.*`)?
+
