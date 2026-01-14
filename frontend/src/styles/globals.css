@@ -1,0 +1,670 @@
+/* Import Pico.css */
+@import '@picocss/pico';
+
+/* Position OS Dark Theme */
+:root {
+  /* Pico theme */
+  pico-theme: dark;
+
+  /* Background Colors */
+  --pico-background-color: #1a1f2e;
+  --pico-card-background-color: #242c3d;
+  --pico-card-separator-color: #334155;
+
+  /* Text Colors */
+  --pico-color: #e2e8f0;
+  --pico-muted-color: #94a3b8;
+
+  /* Accent Colors */
+  --pico-primary: #60a5fa;
+  --pico-primary-hover: #3b82f6;
+  --pico-primary-focus: rgba(96, 165, 250, 0.375);
+  --pico-primary-inverse: #1a1f2e;
+
+  --pico-secondary: #94a3b8;
+  --pico-secondary-hover: #64748b;
+  --pico-secondary-focus: rgba(148, 163, 184, 0.375);
+  --pico-secondary-inverse: #1a1f2e;
+
+  --pico-success: #22c55e;
+  --pico-success-hover: #16a34a;
+  --pico-success-focus: rgba(34, 197, 94, 0.375);
+  --pico-success-inverse: #1a1f2e;
+
+  --pico-warning: #f59e0b;
+  --pico-warning-hover: #d97706;
+  --pico-warning-focus: rgba(245, 158, 11, 0.375);
+  --pico-warning-inverse: #1a1f2e;
+
+  --pico-error: #ef4444;
+  --pico-error-hover: #dc2626;
+  --pico-error-focus: rgba(239, 68, 68, 0.375);
+  --pico-error-inverse: #1a1f2e;
+
+  /* Form Elements */
+  --pico-form-element-background-color: rgba(255, 255, 255, 0.03);
+  --pico-form-element-border-color: var(--pico-card-separator-color);
+  --pico-form-element-active-border-color: var(--pico-primary);
+  --pico-form-element-focus-color: var(--pico-primary-focus);
+
+  /* Typography */
+  --pico-font-size: 100%;
+  --pico-line-height: 1.6;
+
+  /* Border Radius */
+  --pico-border-radius: 0.5rem;
+
+  /* Spacing */
+  --pico-spacing: 1rem;
+
+  /* Transitions */
+  --pico-transition: 0.15s ease-in-out;
+
+  /* Table */
+  --pico-table-stripe-background-color: rgba(255, 255, 255, 0.02);
+  --pico-table-hover-background-color: rgba(255, 255, 255, 0.03);
+
+  /* Code */
+  --pico-code-background-color: rgba(255, 255, 255, 0.05);
+  --pico-code-color: #e2e8f0;
+
+  /* Modal */
+  --pico-modal-overlay-background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* Status Badge Colors */
+.status-badge {
+  --status-raw-bg: rgba(245, 158, 11, 0.2);
+  --status-raw-border: rgba(245, 158, 11, 0.3);
+  --status-raw-text: #f59e0b;
+
+  --status-analyzed-bg: rgba(96, 165, 250, 0.2);
+  --status-analyzed-border: rgba(96, 165, 250, 0.3);
+  --status-analyzed-text: #60a5fa;
+
+  --status-interested-bg: rgba(34, 197, 94, 0.2);
+  --status-interested-border: rgba(34, 197, 94, 0.3);
+  --status-interested-text: #22c55e;
+
+  --status-rejected-bg: rgba(239, 68, 68, 0.2);
+  --status-rejected-border: rgba(239, 68, 68, 0.3);
+  --status-rejected-text: #ef4444;
+
+  --status-paused-bg: rgba(148, 163, 184, 0.2);
+  --status-paused-border: rgba(148, 163, 184, 0.3);
+  --status-paused-text: #94a3b8;
+}
+
+/* Status Badge Base */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge.raw {
+  background: var(--status-raw-bg);
+  border: 1px solid var(--status-raw-border);
+  color: var(--status-raw-text);
+}
+
+.status-badge.analyzed {
+  background: var(--status-analyzed-bg);
+  border: 1px solid var(--status-analyzed-border);
+  color: var(--status-analyzed-text);
+}
+
+.status-badge.interested {
+  background: var(--status-interested-bg);
+  border: 1px solid var(--status-interested-border);
+  color: var(--status-interested-text);
+}
+
+.status-badge.rejected {
+  background: var(--status-rejected-bg);
+  border: 1px solid var(--status-rejected-border);
+  color: var(--status-rejected-text);
+}
+
+.status-badge.paused {
+  background: var(--status-paused-bg);
+  border: 1px solid var(--status-paused-border);
+  color: var(--status-paused-text);
+}
+
+/* Tailored, Sent, Responded statuses */
+.status-badge.tailored {
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #a855f7;
+}
+
+.status-badge.sent {
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0ea5e9;
+}
+
+.status-badge.responded {
+  background: rgba(236, 72, 153, 0.2);
+  border: 1px solid rgba(236, 72, 153, 0.3);
+  color: #ec4899;
+}
+
+/* Utility Classes */
+.flex { display: flex }
+.flex-col { flex-direction: column }
+.flex-1 { flex: 1 1 0% }
+.items-center { align-items: center }
+.items-start { align-items: flex-start }
+.justify-between { justify-content: space-between }
+.justify-center { justify-content: center }
+.justify-end { justify-content: flex-end }
+.gap-1 { gap: 0.25rem }
+.gap-2 { gap: 0.5rem }
+.gap-3 { gap: 0.75rem }
+.gap-4 { gap: 1rem }
+.gap-6 { gap: 1.5rem }
+
+.p-0 { padding: 0 }
+.p-1 { padding: 0.25rem }
+.p-2 { padding: 0.5rem }
+.p-3 { padding: 0.75rem }
+.p-4 { padding: 1rem }
+.p-6 { padding: 1.5rem }
+
+.m-0 { margin: 0 }
+.mt-2 { margin-top: 0.5rem }
+.mt-4 { margin-top: 1rem }
+.mb-2 { margin-bottom: 0.5rem }
+.mb-4 { margin-bottom: 1rem }
+.mb-6 { margin-bottom: 1.5rem }
+
+.w-full { width: 100% }
+.h-full { height: 100% }
+
+.text-sm { font-size: 0.875rem }
+.text-xs { font-size: 0.75rem }
+.text-muted { color: var(--pico-muted-color) }
+.text-center { text-align: center }
+
+/* Card */
+.card {
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-card-separator-color);
+  border-radius: var(--pico-border-radius);
+  padding: 1.5rem;
+}
+
+/* Layout */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 16rem;
+  background: var(--pico-card-background-color);
+  border-right: 1px solid var(--pico-card-separator-color);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  color: var(--pico-muted-color);
+  text-decoration: none;
+  border-radius: 0.375rem;
+  transition: background-color var(--pico-transition), color var(--pico-transition);
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--pico-color);
+}
+
+.sidebar-link.active {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--pico-primary);
+}
+
+/* Button Component Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: var(--pico-border-radius);
+  cursor: pointer;
+  transition: background-color var(--pico-transition),
+              border-color var(--pico-transition),
+              color var(--pico-transition),
+              opacity var(--pico-transition);
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Button Variants */
+.btn-primary {
+  background-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--pico-primary-hover);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border-color: var(--pico-secondary);
+  color: var(--pico-secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--pico-secondary);
+  color: var(--pico-secondary-inverse);
+}
+
+.btn-success {
+  background-color: var(--pico-success);
+  color: var(--pico-success-inverse);
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: var(--pico-success-hover);
+}
+
+.btn-danger {
+  background-color: var(--pico-error);
+  color: var(--pico-error-inverse);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--pico-error-hover);
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-md {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Loading State */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin: -0.5rem 0 0 -0.5rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spinner 0.6s linear infinite;
+}
+
+@keyframes btn-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Focus Visible */
+.btn:focus-visible {
+  outline: 2px solid var(--pico-primary-focus);
+  outline-offset: 2px;
+}
+
+/* Input Component Styles */
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pico-color);
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: var(--pico-form-element-background-color);
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  color: var(--pico-color);
+  transition: border-color var(--pico-transition),
+              box-shadow var(--pico-transition);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--pico-form-element-active-border-color);
+  box-shadow: 0 0 0 3px var(--pico-form-element-focus-color);
+}
+
+.input::placeholder {
+  color: var(--pico-muted-color);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input Variants */
+.input-search {
+  padding-left: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.75rem center;
+}
+
+/* Input Sizes */
+.input-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.input-lg {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+/* Input Error State */
+.input-error {
+  border-color: var(--pico-error);
+}
+
+.input-error:focus {
+  border-color: var(--pico-error);
+  box-shadow: 0 0 0 3px var(--pico-error-focus);
+}
+
+.input-error-message {
+  font-size: 0.75rem;
+  color: var(--pico-error);
+}
+
+.input-helper-text {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+}
+
+/* Select Component Styles */
+.select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.select-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pico-color);
+}
+
+.select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: var(--pico-form-element-background-color);
+  border: 1px solid var(--pico-form-element-border-color);
+  border-radius: var(--pico-border-radius);
+  color: var(--pico-color);
+  transition: border-color var(--pico-transition),
+              box-shadow var(--pico-transition);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--pico-form-element-active-border-color);
+  box-shadow: 0 0 0 3px var(--pico-form-element-focus-color);
+}
+
+.select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Select Sizes */
+.select-sm {
+  padding: 0.25rem 0.5rem;
+  padding-right: 2rem;
+  font-size: 0.75rem;
+}
+
+.select-lg {
+  padding: 0.75rem 1rem;
+  padding-right: 3rem;
+  font-size: 1rem;
+}
+
+/* Select Error State */
+.select-error {
+  border-color: var(--pico-error);
+}
+
+.select-error:focus {
+  border-color: var(--pico-error);
+  box-shadow: 0 0 0 3px var(--pico-error-focus);
+}
+
+.select-error-message {
+  font-size: 0.75rem;
+  color: var(--pico-error);
+}
+
+.select-helper-text {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+}
+
+/* Spinner Component Styles */
+.spinner {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  color: var(--pico-primary);
+}
+
+.spinner-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+.spinner-md {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-width: 3px;
+}
+
+.spinner-lg {
+  width: 2rem;
+  height: 2rem;
+  border-width: 3px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Skeleton Component Styles */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 0.25rem;
+}
+
+.skeleton-animate {
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 1rem;
+  width: 100%;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-rectangle {
+  border-radius: 0.25rem;
+}
+
+/* Error Boundary Styles */
+.error-boundary {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--pico-error);
+  text-align: center;
+}
+
+.error-boundary h3 {
+  color: var(--pico-error);
+  margin-bottom: 0.5rem;
+}
+
+.error-boundary details {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.error-boundary pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--pico-card-separator-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pico-muted-color);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--pico-card-separator-color);
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+}
