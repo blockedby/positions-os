@@ -121,6 +121,13 @@ func (s *Server) RegisterPagesHandler(handler interface{}) {
 		StatsCards(w http.ResponseWriter, r *http.Request)
 		RecentJobs(w http.ResponseWriter, r *http.Request)
 		DesignTest(w http.ResponseWriter, r *http.Request)
+		JobApplications(w http.ResponseWriter, r *http.Request)
+		ApplicationSendModal(w http.ResponseWriter, r *http.Request)
+		ChannelInfo(w http.ResponseWriter, r *http.Request)
+		CloseModal(w http.ResponseWriter, r *http.Request)
+		ApplicationProgress(w http.ResponseWriter, r *http.Request)
+		ApplicationSuccess(w http.ResponseWriter, r *http.Request)
+		ApplicationError(w http.ResponseWriter, r *http.Request)
 	}
 
 	if h, ok := handler.(pagesHandler); ok {
@@ -133,6 +140,15 @@ func (s *Server) RegisterPagesHandler(handler interface{}) {
 		s.router.Get("/partials/jobs/row/{id}", h.JobRow)
 		s.router.Get("/partials/stats-cards", h.StatsCards)
 		s.router.Get("/partials/recent-jobs", h.RecentJobs)
+
+		// Applications partials
+		s.router.Get("/partials/applications", h.JobApplications)
+		s.router.Get("/partials/applications/send", h.ApplicationSendModal)
+		s.router.Get("/partials/applications/channels", h.ChannelInfo)
+		s.router.Get("/partials/close-modal", h.CloseModal)
+		s.router.Get("/partials/application/progress", h.ApplicationProgress)
+		s.router.Get("/partials/application/success", h.ApplicationSuccess)
+		s.router.Get("/partials/application/error", h.ApplicationError)
 	}
 }
 

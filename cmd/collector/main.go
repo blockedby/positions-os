@@ -73,6 +73,7 @@ func main() {
 	jobsRepo := repository.NewJobsRepository(db.Pool)
 	rangesRepo := repository.NewRangesRepository(db.Pool)
 	statsRepo := repository.NewStatsRepository(db.Pool)
+	applicationsRepo := repository.NewApplicationsRepository(db.Pool)
 
 	// 7. Initialize telegram manager
 	if cfg.TGApiID == 0 || cfg.TGApiHash == "" {
@@ -119,7 +120,7 @@ func main() {
 	}
 
 	// 10. Initialize Web Handlers
-	pagesHandler := handlers.NewPagesHandler(tmpl, jobsRepo, statsRepo)
+	pagesHandler := handlers.NewPagesHandler(tmpl, jobsRepo, statsRepo, applicationsRepo)
 	jobsAPIHandler := handlers.NewJobsHandler(jobsRepo, hub)
 	targetsAPIHandler := handlers.NewTargetsHandler(targetsRepo, tmpl)
 	statsAPIHandler := handlers.NewStatsHandler(statsRepo)

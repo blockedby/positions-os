@@ -21,9 +21,10 @@ import (
 func TestLayout_ContainsSidebar(t *testing.T) {
 	mockRepo := new(MockJobsRepository)
 	mockStats := new(MockStatsRepository)
+	mockApplications := &MockApplicationsRepository{} // Simple in-memory mock
 	mockStats.On("GetStats", mock.Anything).Return(&repository.DashboardStats{}, nil).Maybe()
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, mockApplications)
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL + "/")
@@ -43,12 +44,13 @@ func TestLayout_ContainsSidebar(t *testing.T) {
 func TestNavigation_AllPagesLoad(t *testing.T) {
 	mockRepo := new(MockJobsRepository)
 	mockStats := new(MockStatsRepository)
+	mockApplications := &MockApplicationsRepository{}
 
 	// Expect List to be called for Jobs page
 	mockRepo.On("List", mock.Anything, mock.Anything).Return([]*repository.Job{}, 0, nil).Maybe()
 	mockStats.On("GetStats", mock.Anything).Return(&repository.DashboardStats{}, nil).Maybe()
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, mockApplications)
 	defer srv.Close()
 
 	pages := []struct {
@@ -80,7 +82,7 @@ func TestNavigation_HTMXPartialResponse(t *testing.T) {
 	mockRepo.On("List", mock.Anything, mock.Anything).Return([]*repository.Job{}, 0, nil).Maybe()
 	mockStats.On("GetStats", mock.Anything).Return(&repository.DashboardStats{}, nil).Maybe()
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	// Request with HX-Request header (HTMX request)
@@ -112,7 +114,7 @@ func TestJobsPage_RendersJobs(t *testing.T) {
 	// Expect List call
 	mockRepo.On("List", mock.Anything, mock.Anything).Return(jobs, 2, nil)
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL + "/jobs")
@@ -133,7 +135,7 @@ func TestJobsPage_HTMX_RendersTable(t *testing.T) {
 	jobs := []*repository.Job{{ExternalID: "job-htmx"}}
 	mockRepo.On("List", mock.Anything, mock.Anything).Return(jobs, 1, nil)
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	req, _ := http.NewRequest("GET", srv.URL+"/jobs", nil)
@@ -160,7 +162,7 @@ func TestJobPanel_Renders(t *testing.T) {
 
 	mockRepo.On("GetByID", mock.Anything, id).Return(job, nil) // Return pointer to job
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	req, _ := http.NewRequest("GET", srv.URL+"/jobs/"+id.String(), nil)
@@ -184,7 +186,7 @@ func TestJobRow_Renders(t *testing.T) {
 
 	mockRepo.On("GetByID", mock.Anything, id).Return(job, nil)
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	// Should call partials endpoint
@@ -212,7 +214,7 @@ func TestStatsCards_Renders(t *testing.T) {
 
 	mockStats.On("GetStats", mock.Anything).Return(stats, nil)
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	req, _ := http.NewRequest("GET", srv.URL+"/partials/stats-cards", nil)
@@ -247,7 +249,7 @@ func TestRecentJobs_Renders(t *testing.T) {
 		return f.Limit == 5
 	})).Return(jobs, 1, nil)
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	req, _ := http.NewRequest("GET", srv.URL+"/partials/recent-jobs", nil)
@@ -276,7 +278,7 @@ func (m *MockStatsRepository) GetStats(ctx context.Context) (*repository.Dashboa
 	return args.Get(0).(*repository.DashboardStats), args.Error(1)
 }
 
-func setupTestServer(t *testing.T, jobsRepo JobsRepository, statsRepo StatsRepository) *httptest.Server {
+func setupTestServer(t *testing.T, jobsRepo JobsRepository, statsRepo StatsRepository, applicationsRepo ApplicationsRepository) *httptest.Server {
 	// Create test templates
 	templateDir := filepath.Join(t.TempDir(), "templates")
 	require.NoError(t, os.MkdirAll(filepath.Join(templateDir, "pages"), 0755))
@@ -341,7 +343,7 @@ func setupTestServer(t *testing.T, jobsRepo JobsRepository, statsRepo StatsRepos
 	templates := web.NewTemplateEngine(templateDir, false)
 	require.NoError(t, templates.Load())
 
-	pagesHandler := NewPagesHandler(templates, jobsRepo, statsRepo)
+	pagesHandler := NewPagesHandler(templates, jobsRepo, statsRepo, applicationsRepo)
 	webSrv.RegisterPagesHandler(pagesHandler)
 
 	go webSrv.Start()
@@ -368,7 +370,7 @@ func TestSettingsPage_AutoStartsAuthWhenNotConnected(t *testing.T) {
 	mockStats := new(MockStatsRepository)
 	mockStats.On("GetStats", mock.Anything).Return(&repository.DashboardStats{}, nil).Maybe()
 
-	srv := setupTestServer(t, mockRepo, mockStats)
+	srv := setupTestServer(t, mockRepo, mockStats, new(MockApplicationsRepository))
 	defer srv.Close()
 
 	// Act: request settings page
