@@ -1,0 +1,662 @@
+<pattern name="MD-Indexer">
+
+  <overview>
+    Template for creating index markdown files that document project structure.
+    Each folder gets an index file linking to subfolder indexes and individual file documentation.
+  </overview>
+
+  <templates>
+
+    <template name="folder-with-subfolders" type="folder">
+      <description>Use for folders containing subfolders</description>
+      <structure>
+        <line># foldername</line>
+        <line></line>
+        <line>Brief one-line description.</line>
+        <line></line>
+        <line>## Structure</line>
+        <line></line>
+        <line>- **subfolder/** — Description → [subfolder.md](subfolder.md)</line>
+      </structure>
+      <example>
+        <file>static/README.md</file>
+        <content>
+          # static
+
+          Static assets for the web UI.
+
+          ## Structure
+
+          - **css/** — Stylesheets → [css.md](css.md)
+          - **js/** — JavaScript files → [js.md](js.md)
+        </content>
+      </example>
+    </template>
+
+    <template name="folder-with-files" type="folder">
+      <description>Use for folders containing only files (no subfolders)</description>
+      <structure>
+        <line># foldername</line>
+        <line></line>
+        <line>Brief one-line description.</line>
+        <line></line>
+        <line>## Files</line>
+        <line></line>
+        <line>- **filename.ext** → [filename.ext.md](filename.ext.md)</line>
+      </structure>
+      <example>
+        <file>static/js.md</file>
+        <content>
+          # js
+
+          JavaScript files for the web UI.
+
+          ## Files
+
+          - **htmx.min.js** → [htmx.min.js.md](htmx.min.js.md)
+          - **ws.js** → [ws.js.md](ws.js.md)
+        </content>
+      </example>
+    </template>
+
+    <template name="file-documentation" type="file">
+      <description>Use for individual file documentation</description>
+      <structure>
+        <line># filename.ext</line>
+        <line></line>
+        <line>One-line summary.</line>
+        <line></line>
+        <line>Optional bullet points:</line>
+        <line>- Feature 1</line>
+        <line>- Feature 2</line>
+      </structure>
+      <example>
+        <file>static/css/pico.css.md</file>
+        <content>
+          # pico.css
+
+          Pico.css — minimal, semantic CSS framework.
+
+          - ~10kb minified
+          - Zero classes needed — just semantic HTML
+          - Built-in dark mode (auto + manual toggle)
+          - Perfect for HTMX/SSR
+
+          Docs: https://picocss.com
+        </content>
+      </example>
+    </template>
+
+    <!-- BUSINESS LOGIC PACKAGE -->
+
+    <template name="business-logic-package" type="folder">
+      <description>Use for business logic packages with service/manager/handler pattern</description>
+      <structure>
+        <line># packagename</line>
+        <line></line>
+        <line>Brief description of what this package does.</line>
+        <line></line>
+        <line>## Core</line>
+        <line>- **service.go** → [service.go.md](service.go.md) — Core business logic</line>
+        <line>- **manager.go** → [manager.go.md](manager.go.md) — Workflow coordination</line>
+        <line></line>
+        <line>## API</line>
+        <line>- **handler.go** → [handler.go.md](handler.go.md) — HTTP handlers</line>
+        <line>- **router.go** → [router.go.md](router.go.md) — Route configuration</line>
+        <line>- **validation.go** → [validation.go.md](validation.go.md) — Input validation</line>
+        <line></line>
+        <line>## Tests</line>
+        <line>- ***_test.go** — Unit and integration tests</line>
+      </structure>
+      <example>
+        <file>internal/collector.md</file>
+        <content>
+          # collector
+
+          Telegram scraping service — fetches job postings from channels and forums.
+
+          ## Core
+          - **service.go** → [service.go.md](service.go.md) — Scraping orchestration
+          - **manager.go** → [manager.go.md](manager.go.md) — Scrape job lifecycle
+
+          ## API
+          - **handler.go** → [handler.go.md](handler.go.md) — HTTP endpoints
+          - **router.go** → [router.go.md](router.go.md) — Route setup
+          - **validation.go** → [validation.go.md](validation.go.md) — Request validation
+
+          ## Tests
+          - **service_test.go**, **handler_test.go**, **validation_test.go**
+        </content>
+      </example>
+    </template>
+
+    <!-- REPOSITORY / DATABASE LAYER -->
+
+    <template name="repository-layer" type="folder">
+      <description>Use for data access layer with repository pattern</description>
+      <structure>
+        <line># repository</line>
+        <line></line>
+        <line>Data access layer — CRUD operations for each entity.</line>
+        <line></line>
+        <line>## Repositories</line>
+        <line>- **entity.go** → [entity.go.md](entity.go.md) — Entity CRUD + queries</line>
+        <line></line>
+        <line>## Tests</line>
+        <line>- **entity_test.go** — Unit tests</line>
+        <line>- **entity_db_test.go** — DB integration tests</line>
+      </structure>
+      <example>
+        <file>internal/repository.md</file>
+        <content>
+          # repository
+
+          Data access layer — PostgreSQL CRUD operations via GORM.
+
+          ## Repositories
+          - **jobs.go** → [jobs.go.md](jobs.go.md) — Job CRUD, filtering by status/target
+          - **targets.go** → [targets.go.md](targets.go.md) — Scraping target management
+          - **ranges.go** → [ranges.go.md](ranges.go.md) — Parsed range tracking
+          - **stats.go** → [stats.go.md](stats.go.md) — Statistics queries
+
+          ## Tests
+          - **jobs_test.go**, **jobs_db_test.go** — Jobs tests
+          - **targets_test.go**, **ranges_test.go** — Entity tests
+        </content>
+      </example>
+    </template>
+
+    <!-- API HANDLERS PACKAGE -->
+
+    <template name="api-handlers-package" type="folder">
+      <description>Use for HTTP handlers/API endpoints package</description>
+      <structure>
+        <line># handlers</line>
+        <line></line>
+        <line>HTTP handlers for resource endpoints.</line>
+        <line></line>
+        <line>## Handlers</line>
+        <line>- **resource.go** → [resource.go.md](resource.go.md) — Resource CRUD endpoints</line>
+        <line>- **auth.go** → [auth.go.md](auth.go.md) — Authentication</line>
+        <line></line>
+        <line>## Interfaces</line>
+        <line>- **interfaces.go** → [interfaces.go.md](interfaces.go.md) — Handler contracts</line>
+        <line></line>
+        <line>## Tests</line>
+        <line>- ***_test.go** — Handler tests</line>
+      </structure>
+      <example>
+        <file>internal/web/handlers.md</file>
+        <content>
+          # handlers
+
+          HTTP request handlers for the web API.
+
+          ## Handlers
+          - **jobs.go** → [jobs.go.md](jobs.go.md) — Job list, get, update status
+          - **targets.go** → [targets.go.md](targets.go.md) — Target CRUD
+          - **auth.go** → [auth.go.md](auth.go.md) — Telegram authentication
+          - **stats.go** → [stats.go.md](stats.go.md) — Metrics endpoints
+          - **pages.go** → [pages.go.md](pages.go.md) — Page rendering
+
+          ## Interfaces
+          - **interfaces.go** → [interfaces.go.md](interfaces.go.md) — Handler interfaces
+
+          ## Tests
+          - **jobs_test.go**, **auth_test.go**, **pages_test.go**
+        </content>
+      </example>
+    </template>
+
+    <!-- MODELS PACKAGE -->
+
+    <template name="models-package" type="folder">
+      <description>Use for domain models/entities package</description>
+      <structure>
+        <line># models</line>
+        <line></line>
+        <line>Domain entities and data structures.</line>
+        <line></line>
+        <line>## Entities</line>
+        <line>- **entity.go** → [entity.go.md](entity.go.md) — Entity definition + enums</line>
+      </structure>
+      <example>
+        <file>internal/models.md</file>
+        <content>
+          # models
+
+          Domain entities and data structures.
+
+          ## Entities
+          - **job.go** → [job.go.md](job.go.md) — Job entity + JobStatus enum
+          - **target.go** → [target.go.md](target.go.md) — Scraping target entity
+          - **application.go** → [application.go.md](application.go.md) — Application settings
+        </content>
+      </example>
+    </template>
+
+    <!-- TEST FILE DOCUMENTATION -->
+
+    <template name="test-file-documentation" type="file">
+      <description>Use for test file documentation — detailed test plan format</description>
+      <structure>
+        <line># file_test.go</line>
+        <line></line>
+        <line>Brief description of what is being tested.</line>
+        <line></line>
+        <line>## Test Environment / Test Fixtures</line>
+        <line></line>
+        <line>Describe mocks, setup requirements, prerequisites.</line>
+        <line></line>
+        <line>## Test Cases</line>
+        <line></line>
+        <line>### TestFunction/Scenario_Name</line>
+        <line></line>
+        <line>**Scenario:** Brief description of test flow</line>
+        <line></line>
+        <line>**Setup:** (if applicable)</line>
+        <line>- Mock configuration</line>
+        <line>- Initial state</line>
+        <line></line>
+        <line>**Steps:**</line>
+        <line>1. First action</line>
+        <line>2. Second action</line>
+        <line>3. Verify outcome</line>
+        <line></line>
+        <line>**Expected Results:**</line>
+        <line>- Specific assertion results</line>
+        <line>- Return values</line>
+        <line></line>
+        <line>**Validates:**</line>
+        <line>- What behavior is confirmed</line>
+        <line>- Which code path is exercised</line>
+        <line></line>
+        <line>---</line>
+        <line></line>
+        <line>## Coverage Summary</line>
+        <line></line>
+        <line>Optional: table or summary of what is covered.</line>
+      </structure>
+      <example>
+        <file>internal/analyzer/processor_test.go.md</file>
+        <content>
+          # processor_test.go
+
+          Unit tests for job processor — validates LLM job analysis logic in isolation.
+
+          ## Test Fixtures
+
+          ### MockJobsRepo
+          In-memory mock implementing `JobsRepository` interface.
+          | Field | Purpose |
+          |-------|---------|
+          | `Jobs` | Pre-seeded job lookup map |
+          | `UpdatedData` | Stores data passed to `UpdateStructuredData()` |
+          | `Err` | Optional error to return from methods |
+          | `mu` | Mutex for thread safety |
+
+          ### MockLLMClient
+          Configurable mock implementing `LLMClient` interface.
+          | Field | Purpose |
+          |-------|---------|
+          | `ExtractFunc` | Function called on `ExtractJobData()`; returns JSON string or error |
+
+          ## Test Cases
+
+          ### TestProcessor_ProcessJob/Success
+
+          **Scenario:** Valid job → LLM extracts data → Repository updated
+
+          **Setup:**
+          - Job ID with `RawContent: "Go Developer"`
+          - LLM returns `{"title": "Go Developer"}`
+          - User prompt template: `"content: {{RAW_CONTENT}}"`
+
+          **Steps:**
+          1. Call `ProcessJob(ctx, jobID)`
+          2. Verify no error returned
+          3. Verify repo's `UpdatedData["title"]` equals "Go Developer"
+
+          **Validates:**
+          - `GetByID()` called to fetch job
+          - User prompt contains raw content
+          - LLM response parsed as JSON
+          - `UpdateStructuredData()` called with parsed data
+
+          ---
+
+          ### TestProcessor_ProcessJob/InvalidJSON
+
+          **Scenario:** LLM returns invalid JSON → Error returned
+
+          **Setup:**
+          - LLM returns `INVALID JSON` (not valid JSON)
+
+          **Steps:**
+          1. Call `ProcessJob(ctx, jobID)`
+          2. Verify error is non-nil
+
+          **Expected:** Error message contains "invalid json received from llm"
+
+          **Validates:**
+          - JSON parsing errors are propagated
+          - Processor fails gracefully on bad LLM output
+
+          ---
+
+          ## Coverage Summary
+
+          | Test | Covers |
+          |------|--------|
+          | Success | Happy path, prompt building, repo update |
+          | InvalidJSON | JSON validation error handling |
+          | MarkdownCleanup | LLM output sanitization (`cleanJSON()`) |
+        </content>
+      </example>
+      <example>
+        <file>internal/collector/handler_test.go.md</file>
+        <content>
+          # handler_test.go
+
+          HTTP handler tests — validates request/response handling using httptest.
+
+          ## Test Cases
+
+          ### TestHandler_Health
+
+          **Endpoint:** GET /health
+
+          **Expected:** HTTP 200 with `{"status": "ok", "time": "..."}`
+
+          ---
+
+          ### TestHandler_StartScrape/returns_400_on_empty_request
+
+          **Request:** POST /api/v1/scrape/telegram with `{}`
+
+          **Expected:** HTTP 400, error message
+
+          **Validates:** Missing `channel` field triggers validation error
+
+          ---
+
+          ### TestHandler_StartScrape/returns_409_when_already_running
+
+          **Setup:** MockScraper with 100ms delay (keeps job running)
+
+          **Steps:**
+          1. Start first job → expect 200
+          2. Start second job → expect 409 Conflict
+
+          **Validates:** Concurrent job prevention returns correct HTTP status
+
+          ---
+
+          ## Coverage Summary
+
+          | Endpoint | Status | Body | Validation |
+          |----------|--------|------|------------|
+          | GET /health | ✅ | ✅ | — |
+          | POST /api/v1/scrape/telegram | ✅ | ✅ | ✅ |
+          | DELETE /api/v1/scrape/current | ✅ | ✅ | — |
+          | GET /api/v1/scrape/status | ✅ | ✅ | — |
+        </content>
+      </example>
+    </template>
+
+    <!-- TEST INTEGRATION FILE -->
+
+    <template name="test-integration-documentation" type="file">
+      <description>Use for integration test files — external dependencies required</description>
+      <structure>
+        <line># file_integration_test.go</line>
+        <line></line>
+        <line>Integration tests for X — validates end-to-end flow.</line>
+        <line></line>
+        <line>## Test Environment</line>
+        <line></line>
+        <line>**Prerequisites:**</line>
+        <line>- Environment variables required</line>
+        <line>- External services needed (database, NATS, etc.)</line>
+        <line>- Timeout duration</line>
+        <line></line>
+        <line>**Test Setup:**</line>
+        <line>1. Connect to external service</line>
+        <line>2. Ensure stream/table exists</line>
+        <line>3. Create mocks or seed data</line>
+        <line>4. Initialize component under test</line>
+        <line></line>
+        <line>## Test Cases</line>
+        <line></line>
+        <line>### TestX_Integration</line>
+        <line></line>
+        <line>**Scenario:** Trigger event → System processes → State updated</line>
+        <line></line>
+        <line>**Steps:**</line>
+        <line>1. Seed data</line>
+        <line>2. Start component</line>
+        <line>3. Publish/trigger event</line>
+        <line>4. Poll for result</line>
+        <line>5. Verify state change</line>
+        <line></line>
+        <line>**Expected Results:**</line>
+        <line>- Message consumed</line>
+        <line>- Processing completed</line>
+        <line>- State updated correctly</line>
+        <line></line>
+        <line>**Mock Behavior:**</line>
+        <line>| Mock | Behavior |</line>
+        <line>|------|----------|</line>
+        <line>| `MockRepo` | Returns pre-seeded data |</line>
+        <line>| `MockLLM` | Returns hardcoded response |</line>
+        <line></line>
+        <line>**Failure Modes:**</line>
+        <line>- Timeout if not completed within X</line>
+        <line>- Error if connection fails</line>
+      </structure>
+      <example>
+        <file>internal/analyzer/consumer_integration_test.go.md</file>
+        <content>
+          # consumer_integration_test.go
+
+          Integration tests for NATS consumer — validates end-to-end message flow from NATS to job processing.
+
+          ## Test Environment
+
+          **Prerequisites:**
+          - `INTEGRATION_TEST=1` environment variable set
+          - `NATS_URL` environment variable pointing to running NATS server
+          - 10-second timeout for entire test
+
+          **Test Setup:**
+          1. Connect to NATS using real client
+          2. Ensure `jobs` stream exists with subject `jobs.new`
+          3. Create mock `JobsRepository` with pre-seeded job data
+          4. Create mock `LLMClient` that returns structured JSON
+          5. Initialize `Processor` with mocks
+          6. Start `Consumer` subscribing to `jobs.new`
+
+          ## Test Cases
+
+          ### TestConsumer_Integration
+
+          **Scenario:** Publish job event → Consumer receives → Processor processes → Repository updated
+
+          **Steps:**
+          1. Seed mock repo with a RAW job (ID: `jobID`, RawContent: "Go Developer")
+          2. Start consumer listening on `jobs.new`
+          3. Publish `{job_id: jobID}` event to NATS
+          4. Poll repository every 100ms for updates
+          5. Verify `UpdatedData["title"]` equals "Go Developer"
+
+          **Expected Results:**
+          - Message successfully consumed from `jobs.new`
+          - `Processor.ProcessJob()` called with correct JobID
+          - Mock LLM returns `{"title": "Go Developer"}`
+          - Repository receives `UpdateStructuredData()` call
+          - Test completes within 10-second timeout
+
+          **Mock Behavior:**
+          | Mock | Behavior |
+          |------|----------|
+          | `MockJobsRepo` | Returns pre-seeded job by ID; stores updates in `UpdatedData` map |
+          | `MockLLMClient` | Returns hardcoded JSON `{"title": "Go Developer"}` |
+
+          **Failure Modes:**
+          - Timeout if message not processed within 10s
+          - Error if NATS connection fails
+          - Error if stream creation fails
+          - Error if publish fails
+        </content>
+      </example>
+    </template>
+
+    <!-- TEST TABLE-DRIVEN VALIDATION -->
+
+    <template name="test-validation-documentation" type="file">
+      <description>Use for table-driven validation tests</description>
+      <structure>
+        <line># validation_test.go</line>
+        <line></line>
+        <line>Unit tests for request validation — table-driven tests.</line>
+        <line></line>
+        <line>## Test Cases: Validate()</line>
+        <line></line>
+        <line>| Test | Input | Expected |</line>
+        <line>|------|-------|----------|</line>
+        <line>| test_name | `field: value` | `ErrType` or nil |</line>
+        <line></line>
+        <line>## Test Cases: HelperMethod()</line>
+        <line></line>
+        <line>| Test | Input | Expected |</line>
+        <line>|------|-------|----------|</line>
+        <line>| test_name | `value` | result |</line>
+        <line></line>
+        <line>## Coverage Summary</line>
+        <line></line>
+        <line>**Validated Rules:**</line>
+        <line>- Rule 1</line>
+        <line>- Rule 2</line>
+        <line></line>
+        <line>**Not Validated Here:**</line>
+        <line>- Rules checked at runtime</line>
+      </structure>
+      <example>
+        <file>internal/collector/validation_test.go.md</file>
+        <content>
+          # validation_test.go
+
+          Unit tests for request validation — table-driven tests for `ScrapeRequest.Validate()` and `UntilTime()`.
+
+          ## Test Cases: Validate()
+
+          | Test | Input | Expected |
+          |------|-------|----------|
+          | empty_request | `{}` | `ErrChannelRequired` |
+          | valid_channel | `channel: "@golang_jobs"` | nil |
+          | valid_channel_without_at | `channel: "golang_jobs"` | nil (normalizes to without @) |
+          | negative_limit | `channel: "@test", limit: -1` | `ErrInvalidLimit` |
+          | invalid_date_format | `channel: "@test", until: "not-a-date"` | `ErrInvalidDate` |
+          | future_date | `channel: "@test", until: "2099-12-31"` | `ErrFutureDate` |
+
+          ## Test Cases: UntilTime()
+
+          | Test | Input | Expected |
+          |------|-------|----------|
+          | empty_until | `until: ""` | nil |
+          | valid_date | `until: "2024-06-15"` | `*time.Time` with Year=2024 |
+
+          ## Coverage Summary
+
+          **Validated Rules:**
+          - Either `target_id` OR `channel` must be provided
+          - `@` prefix stripped from channel
+          - `limit` must be ≥ 0
+          - `until` must be `YYYY-MM-DD` format
+          - `until` cannot be in the future
+
+          **Not Validated Here:**
+          - Whether channel actually exists (requires network call)
+          - Whether `topic_ids` are valid for the forum (checked at runtime)
+        </content>
+      </example>
+    </template>
+
+    <!-- DOCS INDEX -->
+
+    <template name="docs-index" type="folder">
+      <description>Use for docs/index/ — central documentation hub</description>
+      <structure>
+        <line># Project Index</line>
+        <line></line>
+        <line>Documentation index for ProjectName.</line>
+        <line></line>
+        <line>## Structure</line>
+        <line></line>
+        <line>- **folder/** → [folder.md](folder.md) — Description</line>
+      </structure>
+      <instruction>
+        Create docs/index/ folder. Copy folder.md from source with adjusted relative paths.
+        Links from docs/index/ to source folders use ../../folder/file.md paths.
+      </instruction>
+      <example>
+        <file>docs/index/_entrypoint.md</file>
+        <content>
+          # Project Index
+
+          Documentation index for Positions OS.
+
+          ## Structure
+
+          - **cmd/** → [cmd.md](cmd.md) — Service entry points
+        </content>
+      </example>
+      <example>
+        <file>docs/index/cmd.md</file>
+        <content>
+          # cmd
+
+          Service entry points — each subfolder is a standalone binary.
+
+          ## Services
+
+          - **analyzer/** → [analyzer.md](../../cmd/analyzer.md) — LLM analysis worker
+          - **collector/** → [collector.md](../../cmd/collector.md) — Web UI + scraping API
+
+          ## CLI Tools
+
+          - **tg-auth/** → [tg-auth.md](../../cmd/tg-auth.md) — Telegram session generator
+          - **tg-topics/** → [tg-topics.md](../../cmd/tg-topics.md) — Forum topics lister
+          - **validate-yaml/** → [validate-yaml.md](../../cmd/validate-yaml.md) — YAML validator
+        </content>
+      </example>
+    </template>
+
+  </templates>
+
+  <rules>
+    <rule order="1">Folder index: named `foldername.md` or `README.md` if inside the folder</rule>
+    <rule order="2">File docs: named `filename.ext.md` (e.g., `main.go.md`)</rule>
+    <rule order="3">Test docs: Use detailed test plan format — fixtures, scenarios, steps, validates, coverage</rule>
+    <rule order="4">Links use relative paths: `[target](target.md)`</rule>
+    <rule order="5">Subfolders noted with trailing slash: **subfolder/**</rule>
+    <rule order="6">Arrows `→` separate item from documentation link</rule>
+    <rule order="7">docs/index/ copies folder.md with adjusted paths: `../../folder/file.md`</rule>
+  </rules>
+
+  <linking>
+    <pattern>
+      <source>folder.md</source>
+      <target>[folder](folder.md)</target>
+    </pattern>
+    <pattern>
+      <source>subfolder/</source>
+      <target>[subfolder/](subfolder.md)</target>
+    </pattern>
+    <pattern>
+      <source>filename.ext</source>
+      <target>[filename.ext](filename.ext.md)</target>
+    </pattern>
+  </linking>
+
+</pattern>

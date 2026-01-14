@@ -1,0 +1,69 @@
+<prompt name="cover-letter">
+  <system>
+    Напиши сопроводительное письмо на основе шаблона.
+    Адаптируй под конкретную вакансию, сохраняя структуру.
+    Тон: профессиональный, но не формальный.
+    Язык: соответствует шаблону.
+    Ответ: только письмо, без комментариев.
+  </system>
+
+  <templates>
+    <!-- Шаблон 1: Формальный (RU) -->
+    <template id="formal_ru">
+      Уважаемый(-ая) {{CONTACT_NAME}},
+
+      Меня заинтересовала позиция {{POSITION}} в {{COMPANY}}.
+
+      {{RELEVANT_EXPERIENCE}}
+
+      {{WHY_COMPANY}}
+
+      Буду рад обсудить возможное сотрудничество.
+
+      С уважением,
+      {{MY_NAME}}
+    </template>
+
+    <!-- Шаблон 2: Современный (RU) -->
+    <template id="modern_ru">
+      Привет!
+
+      Увидел вакансию {{POSITION}} и понял — это то, что ищу.
+
+      {{RELEVANT_EXPERIENCE}}
+
+      {{WHY_COMPANY}}
+
+      Давайте созвонимся?
+
+      {{MY_NAME}}
+    </template>
+
+    <!-- Шаблон 3: Professional (EN) -->
+    <template id="professional_en">
+      Dear Hiring Manager,
+
+      I am writing to express my interest in the {{POSITION}} role at {{COMPANY}}.
+
+      {{RELEVANT_EXPERIENCE}}
+
+      {{WHY_COMPANY}}
+
+      I look forward to discussing this opportunity.
+
+      Best regards,
+      {{MY_NAME}}
+    </template>
+  </templates>
+
+  <user>
+    ## Вакансия:
+    {{JOB_DATA}}
+
+    ## Моё резюме (адаптированное):
+    {{TAILORED_RESUME}}
+
+    ## Используй шаблон:
+    {{TEMPLATE_ID}}
+  </user>
+</prompt>
