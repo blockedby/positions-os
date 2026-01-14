@@ -3,6 +3,7 @@ package dispatcher
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -288,29 +289,14 @@ func isRetryable(err error) bool {
 	errMsg := err.Error()
 
 	// FloodWait errors are retryable
-	if contains(errMsg, "FLOOD_WAIT") || contains(errMsg, "FloodWait") {
+	if strings.Contains(errMsg, "FLOOD_WAIT") || strings.Contains(errMsg, "FloodWait") {
 		return true
 	}
 
 	// Network timeouts are retryable
-	if contains(errMsg, "timeout") || contains(errMsg, "connection") {
+	if strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "connection") {
 		return true
 	}
 
 	return false
-}
-
-// contains is a simple string contains helper
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && indexOf(s, substr) >= 0)
-}
-
-// indexOf finds substring index
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
 }

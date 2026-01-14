@@ -31,6 +31,11 @@ type ClientFactory func(ctx context.Context, cfg *config.Config, db *gorm.DB) (*
 // QRClientFactory is a function that creates a raw telegram client for QR auth.
 type QRClientFactory func(cfg *config.Config) (*QRClientBundle, error)
 
+// ReadReceiptCallback is called when a message read receipt is received.
+// peerUserID is the Telegram user ID of the peer who read the message.
+// maxMsgID is the highest message ID that was read.
+type ReadReceiptCallback func(ctx context.Context, peerUserID int64, maxMsgID int64) error
+
 type Manager struct {
 	client *gotgproto.Client
 	db     *gorm.DB
@@ -47,6 +52,10 @@ type Manager struct {
 	qrInProgress atomic.Bool
 	qrCancel     context.CancelFunc
 	qrMu         sync.Mutex
+
+	// Read receipt callback for dispatcher integration
+	readReceiptCallback      ReadReceiptCallback
+	readReceiptCallbackMu    sync.RWMutex
 }
 
 func NewManager(cfg *config.Config, db *gorm.DB) *Manager {
@@ -72,6 +81,29 @@ func (m *Manager) SetQRClientFactory(f QRClientFactory) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.qrClientFactory = f
+}
+
+// SetReadReceiptCallback sets the callback for read receipt events.
+// This is used by the dispatcher to automatically update application status to READ.
+func (m *Manager) SetReadReceiptCallback(cb ReadReceiptCallback) {
+	m.readReceiptCallbackMu.Lock()
+	defer m.readReceiptCallbackMu.Unlock()
+	m.readReceiptCallback = cb
+}
+
+// OnReadReceipt is called by Telegram update handlers when a read receipt is received.
+// This forwards the event to the registered callback (if any).
+// This method is designed to be called from the Telegram client's update dispatcher.
+func (m *Manager) OnReadReceipt(ctx context.Context, peerUserID int64, maxMsgID int64) error {
+	m.readReceiptCallbackMu.RLock()
+	cb := m.readReceiptCallback
+	m.readReceiptCallbackMu.RUnlock()
+
+	if cb == nil {
+		return nil // No callback registered, ignore
+	}
+
+	return cb(ctx, peerUserID, maxMsgID)
 }
 
 func (m *Manager) GetStatus() Status {

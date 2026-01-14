@@ -110,13 +110,13 @@ func TestDeliveryTracker_Integration(t *testing.T) {
 
 	// Setup test data
 	testJobID := uuid.MustParse("00000000-0000-0000-0000-000000000002")
-	pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
-	pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
+	_, _ = pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
+	_, _ = pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
 
 	// Cleanup when done
 	defer func() {
-		pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
-		pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
+		_, _ = pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
+		_, _ = pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
 	}()
 
 	// Create test job
