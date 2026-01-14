@@ -1,0 +1,49 @@
+You are working on THREAD A of the React Migration. Your responsibility is building the Foundation & Data Layer.
+
+CONTEXT:
+- Migrating from HTMX + Go Templates to React + TypeScript
+- You are the FIRST thread - Threads B and C depend on your work
+- Branch: react-thread-a
+- Worktree: /home/kcnc/code/positions-os-react-thread-a
+
+YOUR TASKS (14 total):
+Phase 1 - Foundation (5 tasks):
+  - 01_01_vite_project.md: Initialize Vite + React + TypeScript
+  - 01_02_typescript_config.md: Configure path aliases (@/ imports)
+  - 01_03_pico_css.md: Pico.css integration
+  - 01_04_router.md: React Router setup
+  - 01_05_layout.md: Sidebar + Main layout
+
+Phase 3 - Types & API (3 tasks):
+  - 03_01_types.md: Job, Target, Stats types
+  - 03_02_api_client.md: fetch wrapper
+  - 03_03_ws_types.md: WebSocket event types
+
+Phase 4 - Hooks (6 tasks):
+  - 04_01_query_client.md: React Query setup
+  - 04_02_use_jobs.md: Jobs CRUD hook
+  - 04_03_use_targets.md: Targets CRUD hook
+  - 04_04_use_stats.md: Dashboard stats hook
+  - 04_05_use_websocket.md: WebSocket hook
+  - 04_06_index.md: Hooks barrel export
+
+ACCEPTANCE CRITERIA:
+- [ ] Vite dev server runs on localhost:5173
+- [ ] Router navigation works (/, /jobs, /settings)
+- [ ] API client fetches jobs/targets from Go backend
+- [ ] WebSocket connects and receives events
+- [ ] All hooks have tests with >80% coverage
+
+COMMANDS:
+- bun install          # Install dependencies
+- bun run dev          # Start dev server
+- bun run test         # Run tests
+- bun run type-check   # TypeScript check
+
+YOU MUST COMPLETE YOUR WORK BEFORE THREADS B AND C CAN START.
+Your output structure should be: frontend/src/{main.tsx,App.tsx,lib/,hooks/,components/layout/}
+
+DO NOT work on UI components (Thread B) or Pages (Thread C).
+FOCUS ONLY on Foundation, Types, and Hooks.
+
+Thread: A
