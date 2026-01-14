@@ -212,3 +212,35 @@ func (s *Server) RegisterAuthHandler(handler interface{}) {
 		})
 	}
 }
+
+// RegisterApplicationsHandler registers applications API handlers
+func (s *Server) RegisterApplicationsHandler(handler interface{}) {
+	type applicationsHandler interface {
+		List(w http.ResponseWriter, r *http.Request)
+		GetByID(w http.ResponseWriter, r *http.Request)
+		Create(w http.ResponseWriter, r *http.Request)
+		Send(w http.ResponseWriter, r *http.Request)
+		UpdateDeliveryStatus(w http.ResponseWriter, r *http.Request)
+	}
+
+	if h, ok := handler.(applicationsHandler); ok {
+		s.router.Route("/api/v1/applications", func(r chi.Router) {
+			r.Get("/", h.List)
+			r.Post("/", h.Create)
+			r.Get("/{id}", h.GetByID)
+			r.Post("/{id}/send", h.Send)
+			r.Patch("/{id}/delivery", h.UpdateDeliveryStatus)
+		})
+	}
+}
+
+// RegisterDispatcherHandler registers dispatcher service status handler
+func (s *Server) RegisterDispatcherHandler(handler interface{}) {
+	type dispatcherHandler interface {
+		Status(w http.ResponseWriter, r *http.Request)
+	}
+
+	if h, ok := handler.(dispatcherHandler); ok {
+		s.router.Get("/api/v1/dispatcher/status", h.Status)
+	}
+}
