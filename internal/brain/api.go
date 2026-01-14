@@ -114,7 +114,9 @@ func (h *Handler) PrepareJob(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		logger.Error("failed to encode response", err)
+	}
 	logger.Info("prepare job accepted: " + jobID.String())
 }
 
@@ -174,7 +176,9 @@ func (h *Handler) GetDocuments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		logger.Error("failed to encode response", err)
+	}
 }
 
 // DownloadResume serves the generated resume PDF.
