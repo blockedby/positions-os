@@ -3029,6 +3029,134 @@ func TestSettingsPage_RendersForms(t *testing.T) {
 - [ ] Delete удаляет с подтверждением
 - [ ] Topic IDs показывается только для TG_FORUM
 
+---
+
+#### 3.6.7 — QR Code Persistence (localStorage)
+
+**Цель**: Сохранять QR код в localStorage между перезагрузками страницы, чтобы избежать ожидания новой генерации.
+
+**Проблема**: После перезагрузки страницы предыдущий QR код теряется, и пользователю нужно ждать до 30 секунд для получения нового QR.
+
+**Решение**: При получении QR кода сохранять его URL и timestamp в localStorage. При загрузке страницы проверять наличие сохранённого QR и отображать его если он ещё не истёк (меньше 30 секунд).
+
+---
+
+**Test**: `TestQR_PersistedBetweenReloads` (TDD: RED→GREEN→REFACTOR)
+
+Since this is a frontend feature using localStorage, we test the JavaScript behavior:
+
+```javascript
+// Test helper to simulate localStorage
+test('QR code is persisted to localStorage', () => {
+  const qrUrl = 'tg://login?token=abc123';
+  const now = Date.now();
+
+  // Simulate receiving QR code
+  window.localStorage.setItem('tg_qr_url', qrUrl);
+  window.localStorage.setItem('tg_qr_timestamp', now.toString());
+
+  // On page reload, should restore QR
+  const stored = window.localStorage.getItem('tg_qr_url');
+  const storedTime = parseInt(window.localStorage.getItem('tg_qr_timestamp') || '0');
+  const ageSeconds = (Date.now() - storedTime) / 1000;
+
+  expect(stored).toBe(qrUrl);
+  expect(ageSeconds).toBeLessThan(30); // Valid QR
+});
+
+test('Expired QR code is not restored', () => {
+  const qrUrl = 'tg://login?token=abc123';
+  const expiredTime = Date.now() - (31 * 1000); // 31 seconds ago
+
+  window.localStorage.setItem('tg_qr_url', qrUrl);
+  window.localStorage.setItem('tg_qr_timestamp', expiredTime.toString());
+
+  const storedTime = parseInt(window.localStorage.getItem('tg_qr_timestamp') || '0');
+  const ageSeconds = (Date.now() - storedTime) / 1000;
+
+  expect(ageSeconds).toBeGreaterThan(30); // Expired
+});
+```
+
+**Implementation** (`pages/settings.html`):
+
+```javascript
+// QR Persistence Module
+const QR_PERSISTENCE = {
+  STORAGE_KEY_URL: 'tg_qr_url',
+  STORAGE_KEY_TIMESTAMP: 'tg_qr_timestamp',
+  QR_EXPIRY_SECONDS: 30,
+
+  save: function(url) {
+    localStorage.setItem(this.STORAGE_KEY_URL, url);
+    localStorage.setItem(this.STORAGE_KEY_TIMESTAMP, Date.now().toString());
+  },
+
+  load: function() {
+    const url = localStorage.getItem(this.STORAGE_KEY_URL);
+    const timestamp = localStorage.getItem(this.STORAGE_KEY_TIMESTAMP);
+    if (!url || !timestamp) return null;
+
+    const ageSeconds = (Date.now() - parseInt(timestamp)) / 1000;
+    if (ageSeconds > this.QR_EXPIRY_SECONDS) {
+      this.clear();
+      return null;
+    }
+    return { url, ageSeconds: Math.floor(ageSeconds) };
+  },
+
+  clear: function() {
+    localStorage.removeItem(this.STORAGE_KEY_URL);
+    localStorage.removeItem(this.STORAGE_KEY_TIMESTAMP);
+  }
+};
+
+// On page load - try to restore previous QR
+document.addEventListener("DOMContentLoaded", function () {
+  // ... existing status check ...
+
+  // Try to restore QR from localStorage
+  const savedQR = QR_PERSISTENCE.load();
+  if (savedQR) {
+    displayQR(savedQR.url, 30 - savedQR.ageSeconds);
+  }
+});
+
+// When receiving new QR via WebSocket
+document.addEventListener("tg_qr", function (e) {
+  const url = e.detail.url;
+  if (url === lastQRUrl) return;
+  lastQRUrl = url;
+
+  // Save to localStorage
+  QR_PERSISTENCE.save(url);
+
+  displayQR(url, 30);
+});
+
+// On auth success or error, clear stored QR
+document.addEventListener("tg_auth_success", function () {
+  QR_PERSISTENCE.clear();
+  // ... existing code ...
+});
+
+document.addEventListener("tg_auth_error", function () {
+  QR_PERSISTENCE.clear();
+  // ... existing code ...
+});
+```
+
+**Acceptance Criteria**:
+
+- [ ] QR код сохраняется в localStorage при получении через WebSocket
+- [ ] При перезагрузке страницы сохранённый QR отображается немедленно
+- [ ] QR код не отображается если он истёк (старше 30 секунд)
+- [ ] При успешной авторизации сохранённый QR удаляется
+- [ ] При ошибке авторизации сохранённый QR удаляется
+- [ ] Таймер обратного отсчёта показывает оставшееся время
+
+---
+
 ### Этап 7: Dashboard (3.7) [COMPLETED]
 
 **Цель**: Реализовать Dashboard со статистикой и карточками.

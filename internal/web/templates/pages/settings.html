@@ -43,19 +43,116 @@
       let currentQRTimer = null;
       let lastQRUrl = null;
 
-      // Check initial status
-      fetch("/api/v1/scrape/status")
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.telegram_status === "READY") {
-            statusSpan.textContent = "Connected";
-            statusSpan.style.color = "var(--success)";
-            connectBtn.hidden = true;
-          } else {
-            statusSpan.textContent = "Disconnected";
+      // QR Persistence Module - saves QR to localStorage for page reload recovery
+      const QR_PERSISTENCE = {
+        STORAGE_KEY_URL: "tg_qr_url",
+        STORAGE_KEY_TIMESTAMP: "tg_qr_timestamp",
+        QR_EXPIRY_SECONDS: 30,
+
+        save: function (url) {
+          try {
+            localStorage.setItem(this.STORAGE_KEY_URL, url);
+            localStorage.setItem(this.STORAGE_KEY_TIMESTAMP, Date.now().toString());
+          } catch (e) {
+            console.warn("Failed to save QR to localStorage:", e);
+          }
+        },
+
+        load: function () {
+          try {
+            const url = localStorage.getItem(this.STORAGE_KEY_URL);
+            const timestamp = localStorage.getItem(this.STORAGE_KEY_TIMESTAMP);
+            if (!url || !timestamp) return null;
+
+            const ageSeconds = (Date.now() - parseInt(timestamp)) / 1000;
+            if (ageSeconds > this.QR_EXPIRY_SECONDS) {
+              this.clear();
+              return null;
+            }
+            return { url, ageSeconds: Math.floor(ageSeconds) };
+          } catch (e) {
+            console.warn("Failed to load QR from localStorage:", e);
+            return null;
+          }
+        },
+
+        clear: function () {
+          try {
+            localStorage.removeItem(this.STORAGE_KEY_URL);
+            localStorage.removeItem(this.STORAGE_KEY_TIMESTAMP);
+          } catch (e) {
+            console.warn("Failed to clear QR from localStorage:", e);
+          }
+        },
+      };
+
+      // Display QR code with optional initial time left
+      function displayQR(url, initialTimeLeft) {
+        const timeLeft = initialTimeLeft !== undefined ? initialTimeLeft : 30;
+
+        // Clear any existing timer
+        if (currentQRTimer) {
+          clearInterval(currentQRTimer);
+        }
+
+        qrContainer.hidden = false;
+        qrCodeDiv.innerHTML = "";
+        new QRCode(qrCodeDiv, url);
+        lastQRUrl = url;
+        statusSpan.textContent = "Scan QR Code...";
+        statusSpan.style.color = "var(--warning)";
+
+        // Start QR expiration timer
+        const timerSpan = document.getElementById("qr-timeout");
+        timerSpan.textContent = timeLeft;
+
+        currentQRTimer = setInterval(function () {
+          const currentTimeLeft = parseInt(timerSpan.textContent) - 1;
+          timerSpan.textContent = currentTimeLeft;
+          if (currentTimeLeft <= 0) {
+            clearInterval(currentQRTimer);
+            currentQRTimer = null;
+            lastQRUrl = null;
+            QR_PERSISTENCE.clear();
+            qrContainer.hidden = true;
+            qrCodeDiv.innerHTML = "";
+            statusSpan.textContent = "QR expired. Try again.";
             statusSpan.style.color = "var(--error)";
           }
-        });
+        }, 1000);
+      }
+
+      // Check initial status and restore QR if available
+      function init() {
+        fetch("/api/v1/scrape/status")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.telegram_status === "READY") {
+              statusSpan.textContent = "Connected";
+              statusSpan.style.color = "var(--success)";
+              connectBtn.hidden = true;
+              QR_PERSISTENCE.clear(); // Clear any stale QR data
+            } else {
+              statusSpan.textContent = "Disconnected";
+              statusSpan.style.color = "var(--error)";
+
+              // Try to restore QR from localStorage
+              const savedQR = QR_PERSISTENCE.load();
+              if (savedQR) {
+                // QR is still valid, display it immediately
+                displayQR(savedQR.url, 30 - savedQR.ageSeconds);
+              }
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to check status:", err);
+            statusSpan.textContent = "Error checking status";
+            statusSpan.style.color = "var(--error)";
+          });
+      }
+
+      // Initialize on page load
+      init();
 
       // Add click debouncing to the connect button
       connectBtn.addEventListener("click", function () {
@@ -79,44 +176,21 @@
         if (url === lastQRUrl) {
           return;
         }
-        lastQRUrl = url;
 
-        // Clear any existing timer
-        if (currentQRTimer) {
-          clearInterval(currentQRTimer);
-        }
+        // Save to localStorage for persistence across reloads
+        QR_PERSISTENCE.save(url);
 
-        qrContainer.hidden = false;
-        qrCodeDiv.innerHTML = "";
-        new QRCode(qrCodeDiv, url);
-        statusSpan.textContent = "Scan QR Code...";
-        statusSpan.style.color = "var(--warning)";
-
-        // Start QR expiration timer (30 seconds - Telegram's default QR expiration)
-        let timeLeft = 30;
-        const timerSpan = document.getElementById("qr-timeout");
-        currentQRTimer = setInterval(function () {
-          timeLeft--;
-          if (timerSpan) timerSpan.textContent = timeLeft;
-          if (timeLeft <= 0) {
-            clearInterval(currentQRTimer);
-            currentQRTimer = null;
-            lastQRUrl = null;
-            qrContainer.hidden = true;
-            qrCodeDiv.innerHTML = "";
-            statusSpan.textContent = "QR expired. Try again.";
-            statusSpan.style.color = "var(--error)";
-          }
-        }, 1000);
+        displayQR(url, 30);
       });
 
       document.addEventListener("tg_auth_success", function () {
-        // Clear timer
+        // Clear timer and stored QR
         if (currentQRTimer) {
           clearInterval(currentQRTimer);
           currentQRTimer = null;
         }
         lastQRUrl = null;
+        QR_PERSISTENCE.clear();
 
         qrContainer.hidden = true;
         qrCodeDiv.innerHTML = "";
@@ -126,12 +200,13 @@
       });
 
       document.addEventListener("tg_auth_error", function (e) {
-        // Clear timer
+        // Clear timer and stored QR
         if (currentQRTimer) {
           clearInterval(currentQRTimer);
           currentQRTimer = null;
         }
         lastQRUrl = null;
+        QR_PERSISTENCE.clear();
 
         console.error("Auth error:", e.detail.message);
         qrContainer.hidden = true;

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Persistence Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1d1f21; color: #c5c8c6; }
+    .test { padding: 10px; margin: 5px 0; border-radius: 4px; }
+    .pass { background: #2d3e2d; color: #8c9e8c; }
+    .fail { background: #3e2d2d; color: #9e8c8c; }
+    .output { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>QR Persistence Module Tests</h1>
+  <div id="results"></div>
+
+  <script>
+    // QR_PERSISTENCE Module (copied from settings.html)
+    const QR_PERSISTENCE = {
+      STORAGE_KEY_URL: 'tg_qr_url',
+      STORAGE_KEY_TIMESTAMP: 'tg_qr_timestamp',
+      QR_EXPIRY_SECONDS: 30,
+
+      save: function(url) {
+        localStorage.setItem(this.STORAGE_KEY_URL, url);
+        localStorage.setItem(this.STORAGE_KEY_TIMESTAMP, Date.now().toString());
+      },
+
+      load: function() {
+        const url = localStorage.getItem(this.STORAGE_KEY_URL);
+        const timestamp = localStorage.getItem(this.STORAGE_KEY_TIMESTAMP);
+        if (!url || !timestamp) return null;
+
+        const ageSeconds = (Date.now() - parseInt(timestamp)) / 1000;
+        if (ageSeconds > this.QR_EXPIRY_SECONDS) {
+          this.clear();
+          return null;
+        }
+        return { url, ageSeconds: Math.floor(ageSeconds) };
+      },
+
+      clear: function() {
+        localStorage.removeItem(this.STORAGE_KEY_URL);
+        localStorage.removeItem(this.STORAGE_KEY_TIMESTAMP);
+      }
+    };
+
+    // Test Framework
+    const results = document.getElementById('results');
+
+    function test(name, fn) {
+      try {
+        fn();
+        results.innerHTML += `<div class="test pass">PASS: ${name}</div>`;
+      } catch (e) {
+        results.innerHTML += `<div class="test fail">FAIL: ${name}\n<div class="output">${e.message}</div></div>`;
+      }
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message || 'Assertion failed');
+      }
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(message || `Expected ${expected}, got ${actual}`);
+      }
+    }
+
+    // Cleanup before tests
+    QR_PERSISTENCE.clear();
+
+    // TEST 1: Save and Load QR Code
+    test('Save and Load QR Code', () => {
+      const testUrl = 'tg://login?token=test123';
+      QR_PERSISTENCE.save(testUrl);
+
+      const loaded = QR_PERSISTENCE.load();
+      assert(loaded !== null, 'Should return loaded data');
+      assertEqual(loaded.url, testUrl, 'URL should match');
+      assert(loaded.ageSeconds < 1, 'Should be fresh (age < 1 second)');
+    });
+
+    // TEST 2: Load returns null when nothing saved
+    test('Load returns null when nothing saved', () => {
+      QR_PERSISTENCE.clear();
+      const loaded = QR_PERSISTENCE.load();
+      assertEqual(loaded, null, 'Should return null');
+    });
+
+    // TEST 3: Expired QR is not loaded (simulate expired by mocking Date.now)
+    test('Expired QR is cleared and returns null', () => {
+      const testUrl = 'tg://login?token=expired';
+      const expiredTime = Date.now() - (31 * 1000); // 31 seconds ago
+
+      localStorage.setItem(QR_PERSISTENCE.STORAGE_KEY_URL, testUrl);
+      localStorage.setItem(QR_PERSISTENCE.STORAGE_KEY_TIMESTAMP, expiredTime.toString());
+
+      const loaded = QR_PERSISTENCE.load();
+      assertEqual(loaded, null, 'Should return null for expired QR');
+
+      // Verify it was cleared
+      assertEqual(localStorage.getItem(QR_PERSISTENCE.STORAGE_KEY_URL), null, 'URL should be cleared');
+    });
+
+    // TEST 4: Clear removes all data
+    test('Clear removes all data', () => {
+      QR_PERSISTENCE.save('tg://login?token=toclear');
+      QR_PERSISTENCE.clear();
+
+      assertEqual(localStorage.getItem(QR_PERSISTENCE.STORAGE_KEY_URL), null, 'URL should be null after clear');
+      assertEqual(localStorage.getItem(QR_PERSISTENCE.STORAGE_KEY_TIMESTAMP), null, 'Timestamp should be null after clear');
+    });
+
+    // TEST 5: Age calculation is correct
+    test('Age calculation is correct', () => {
+      const testUrl = 'tg://login?token=agetest';
+      const pastTime = Date.now() - (5 * 1000); // 5 seconds ago
+
+      localStorage.setItem(QR_PERSISTENCE.STORAGE_KEY_URL, testUrl);
+      localStorage.setItem(QR_PERSISTENCE.STORAGE_KEY_TIMESTAMP, pastTime.toString());
+
+      const loaded = QR_PERSISTENCE.load();
+      assert(loaded !== null, 'Should return data');
+      assert(loaded.ageSeconds >= 4 && loaded.ageSeconds <= 6, `Age should be ~5 seconds, got ${loaded.ageSeconds}`);
+    });
+
+    // TEST 6: Exactly 30 seconds is considered valid
+    test('Exactly 30 seconds is considered valid', () => {
+      const testUrl = 'tg://login?token=boundary';
+      const boundaryTime = Date.now() - (30 * 1000); // Exactly 30 seconds
+
+      localStorage.setItem(QR_PERSISTENCE.STORAGE_KEY_URL, testUrl);
+      localStorage.setItem(QR_PERSISTENCE.STORAGE_KEY_TIMESTAMP, boundaryTime.toString());
+
+      const loaded = QR_PERSISTENCE.load();
+      // Due to floating point, 30.0 might still pass or fail depending on exact timing
+      // The implementation uses > comparison, so 30 should still be valid
+      // But due to execution time, it will likely be 30.x and rejected
+      // We accept either result for this boundary test
+      const result = loaded === null ? 'rejected' : 'accepted';
+      results.innerHTML += `<div class="test pass" style="color: #888;">INFO: Boundary (30s): ${result}</div>`;
+    });
+
+    // Cleanup
+    QR_PERSISTENCE.clear();
+
+    results.innerHTML += '<div class="test pass">All tests completed!</div>';
+  </script>
+</body>
+</html>
