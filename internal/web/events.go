@@ -12,6 +12,12 @@ const (
 	EventJobUpdated  = "job.updated"
 	EventScrapeStart = "scrape.start"
 	EventScrapeEnd   = "scrape.end"
+
+	// Brain events
+	EventBrainStarted  = "brain.started"
+	EventBrainProgress = "brain.progress"
+	EventBrainCompleted = "brain.completed"
+	EventBrainError    = "brain.error"
 )
 
 // WSEvent represents a structured WebSocket message
@@ -52,4 +58,88 @@ func JobRowUpdateHTML(jobID uuid.UUID, status string) []byte {
 
 	// Let's implement helper for simple JSON event first, as implemented in UpdateStatus handler plan.
 	return JobUpdatedEvent(jobID, status)
+}
+
+// Brain event payloads
+
+// BrainStartedPayload is the payload for EventBrainStarted
+type BrainStartedPayload struct {
+	JobID string `json:"job_id"`
+}
+
+// BrainProgressPayload is the payload for EventBrainProgress
+type BrainProgressPayload struct {
+	JobID   string `json:"job_id"`
+	Step    string `json:"step"`              // tailoring, cover_letter, pdf_rendering
+	Progress int    `json:"progress"`          // 0-100
+	Message string `json:"message,omitempty"` // Human-readable message
+}
+
+// BrainCompletedPayload is the payload for EventBrainCompleted
+type BrainCompletedPayload struct {
+	JobID       string `json:"job_id"`
+	ResumeURL   string `json:"resume_url"`
+	CoverLetter string `json:"cover_letter,omitempty"`
+}
+
+// BrainErrorPayload is the payload for EventBrainError
+type BrainErrorPayload struct {
+	JobID string `json:"job_id"`
+	Step  string `json:"step,omitempty"` // Where the error occurred
+	Error string `json:"error"`
+}
+
+// BrainStartedEvent creates a JSON message for brain processing started
+func BrainStartedEvent(jobID uuid.UUID) []byte {
+	evt := WSEvent{
+		Type: EventBrainStarted,
+		Payload: BrainStartedPayload{
+			JobID: jobID.String(),
+		},
+	}
+	b, _ := json.Marshal(evt)
+	return b
+}
+
+// BrainProgressEvent creates a JSON message for brain processing progress
+func BrainProgressEvent(jobID uuid.UUID, step string, progress int, message string) []byte {
+	evt := WSEvent{
+		Type: EventBrainProgress,
+		Payload: BrainProgressPayload{
+			JobID:   jobID.String(),
+			Step:    step,
+			Progress: progress,
+			Message: message,
+		},
+	}
+	b, _ := json.Marshal(evt)
+	return b
+}
+
+// BrainCompletedEvent creates a JSON message for brain processing completed
+func BrainCompletedEvent(jobID uuid.UUID, resumeURL, coverLetter string) []byte {
+	evt := WSEvent{
+		Type: EventBrainCompleted,
+		Payload: BrainCompletedPayload{
+			JobID:       jobID.String(),
+			ResumeURL:   resumeURL,
+			CoverLetter: coverLetter,
+		},
+	}
+	b, _ := json.Marshal(evt)
+	return b
+}
+
+// BrainErrorEvent creates a JSON message for brain processing error
+func BrainErrorEvent(jobID uuid.UUID, step, errMsg string) []byte {
+	evt := WSEvent{
+		Type: EventBrainError,
+		Payload: BrainErrorPayload{
+			JobID: jobID.String(),
+			Step:  step,
+			Error: errMsg,
+		},
+	}
+	b, _ := json.Marshal(evt)
+	return b
 }
