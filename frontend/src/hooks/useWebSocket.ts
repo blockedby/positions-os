@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { WSClient } from '@/lib/api'
 import { queryKeys } from '@/lib/types'
@@ -14,43 +14,62 @@ export function useWebSocket({ enabled = true, onEvent }: WebSocketOptions = {})
   const [isConnected, setIsConnected] = useState(false)
   const queryClient = useQueryClient()
 
-  const handleMessage = useCallback(
-    (event: MessageEvent) => {
+  // Store callbacks in refs to avoid triggering reconnections
+  const onEventRef = useRef(onEvent)
+  const queryClientRef = useRef(queryClient)
+
+  // Update refs on every render (doesn't cause re-renders)
+  useEffect(() => {
+    onEventRef.current = onEvent
+  }, [onEvent])
+
+  useEffect(() => {
+    queryClientRef.current = queryClient
+  }, [queryClient])
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const wsEvent: WSEvent = JSON.parse(event.data)
-        onEvent?.(wsEvent)
+        onEventRef.current?.(wsEvent)
+
+        const qc = queryClientRef.current
 
         // Invalidate queries based on event type
         switch (wsEvent.type) {
           case 'job.new':
           case 'job.updated':
           case 'job.analyzed':
-            queryClient.invalidateQueries({ queryKey: ['jobs'] })
-            queryClient.invalidateQueries({ queryKey: queryKeys.job(wsEvent.job_id) })
-            queryClient.invalidateQueries({ queryKey: queryKeys.stats() })
+            qc.invalidateQueries({ queryKey: ['jobs'] })
+            qc.invalidateQueries({ queryKey: queryKeys.job(wsEvent.job_id) })
+            qc.invalidateQueries({ queryKey: queryKeys.stats() })
             break
 
           case 'target.created':
           case 'target.updated':
-            queryClient.invalidateQueries({ queryKey: queryKeys.targets() })
-            queryClient.invalidateQueries({ queryKey: queryKeys.stats() })
+            qc.invalidateQueries({ queryKey: queryKeys.targets() })
+            qc.invalidateQueries({ queryKey: queryKeys.stats() })
             break
 
           case 'target.deleted':
-            queryClient.invalidateQueries({ queryKey: queryKeys.targets() })
-            queryClient.invalidateQueries({ queryKey: queryKeys.stats() })
+            qc.invalidateQueries({ queryKey: queryKeys.targets() })
+            qc.invalidateQueries({ queryKey: queryKeys.stats() })
             break
 
           case 'scrape.started':
           case 'scrape.progress':
           case 'scrape.completed':
-            queryClient.invalidateQueries({ queryKey: ['scrape-status'] })
-            queryClient.invalidateQueries({ queryKey: ['jobs'] })
-            queryClient.invalidateQueries({ queryKey: queryKeys.stats() })
+            qc.invalidateQueries({ queryKey: ['scrape-status'] })
+            qc.invalidateQueries({ queryKey: ['jobs'] })
+            qc.invalidateQueries({ queryKey: queryKeys.stats() })
             break
 
           case 'stats.updated':
-            queryClient.invalidateQueries({ queryKey: queryKeys.stats() })
+            qc.invalidateQueries({ queryKey: queryKeys.stats() })
             break
 
           case 'tg_qr':
@@ -63,21 +82,14 @@ export function useWebSocket({ enabled = true, onEvent }: WebSocketOptions = {})
       } catch (error) {
         console.error('Failed to parse WebSocket event:', error)
       }
-    },
-    [onEvent, queryClient],
-  )
+    }
 
-  const handleOpen = useCallback(() => {
-    setIsConnected(true)
-  }, [])
+    const handleOpen = () => {
+      setIsConnected(true)
+    }
 
-  const handleClose = useCallback(() => {
-    setIsConnected(false)
-  }, [])
-
-  useEffect(() => {
-    if (!enabled) {
-      return
+    const handleClose = () => {
+      setIsConnected(false)
     }
 
     const client = new WSClient({
@@ -92,7 +104,7 @@ export function useWebSocket({ enabled = true, onEvent }: WebSocketOptions = {})
     return () => {
       client.disconnect()
     }
-  }, [enabled, handleMessage, handleOpen, handleClose])
+  }, [enabled]) // Only depend on 'enabled' - callbacks are accessed via refs
 
   return {
     isConnected,
@@ -105,7 +117,6 @@ export function useWebSocket({ enabled = true, onEvent }: WebSocketOptions = {})
 // ============================================================================
 
 export function useScrapeStatus(enabled = true) {
-  const { isConnected } = useWebSocket({ enabled })
   const [isScraping, setIsScraping] = useState(false)
   const [scrapeTarget, setScrapeTarget] = useState<string>()
   const [scrapeProgress, setScrapeProgress] = useState<{
@@ -114,39 +125,42 @@ export function useScrapeStatus(enabled = true) {
     newJobs: number
   }>()
 
-  // Listen for scrape events
-  useWebSocket({
+  // Memoize the event handler to prevent infinite re-renders
+  const handleScrapeEvent = useCallback((event: WSEvent) => {
+    switch (event.type) {
+      case 'scrape.started':
+        setIsScraping(true)
+        setScrapeTarget(event.target)
+        setScrapeProgress(undefined)
+        break
+
+      case 'scrape.progress':
+        setScrapeProgress({
+          processed: event.processed,
+          total: event.processed, // API doesn't return total
+          newJobs: event.new_jobs,
+        })
+        break
+
+      case 'scrape.completed':
+        setIsScraping(false)
+        setScrapeTarget(undefined)
+        setScrapeProgress(undefined)
+        break
+
+      case 'scrape.failed':
+      case 'scrape.cancelled':
+        setIsScraping(false)
+        setScrapeTarget(undefined)
+        setScrapeProgress(undefined)
+        break
+    }
+  }, [])
+
+  // Single WebSocket connection with memoized callback
+  const { isConnected } = useWebSocket({
     enabled,
-    onEvent: (event: WSEvent) => {
-      switch (event.type) {
-        case 'scrape.started':
-          setIsScraping(true)
-          setScrapeTarget(event.target)
-          setScrapeProgress(undefined)
-          break
-
-        case 'scrape.progress':
-          setScrapeProgress({
-            processed: event.processed,
-            total: event.processed, // API doesn't return total
-            newJobs: event.new_jobs,
-          })
-          break
-
-        case 'scrape.completed':
-          setIsScraping(false)
-          setScrapeTarget(undefined)
-          setScrapeProgress(undefined)
-          break
-
-        case 'scrape.failed':
-        case 'scrape.cancelled':
-          setIsScraping(false)
-          setScrapeTarget(undefined)
-          setScrapeProgress(undefined)
-          break
-      }
-    },
+    onEvent: handleScrapeEvent,
   })
 
   return {
