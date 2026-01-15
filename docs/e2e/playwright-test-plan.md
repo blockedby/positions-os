@@ -663,173 +663,554 @@ export const test = base.extend({
 
 ---
 
-## Local CI/CD Runner
+## Local Test Runner Setup
 
 ### Overview
 
-For local development, we use a Docker-based test runner that mirrors CI behavior. This ensures tests pass locally before pushing.
+This section provides a comprehensive setup guide for running Playwright E2E tests locally using Task runner. The setup uses existing Docker infrastructure (`task docker-up`) and adds Playwright testing on top.
 
-### Option 1: Docker Compose (Recommended)
+### Prerequisites
 
-```yaml
-# docker-compose.test.yml
-services:
-  # Test database (isolated from dev)
-  postgres-test:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: positions_test
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+#### 1. System Requirements
 
-  # NATS for WebSocket testing
-  nats-test:
-    image: nats:2.10-alpine
-    command: ["--jetstream"]
-    ports:
-      - "4223:4222"
+| Tool | Version | Installation |
+|------|---------|--------------|
+| **Task** | 3.x+ | `brew install go-task` or [taskfile.dev](https://taskfile.dev/installation/) |
+| **Bun** | 1.x+ | `curl -fsSL https://bun.sh/install \| bash` |
+| **Docker** | 24.x+ | [docker.com](https://docs.docker.com/get-docker/) |
+| **Go** | 1.21+ | `brew install go` or [go.dev](https://go.dev/dl/) |
 
-  # Backend API
-  api-test:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres-test:5432/positions_test?sslmode=disable
-      NATS_URL: nats://nats-test:4222
-      HTTP_PORT: 3100
-      # Mock Telegram - don't use real credentials!
-      TG_API_ID: "0"
-      TG_API_HASH: "mock"
-      TG_SESSION_STRING: ""
-    ports:
-      - "3100:3100"
-    depends_on:
-      postgres-test:
-        condition: service_healthy
-      nats-test:
-        condition: service_started
-
-  # Playwright test runner
-  playwright:
-    image: mcr.microsoft.com/playwright:v1.50.0-noble
-    working_dir: /app/frontend
-    volumes:
-      - ./frontend:/app/frontend
-      - ./playwright-report:/app/frontend/playwright-report
-    environment:
-      BASE_URL: http://api-test:3100
-      TEST_DATABASE_URL: postgres://postgres:postgres@postgres-test:5432/positions_test
-    command: ["npx", "playwright", "test", "--reporter=html"]
-    depends_on:
-      - api-test
-```
-
-### Running Tests Locally
+#### 2. Verify Installation
 
 ```bash
-# Run all E2E tests in Docker
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
-
-# View HTML report after tests complete
-open frontend/playwright-report/index.html
-
-# Clean up
-docker compose -f docker-compose.test.yml down -v
+# Check all tools are available
+task --version    # Task version 3.x
+bun --version     # Bun 1.x
+docker --version  # Docker 24.x+
+go version        # go1.21+
 ```
 
-### Option 2: Task Runner Integration
+### Step-by-Step Setup
 
-Add to `Taskfile.yml`:
+#### Step 1: Install Playwright in Frontend
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install Playwright and dependencies
+bun add -D @playwright/test
+
+# Install browser binaries (Chromium only for speed)
+bunx playwright install chromium
+
+# Verify installation
+bunx playwright --version
+```
+
+#### Step 2: Create Playwright Configuration
+
+```typescript
+// frontend/playwright.config.ts
+import { defineConfig, devices } from '@playwright/test'
+
+export default defineConfig({
+  // Test directory
+  testDir: './e2e',
+
+  // Run tests in parallel
+  fullyParallel: true,
+
+  // Fail build on CI if test.only left in code
+  forbidOnly: !!process.env.CI,
+
+  // Retry failed tests (more on CI)
+  retries: process.env.CI ? 2 : 0,
+
+  // Limit workers for stability
+  workers: process.env.CI ? 1 : 4,
+
+  // Reporter configuration
+  reporter: [
+    ['html', { outputFolder: 'playwright-report' }],
+    ['list'],
+  ],
+
+  // Shared settings for all projects
+  use: {
+    // Base URL for navigation
+    baseURL: process.env.BASE_URL || 'http://localhost:3100',
+
+    // Capture trace on first retry
+    trace: 'on-first-retry',
+
+    // Screenshot on failure
+    screenshot: 'only-on-failure',
+
+    // Video on failure
+    video: 'on-first-retry',
+
+    // Timeout for actions
+    actionTimeout: 10000,
+
+    // Timeout for navigation
+    navigationTimeout: 30000,
+  },
+
+  // Test timeout
+  timeout: 60000,
+
+  // Expect timeout
+  expect: {
+    timeout: 5000,
+  },
+
+  // Browser projects
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Uncomment for cross-browser testing
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
+  ],
+
+  // Output directory for test artifacts
+  outputDir: 'test-results',
+
+  // Global setup/teardown
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
+})
+```
+
+#### Step 3: Create Directory Structure
+
+```bash
+# Create E2E test structure
+mkdir -p frontend/e2e/{fixtures,pages,specs}
+
+# Create required files
+touch frontend/e2e/global-setup.ts
+touch frontend/e2e/global-teardown.ts
+touch frontend/e2e/fixtures/index.ts
+touch frontend/e2e/fixtures/mock-data.ts
+touch frontend/e2e/fixtures/database.fixture.ts
+touch frontend/e2e/fixtures/api-mock.fixture.ts
+touch frontend/e2e/pages/settings.page.ts
+touch frontend/e2e/specs/websocket.spec.ts
+touch frontend/e2e/specs/targets.spec.ts
+touch frontend/e2e/specs/api.spec.ts
+```
+
+**Final Structure:**
+
+```
+frontend/
+├── e2e/
+│   ├── fixtures/
+│   │   ├── index.ts              # Export all fixtures
+│   │   ├── mock-data.ts          # Test data constants
+│   │   ├── database.fixture.ts   # DB seeding fixture
+│   │   └── api-mock.fixture.ts   # API mocking fixture
+│   ├── pages/
+│   │   ├── settings.page.ts      # Settings Page Object
+│   │   ├── dashboard.page.ts     # Dashboard Page Object
+│   │   └── jobs.page.ts          # Jobs Page Object
+│   ├── specs/
+│   │   ├── websocket.spec.ts     # WS-* tests
+│   │   ├── targets.spec.ts       # TG-* tests
+│   │   ├── api.spec.ts           # API-* tests
+│   │   └── auth.spec.ts          # AUTH-* tests
+│   ├── global-setup.ts           # Runs before all tests
+│   └── global-teardown.ts        # Runs after all tests
+├── playwright.config.ts
+├── playwright-report/            # Generated HTML reports
+└── test-results/                 # Test artifacts (screenshots, videos)
+```
+
+#### Step 4: Create Global Setup/Teardown
+
+```typescript
+// frontend/e2e/global-setup.ts
+import { chromium, FullConfig } from '@playwright/test'
+
+async function globalSetup(config: FullConfig) {
+  const baseURL = config.projects[0].use.baseURL || 'http://localhost:3100'
+
+  console.log('🚀 Global Setup: Waiting for backend...')
+
+  // Wait for backend to be ready
+  const browser = await chromium.launch()
+  const page = await browser.newPage()
+
+  let retries = 30
+  while (retries > 0) {
+    try {
+      const response = await page.goto(`${baseURL}/api/v1/stats`, {
+        timeout: 5000,
+      })
+      if (response?.ok()) {
+        console.log('✅ Backend is ready!')
+        break
+      }
+    } catch {
+      retries--
+      if (retries === 0) {
+        throw new Error('Backend did not start in time')
+      }
+      console.log(`⏳ Waiting for backend... (${retries} retries left)`)
+      await page.waitForTimeout(1000)
+    }
+  }
+
+  await browser.close()
+}
+
+export default globalSetup
+```
+
+```typescript
+// frontend/e2e/global-teardown.ts
+import { FullConfig } from '@playwright/test'
+
+async function globalTeardown(config: FullConfig) {
+  console.log('🧹 Global Teardown: Cleaning up...')
+  // Add cleanup logic if needed (e.g., reset database state)
+}
+
+export default globalTeardown
+```
+
+#### Step 5: Add Taskfile Configuration
+
+Add these tasks to your `Taskfile.yml`:
 
 ```yaml
-# Taskfile.yml additions
-tasks:
-  test-e2e:
-    desc: Run E2E tests in Docker
-    cmds:
-      - docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
-      - docker compose -f docker-compose.test.yml down -v
-    env:
-      COMPOSE_PROJECT_NAME: positions-test
+# Taskfile.yml - E2E Testing Tasks
+version: '3'
 
-  test-e2e-local:
-    desc: Run E2E tests against local services
+tasks:
+  # ==========================================================================
+  # E2E Test Setup
+  # ==========================================================================
+
+  e2e-setup:
+    desc: Install Playwright and browsers
     dir: frontend
     cmds:
-      - bunx playwright test {{.CLI_ARGS}}
+      - bun add -D @playwright/test
+      - bunx playwright install chromium
+    status:
+      - test -d node_modules/@playwright
+
+  e2e-setup-all-browsers:
+    desc: Install all Playwright browsers (Chromium, Firefox, WebKit)
+    dir: frontend
+    cmds:
+      - bunx playwright install
+
+  # ==========================================================================
+  # Running Tests
+  # ==========================================================================
+
+  e2e:
+    desc: Run all E2E tests (requires backend running)
+    dir: frontend
+    deps: [docker-up]
+    cmds:
+      - bunx playwright test
     env:
       BASE_URL: http://localhost:3100
 
-  test-e2e-ui:
-    desc: Run E2E tests with Playwright UI
+  e2e-headed:
+    desc: Run E2E tests with visible browser
+    dir: frontend
+    cmds:
+      - bunx playwright test --headed
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-ui:
+    desc: Open Playwright UI mode for interactive testing
     dir: frontend
     cmds:
       - bunx playwright test --ui
+    env:
+      BASE_URL: http://localhost:3100
 
-  test-e2e-report:
-    desc: Open last E2E test report
+  e2e-debug:
+    desc: Run E2E tests in debug mode (step through)
+    dir: frontend
+    cmds:
+      - bunx playwright test --debug
+    env:
+      BASE_URL: http://localhost:3100
+      PWDEBUG: '1'
+
+  # ==========================================================================
+  # Filtered Test Runs
+  # ==========================================================================
+
+  e2e-websocket:
+    desc: Run only WebSocket tests
+    dir: frontend
+    cmds:
+      - bunx playwright test specs/websocket.spec.ts
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-targets:
+    desc: Run only Targets CRUD tests
+    dir: frontend
+    cmds:
+      - bunx playwright test specs/targets.spec.ts
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-api:
+    desc: Run only API tests
+    dir: frontend
+    cmds:
+      - bunx playwright test specs/api.spec.ts
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-grep:
+    desc: Run tests matching pattern (usage: task e2e-grep -- "pattern")
+    dir: frontend
+    cmds:
+      - bunx playwright test --grep "{{.CLI_ARGS}}"
+    env:
+      BASE_URL: http://localhost:3100
+
+  # ==========================================================================
+  # Reports & Artifacts
+  # ==========================================================================
+
+  e2e-report:
+    desc: Open last E2E test report in browser
     dir: frontend
     cmds:
       - bunx playwright show-report
+
+  e2e-clean:
+    desc: Clean test artifacts (reports, screenshots, videos)
+    dir: frontend
+    cmds:
+      - rm -rf playwright-report test-results
+
+  # ==========================================================================
+  # CI Integration
+  # ==========================================================================
+
+  e2e-ci:
+    desc: Run E2E tests in CI mode (single worker, retries)
+    dir: frontend
+    cmds:
+      - bunx playwright test --reporter=github,html
+    env:
+      BASE_URL: http://localhost:3100
+      CI: 'true'
+
+  # ==========================================================================
+  # Development Workflow
+  # ==========================================================================
+
+  e2e-watch:
+    desc: Watch mode - re-run tests on file changes
+    dir: frontend
+    cmds:
+      - |
+        echo "Watching for changes in e2e/ directory..."
+        while true; do
+          inotifywait -r -e modify,create,delete ./e2e/ 2>/dev/null || fswatch -1 ./e2e/
+          bunx playwright test --reporter=list
+        done
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-new-test:
+    desc: Generate test file from template (usage: task e2e-new-test -- feature-name)
+    dir: frontend
+    cmds:
+      - |
+        cat > e2e/specs/{{.CLI_ARGS}}.spec.ts << 'EOF'
+        import { test, expect } from '@playwright/test'
+
+        test.describe('{{.CLI_ARGS}}', () => {
+          test.beforeEach(async ({ page }) => {
+            // Setup before each test
+          })
+
+          test('should work', async ({ page }) => {
+            // Test implementation
+            await page.goto('/')
+            await expect(page).toHaveTitle(/Positions OS/)
+          })
+        })
+        EOF
+      - echo "Created e2e/specs/{{.CLI_ARGS}}.spec.ts"
+
+  # ==========================================================================
+  # Full Test Cycle
+  # ==========================================================================
+
+  e2e-full:
+    desc: Full E2E cycle - start services, run tests, show report
+    cmds:
+      - task: docker-up
+      - task: migrate-up
+      - task: e2e
+      - task: e2e-report
+
+  e2e-dev:
+    desc: Start backend and open Playwright UI
+    cmds:
+      - task: docker-up
+      - task: e2e-ui
 ```
 
-### Option 3: Act (GitHub Actions Locally)
+#### Step 6: Add Package.json Scripts
 
-Run GitHub Actions workflows locally using [act](https://github.com/nektos/act):
+```json
+// frontend/package.json (add to scripts)
+{
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "PWDEBUG=1 playwright test --debug",
+    "test:e2e:report": "playwright show-report"
+  }
+}
+```
+
+### Development Workflow
+
+#### TDD Cycle with Task Runner
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RED-GREEN-REFACTOR CYCLE                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. RED: Write failing test                                     │
+│     $ task e2e-grep -- "should create target"                   │
+│     ❌ Test fails (feature not implemented)                     │
+│                                                                 │
+│  2. GREEN: Implement minimal fix                                │
+│     $ task e2e-grep -- "should create target"                   │
+│     ✅ Test passes                                              │
+│                                                                 │
+│  3. REFACTOR: Improve code quality                              │
+│     $ task e2e-targets                                          │
+│     ✅ All target tests pass                                    │
+│                                                                 │
+│  4. VALIDATE: Run full suite                                    │
+│     $ task e2e                                                  │
+│     ✅ All tests pass                                           │
+│                                                                 │
+│  5. COMMIT & PUSH                                               │
+│     $ git add . && git commit -m "feat: add target creation"    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Quick Reference Commands
+
+| Task | Command | Description |
+|------|---------|-------------|
+| **Setup** | `task e2e-setup` | Install Playwright & browsers |
+| **Run all** | `task e2e` | Run all E2E tests |
+| **UI mode** | `task e2e-ui` | Interactive test runner |
+| **Debug** | `task e2e-debug` | Step-through debugging |
+| **Headed** | `task e2e-headed` | Watch tests in browser |
+| **Specific** | `task e2e-grep -- "pattern"` | Run matching tests |
+| **Report** | `task e2e-report` | View HTML report |
+| **Clean** | `task e2e-clean` | Remove artifacts |
+| **Full cycle** | `task e2e-full` | Services + tests + report |
+
+### Environment Configuration
+
+#### .env.test
 
 ```bash
-# Install act
-brew install act  # macOS
-# or
-curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
-
-# Run E2E workflow locally
-act -j e2e -P ubuntu-latest=catthehacker/ubuntu:act-latest
-
-# Run with secrets
-act -j e2e --secret-file .secrets
-```
-
-### Comparison of Local CI Options
-
-| Option | Pros | Cons | Best For |
-|--------|------|------|----------|
-| **Docker Compose** | Full isolation, mirrors prod | Slower startup, more resources | Full integration tests |
-| **Task Runner** | Fast, simple | Requires local services running | Quick iteration |
-| **Act** | Exact CI parity | Complex setup, slow | Debugging CI failures |
-
-### Recommended Workflow
-
-```
-Development Cycle:
-1. Write test (RED)           → task test-e2e-local -- --grep "my test"
-2. Implement fix (GREEN)      → task test-e2e-local -- --grep "my test"
-3. Refactor                   → task test-e2e-local
-4. Full validation            → task test-e2e (Docker)
-5. Push to PR                 → GitHub Actions runs automatically
-```
-
-### Environment Variables for Testing
-
-```bash
-# .env.test
-DATABASE_URL=postgres://postgres:postgres@localhost:5433/positions_test
-NATS_URL=nats://localhost:4223
-HTTP_PORT=3100
+# frontend/.env.test
+# Base URL for tests
 BASE_URL=http://localhost:3100
 
-# Telegram mocking - NEVER use real credentials in tests!
+# Database for seeding (optional, for DB fixtures)
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/positions_dev
+
+# Playwright settings
+PWDEBUG=0
+CI=false
+
+# Telegram mocking - NEVER use real credentials!
 TG_API_ID=0
 TG_API_HASH=mock
 TG_SESSION_STRING=
+```
+
+#### Loading Environment in Tests
+
+```typescript
+// frontend/e2e/fixtures/index.ts
+import { test as base } from '@playwright/test'
+import * as dotenv from 'dotenv'
+
+// Load test environment
+dotenv.config({ path: '.env.test' })
+
+// Re-export base test
+export { expect } from '@playwright/test'
+export const test = base
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `Backend not ready` | Services not started | Run `task docker-up` first |
+| `Browser not found` | Playwright not installed | Run `task e2e-setup` |
+| `Timeout waiting` | Slow backend startup | Increase timeout in global-setup |
+| `Port already in use` | Previous run didn't cleanup | Run `task docker-down && task docker-up` |
+| `ECONNREFUSED` | Wrong BASE_URL | Check `.env.test` has correct URL |
+
+#### Debug Mode
+
+```bash
+# Enable Playwright Inspector
+PWDEBUG=1 task e2e-grep -- "failing test"
+
+# Verbose logging
+DEBUG=pw:api task e2e
+
+# Trace viewer for failed tests
+bunx playwright show-trace test-results/*/trace.zip
+```
+
+#### Check Backend Health
+
+```bash
+# Verify backend is responding
+curl http://localhost:3100/api/v1/stats
+
+# Check WebSocket endpoint
+websocat ws://localhost:3100/ws
+
+# View backend logs
+docker compose logs -f collector
 ```
 
 ---
