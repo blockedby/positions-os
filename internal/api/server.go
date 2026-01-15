@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -237,4 +238,26 @@ func (s *Server) Stop(ctx context.Context) error {
 // Mux returns the underlying ServeMux for mounting additional routes.
 func (s *Server) Mux() *http.ServeMux {
 	return s.fuego.Mux
+}
+
+// MountDocsOn mounts the OpenAPI documentation routes (/docs, /openapi.json)
+// on a Chi router. This allows using Fuego's OpenAPI generation with an
+// existing router.
+func (s *Server) MountDocsOn(r interface {
+	Get(pattern string, handlerFn http.HandlerFunc)
+}, title, description string) {
+	// Serve Scalar UI directly at /docs
+	scalarHandler := ScalarHandler("/openapi.json", title, description)
+	r.Get("/docs", func(w http.ResponseWriter, req *http.Request) {
+		scalarHandler.ServeHTTP(w, req)
+	})
+
+	// Serve OpenAPI spec from Fuego's generated schema
+	r.Get("/openapi.json", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		spec := s.fuego.OpenAPI.Description()
+		if err := json.NewEncoder(w).Encode(spec); err != nil {
+			http.Error(w, "Failed to encode OpenAPI spec", http.StatusInternalServerError)
+		}
+	})
 }

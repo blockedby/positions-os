@@ -221,3 +221,8 @@ func (s *Server) RegisterDispatcherHandler(handler interface{}) {
 		s.router.Get("/api/v1/dispatcher/status", h.Status)
 	}
 }
+
+// Router returns the underlying Chi router for external route mounting.
+func (s *Server) Router() *chi.Mux {
+	return s.router
+}
