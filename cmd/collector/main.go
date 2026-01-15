@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/blockedby/positions-os/internal/api"
 	"github.com/blockedby/positions-os/internal/collector"
 	"github.com/blockedby/positions-os/internal/config"
 	"github.com/blockedby/positions-os/internal/database"
@@ -123,7 +124,32 @@ func main() {
 	server.RegisterCollectorHandler(collectorHandler)
 	server.RegisterAuthHandler(authHandler)
 
-	// 13. Start Server
+	// 13. Create Fuego API server for OpenAPI documentation
+	// Note: Fuego is used only for OpenAPI spec generation and Scalar UI.
+	// The actual API handlers are registered via Chi above.
+	// Services can be nil since Fuego handlers won't be called (Chi routes take precedence).
+	apiCfg := &api.Config{
+		Port:        cfg.HTTPPort,
+		Title:       "Positions OS API",
+		Description: "Job search automation system API",
+		Version:     "1.0.0",
+	}
+	apiDeps := &api.Dependencies{
+		JobsRepo:          jobsRepo,
+		TargetsRepo:       targetsRepo,
+		StatsRepo:         statsRepo,
+		ApplicationsRepo:  nil, // Not needed for OpenAPI generation
+		TelegramClient:    tgClient,
+		CollectorService:  nil, // Chi handlers handle actual requests
+		DispatcherService: nil,
+		Hub:               hub,
+	}
+	apiServer := api.NewServer(apiCfg, apiDeps)
+
+	// Mount OpenAPI documentation routes on the main router
+	apiServer.MountDocsOn(server.Router(), apiCfg.Title, apiCfg.Description)
+
+	// 14. Start Server
 	log.Info().Int("port", cfg.HTTPPort).Msg("starting API server")
 	go func() {
 		if err := server.Start(); err != nil {
@@ -131,7 +157,7 @@ func main() {
 		}
 	}()
 
-	// 14. Wait for shutdown
+	// 15. Wait for shutdown
 	<-ctx.Done()
 	log.Info().Msg("shutting down services...")
 
