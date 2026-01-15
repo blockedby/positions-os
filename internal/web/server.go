@@ -219,13 +219,17 @@ func (s *Server) RegisterCollectorHandler(handler interface{}) {
 // RegisterAuthHandler registers auth API handlers
 func (s *Server) RegisterAuthHandler(handler interface{}) {
 	type authHandler interface {
+		GetStatus(w http.ResponseWriter, r *http.Request)
 		StartQR(w http.ResponseWriter, r *http.Request)
 	}
 
 	if h, ok := handler.(authHandler); ok {
 		s.router.Route("/api/v1/auth", func(r chi.Router) {
+			r.Get("/status", h.GetStatus)
 			r.Post("/qr", h.StartQR)
 		})
+		// Also register under /telegram for backwards compatibility
+		s.router.Get("/api/v1/telegram/status", h.GetStatus)
 	}
 }
 

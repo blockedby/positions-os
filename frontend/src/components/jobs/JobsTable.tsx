@@ -22,7 +22,7 @@ export const JobsTable = ({
     return <JobsTableSkeleton />
   }
 
-  if (!data || data.jobs.length === 0) {
+  if (!data || !data.jobs || data.jobs.length === 0) {
     return (
       <div className="jobs-table-empty">
         <p className="text-muted">No jobs found. Try adjusting your filters or scrape more jobs.</p>

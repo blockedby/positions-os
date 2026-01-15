@@ -10,6 +10,8 @@ import type {
   ScrapeStatus,
   UpdateJobRequest,
   ApiError,
+  AuthStatusResponse,
+  StartQRResponse,
 } from './types'
 
 // ============================================================================
@@ -196,6 +198,27 @@ const api = {
         Accept: 'application/json',
       },
     }).then(handleResponse<ScrapeStatus>)
+  },
+
+  // ========================================================================
+  // Auth API
+  // ========================================================================
+
+  getAuthStatus(): Promise<AuthStatusResponse> {
+    return fetch(`${API_BASE}/auth/status`, {
+      headers: {
+        Accept: 'application/json',
+      },
+    }).then(handleResponse<AuthStatusResponse>)
+  },
+
+  startQR(): Promise<StartQRResponse> {
+    return fetch(`${API_BASE}/auth/qr`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then(handleResponse<StartQRResponse>)
   },
 }
 

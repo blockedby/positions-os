@@ -52,6 +52,13 @@ export function useWebSocket({ enabled = true, onEvent }: WebSocketOptions = {})
           case 'stats.updated':
             queryClient.invalidateQueries({ queryKey: queryKeys.stats() })
             break
+
+          case 'tg_qr':
+          case 'tg_auth_success':
+          case 'error':
+            // Auth events are handled by TelegramAuth component via onEvent callback
+            // No query invalidation needed here
+            break
         }
       } catch (error) {
         console.error('Failed to parse WebSocket event:', error)

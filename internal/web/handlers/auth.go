@@ -27,6 +27,18 @@ func NewAuthHandler(client TelegramClient, hub HubBroadcaster) *AuthHandler {
 	}
 }
 
+// GetStatus returns the current Telegram authentication status
+func (h *AuthHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
+	status := h.client.GetStatus()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":         string(status),
+		"is_ready":       status == telegram.StatusReady,
+		"qr_in_progress": h.client.IsQRInProgress(),
+	})
+}
+
 // StartQR initiates the QR code login flow
 func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
 	// 1. Check current status

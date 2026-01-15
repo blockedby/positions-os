@@ -93,11 +93,8 @@ export interface Stats {
   analyzed_jobs: number
   interested_jobs: number
   rejected_jobs: number
-  sent_jobs: number
-  responded_jobs: number
-  total_targets: number
+  today_jobs: number
   active_targets: number
-  today_new_jobs: number
 }
 
 export interface StatsCard {
@@ -183,6 +180,9 @@ export type WSEventType =
   | 'target.updated'
   | 'target.deleted'
   | 'stats.updated'
+  | 'tg_qr'
+  | 'tg_auth_success'
+  | 'error'
 
 export interface BaseWSEvent {
   type: WSEventType
@@ -262,6 +262,20 @@ export interface StatsUpdatedEvent extends BaseWSEvent {
   stats: Stats
 }
 
+export interface TgQREvent extends BaseWSEvent {
+  type: 'tg_qr'
+  url: string
+}
+
+export interface TgAuthSuccessEvent extends BaseWSEvent {
+  type: 'tg_auth_success'
+}
+
+export interface ErrorEvent extends BaseWSEvent {
+  type: 'error'
+  message: string
+}
+
 export type WSEvent =
   | ScrapeStartedEvent
   | ScrapeProgressEvent
@@ -275,6 +289,9 @@ export type WSEvent =
   | TargetUpdatedEvent
   | TargetDeletedEvent
   | StatsUpdatedEvent
+  | TgQREvent
+  | TgAuthSuccessEvent
+  | ErrorEvent
 
 // ============================================================================
 // Query Key Types
@@ -302,4 +319,21 @@ export type ApiError = {
 export type PaginationParams = {
   page: number
   limit: number
+}
+
+// ============================================================================
+// Auth Types
+// ============================================================================
+
+export type TelegramStatus = 'READY' | 'UNAUTHORIZED' | 'INITIALIZING' | 'ERROR'
+
+export interface AuthStatusResponse {
+  status: TelegramStatus
+  is_ready: boolean
+  qr_in_progress: boolean
+}
+
+export interface StartQRResponse {
+  status: 'started' | 'already in progress'
+  error?: string
 }

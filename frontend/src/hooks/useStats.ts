@@ -31,18 +31,18 @@ export function useStatsCards() {
           description: 'Jobs you want to apply',
         },
         {
-          label: 'Sent',
-          value: data.sent_jobs,
-          description: 'Applications sent',
+          label: 'Rejected',
+          value: data.rejected_jobs,
+          description: 'Jobs rejected',
         },
         {
-          label: 'Targets',
-          value: data.total_targets,
-          description: `${data.active_targets} active`,
+          label: 'Active Targets',
+          value: data.active_targets,
+          description: 'Active scraping sources',
         },
         {
           label: 'Today',
-          value: data.today_new_jobs,
+          value: data.today_jobs,
           description: 'New jobs today',
         },
       ]
