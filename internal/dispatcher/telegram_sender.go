@@ -17,12 +17,12 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// DeliveryTracker defines the interface for tracking delivery status.
+// DeliveryTrackerInterface defines the interface for tracking delivery status.
 // This will be provided by Thread A (Task 2.x).
-type DeliveryTracker interface {
-	TrackStart(ctx context.Context, appID string) error
-	TrackSuccess(ctx context.Context, appID string) error
-	TrackFailure(ctx context.Context, appID string, err error) error
+type DeliveryTrackerInterface interface {
+	TrackStart(ctx context.Context, appID uuid.UUID) error
+	TrackSuccess(ctx context.Context, appID uuid.UUID) error
+	TrackFailure(ctx context.Context, appID uuid.UUID, err error) error
 }
 
 // ApplicationsRepository defines the interface for application data access.
@@ -33,18 +33,18 @@ type ApplicationsRepository interface {
 	GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error)
 }
 
-// ReadTracker defines the interface for read receipt detection.
+// ReadTrackerInterface defines the interface for read receipt detection.
 // This will be provided by Thread A (Task 2.5.x).
-type ReadTracker interface {
-	RegisterMessage(appID string, msgID int64) error
+type ReadTrackerInterface interface {
+	RegisterSentMessage(msgID int64, appID uuid.UUID)
 }
 
 // TelegramSender handles sending job applications via Telegram DM.
 type TelegramSender struct {
 	client      *gotgproto.Client
-	tracker     DeliveryTracker
+	tracker     DeliveryTrackerInterface
 	repo        ApplicationsRepository
-	readTracker ReadTracker
+	readTracker ReadTrackerInterface
 	limiter     *rate.Limiter // 1 request per 10 seconds
 	log         *logger.Logger
 }
@@ -52,9 +52,9 @@ type TelegramSender struct {
 // NewTelegramSender creates a new TelegramSender with rate limiting.
 func NewTelegramSender(
 	client *gotgproto.Client,
-	tracker DeliveryTracker,
+	tracker DeliveryTrackerInterface,
 	repo ApplicationsRepository,
-	readTracker ReadTracker,
+	readTracker ReadTrackerInterface,
 	log *logger.Logger,
 ) *TelegramSender {
 	return &TelegramSender{
@@ -243,14 +243,14 @@ func (s *TelegramSender) SendApplication(ctx context.Context, appID uuid.UUID, r
 	}
 
 	// Track start
-	if err := s.tracker.TrackStart(ctx, appID.String()); err != nil {
+	if err := s.tracker.TrackStart(ctx, appID); err != nil {
 		return fmt.Errorf("track start: %w", err)
 	}
 
 	// Send resume PDF
 	if err := s.UploadAndSend(ctx, recipient, coverLetter, resumePath); err != nil {
 		// Track failure
-		_ = s.tracker.TrackFailure(ctx, appID.String(), err)
+		_ = s.tracker.TrackFailure(ctx, appID, err)
 		return fmt.Errorf("upload and send: %w", err)
 	}
 
@@ -258,7 +258,7 @@ func (s *TelegramSender) SendApplication(ctx context.Context, appID uuid.UUID, r
 	// TODO: This will be implemented when Thread A provides ReadTracker integration
 
 	// Track success
-	if err := s.tracker.TrackSuccess(ctx, appID.String()); err != nil {
+	if err := s.tracker.TrackSuccess(ctx, appID); err != nil {
 		return fmt.Errorf("track success: %w", err)
 	}
 

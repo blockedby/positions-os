@@ -20,23 +20,23 @@ type TelegramSenderInterface interface {
 // It routes to the appropriate sender based on the delivery channel.
 type DispatcherService struct {
 	tgSender    TelegramSenderInterface
-	emailSender EmailSender
-	tracker     DeliveryTracker
+	emailSender EmailSenderInterface
+	tracker     DeliveryTrackerInterface
 	repo        ApplicationsRepository
 	log         *logger.Logger
 }
 
-// EmailSender defines the interface for sending applications via email.
+// EmailSenderInterface defines the interface for sending applications via email.
 // This is a stub from Thread A (Task E.1).
-type EmailSender interface {
+type EmailSenderInterface interface {
 	SendApplication(ctx context.Context, appID uuid.UUID, recipient string) error
 }
 
 // NewDispatcherService creates a new DispatcherService.
 func NewDispatcherService(
 	tgSender TelegramSenderInterface,
-	emailSender EmailSender,
-	tracker DeliveryTracker,
+	emailSender EmailSenderInterface,
+	tracker DeliveryTrackerInterface,
 	repo ApplicationsRepository,
 	log *logger.Logger,
 ) *DispatcherService {

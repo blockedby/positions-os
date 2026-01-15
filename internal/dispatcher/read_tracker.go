@@ -29,7 +29,7 @@ func NewReadTracker(tracker *DeliveryTracker, log *logger.Logger) *ReadTracker {
 
 // OnMessageRead handles updateReadHistoryOutbox from Telegram
 // This is called when the peer reads our messages
-func (rt *ReadTracker) OnMessageRead(ctx context.Context, peerUserID int64, maxMsgID int64) error {
+func (rt *ReadTracker)OnMessageRead(ctx context.Context, peerUserID int64, maxMsgID int64) error {
 	rt.mu.RLock()
 	appID, found := rt.messageToApp[maxMsgID]
 	rt.mu.RUnlock()
@@ -61,7 +61,7 @@ func (rt *ReadTracker) OnMessageRead(ctx context.Context, peerUserID int64, maxM
 
 // RegisterSentMessage stores mapping for later read detection
 // Call this after successfully sending a message via Telegram
-func (rt *ReadTracker) RegisterSentMessage(msgID int64, appID uuid.UUID) {
+func (rt *ReadTracker)RegisterSentMessage(msgID int64, appID uuid.UUID) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
 	rt.messageToApp[msgID] = appID
@@ -74,7 +74,7 @@ func (rt *ReadTracker) RegisterSentMessage(msgID int64, appID uuid.UUID) {
 
 // UnregisterMessage removes a message from tracking
 // Useful if delivery failed or message was deleted
-func (rt *ReadTracker) UnregisterMessage(msgID int64) {
+func (rt *ReadTracker)UnregisterMessage(msgID int64) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
 	delete(rt.messageToApp, msgID)
@@ -85,7 +85,7 @@ func (rt *ReadTracker) UnregisterMessage(msgID int64) {
 }
 
 // GetApplicationID returns the application ID for a given message ID
-func (rt *ReadTracker) GetApplicationID(msgID int64) (uuid.UUID, bool) {
+func (rt *ReadTracker)GetApplicationID(msgID int64) (uuid.UUID, bool) {
 	rt.mu.RLock()
 	defer rt.mu.RUnlock()
 	appID, found := rt.messageToApp[msgID]
@@ -94,7 +94,7 @@ func (rt *ReadTracker) GetApplicationID(msgID int64) (uuid.UUID, bool) {
 
 // Clear removes all message mappings
 // Useful for cleanup or reset
-func (rt *ReadTracker) Clear() {
+func (rt *ReadTracker)Clear() {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
 	rt.messageToApp = make(map[int64]uuid.UUID)
@@ -102,7 +102,7 @@ func (rt *ReadTracker) Clear() {
 }
 
 // Count returns the number of tracked messages
-func (rt *ReadTracker) Count() int {
+func (rt *ReadTracker)Count() int {
 	rt.mu.RLock()
 	defer rt.mu.RUnlock()
 	return len(rt.messageToApp)

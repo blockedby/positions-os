@@ -25,7 +25,7 @@ const (
 	StatusFailed    DeliveryStatus = models.DeliveryStatusFailed
 )
 
-// DeliveryTracker handles delivery status tracking with database persistence and WebSocket events
+// DeliveryTracker is the concrete implementation of DeliveryTrackerInterface
 type DeliveryTracker struct {
 	repo *repository.ApplicationsRepository
 	hub  *web.Hub
@@ -68,7 +68,7 @@ type FailureEvent struct {
 }
 
 // TrackStart marks delivery as started (PENDING → SENDING)
-func (t *DeliveryTracker) TrackStart(ctx context.Context, appID uuid.UUID) error {
+func (t *DeliveryTracker)TrackStart(ctx context.Context, appID uuid.UUID) error {
 	app, err := t.repo.GetByID(ctx, appID)
 	if err != nil {
 		return fmt.Errorf("get application: %w", err)
@@ -104,7 +104,7 @@ func (t *DeliveryTracker) TrackStart(ctx context.Context, appID uuid.UUID) error
 }
 
 // TrackSuccess marks delivery as successful (SENDING → SENT)
-func (t *DeliveryTracker) TrackSuccess(ctx context.Context, appID uuid.UUID) error {
+func (t *DeliveryTracker)TrackSuccess(ctx context.Context, appID uuid.UUID) error {
 	app, err := t.repo.GetByID(ctx, appID)
 	if err != nil {
 		return fmt.Errorf("get application: %w", err)
@@ -141,7 +141,7 @@ func (t *DeliveryTracker) TrackSuccess(ctx context.Context, appID uuid.UUID) err
 
 // TrackFailure marks delivery as failed (any → FAILED)
 // Stores error message in recruiter_response field
-func (t *DeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err error) error {
+func (t *DeliveryTracker)TrackFailure(ctx context.Context, appID uuid.UUID, err error) error {
 	app, getErr := t.repo.GetByID(ctx, appID)
 	if getErr != nil {
 		return fmt.Errorf("get application: %w", getErr)
@@ -180,7 +180,7 @@ func (t *DeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err
 }
 
 // TrackProgress reports intermediate progress (during SENDING)
-func (t *DeliveryTracker) TrackProgress(ctx context.Context, appID uuid.UUID, step string, progress int) error {
+func (t *DeliveryTracker)TrackProgress(ctx context.Context, appID uuid.UUID, step string, progress int) error {
 	t.hub.Broadcast(ProgressEvent{
 		Type:          "dispatcher.progress",
 		ApplicationID: appID.String(),
@@ -198,7 +198,7 @@ func (t *DeliveryTracker) TrackProgress(ctx context.Context, appID uuid.UUID, st
 }
 
 // UpdateStatus manually updates status (for user actions)
-func (t *DeliveryTracker) UpdateStatus(ctx context.Context, appID uuid.UUID, status DeliveryStatus) error {
+func (t *DeliveryTracker)UpdateStatus(ctx context.Context, appID uuid.UUID, status DeliveryStatus) error {
 	app, err := t.repo.GetByID(ctx, appID)
 	if err != nil {
 		return fmt.Errorf("get application: %w", err)
@@ -237,7 +237,7 @@ func (t *DeliveryTracker) UpdateStatus(ctx context.Context, appID uuid.UUID, sta
 }
 
 // GetStatus returns current status of an application
-func (t *DeliveryTracker) GetStatus(ctx context.Context, appID uuid.UUID) (DeliveryStatus, error) {
+func (t *DeliveryTracker)GetStatus(ctx context.Context, appID uuid.UUID) (DeliveryStatus, error) {
 	app, err := t.repo.GetByID(ctx, appID)
 	if err != nil {
 		return "", fmt.Errorf("get application: %w", err)
@@ -250,7 +250,7 @@ func (t *DeliveryTracker) GetStatus(ctx context.Context, appID uuid.UUID) (Deliv
 }
 
 // ValidateTransition checks if status transition is valid
-func (t *DeliveryTracker) ValidateTransition(from, to DeliveryStatus) bool {
+func (t *DeliveryTracker)ValidateTransition(from, to DeliveryStatus) bool {
 	// Valid transitions:
 	// PENDING → SENDING
 	// SENDING → SENT | FAILED

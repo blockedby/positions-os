@@ -73,7 +73,7 @@ func main() {
 	jobsRepo := repository.NewJobsRepository(db.Pool)
 	rangesRepo := repository.NewRangesRepository(db.Pool)
 	statsRepo := repository.NewStatsRepository(db.Pool)
-	applicationsRepo := repository.NewApplicationsRepository(db.Pool)
+	applicationsRepo := repository.NewApplicationsRepository(db.Pool, log)
 
 	// 7. Initialize telegram manager
 	if cfg.TGApiID == 0 || cfg.TGApiHash == "" {

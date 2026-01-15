@@ -32,9 +32,9 @@ func TestNewTelegramSender_RedPhase(t *testing.T) {
 // Mock interfaces for testing (will be replaced by real interfaces from Thread A)
 type mockDeliveryTracker struct{}
 
-func (m *mockDeliveryTracker) TrackStart(ctx context.Context, appID string) error { return nil }
-func (m *mockDeliveryTracker) TrackSuccess(ctx context.Context, appID string) error { return nil }
-func (m *mockDeliveryTracker) TrackFailure(ctx context.Context, appID string, err error) error { return nil }
+func (m *mockDeliveryTracker) TrackStart(ctx context.Context, appID uuid.UUID) error { return nil }
+func (m *mockDeliveryTracker) TrackSuccess(ctx context.Context, appID uuid.UUID) error { return nil }
+func (m *mockDeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err error) error { return nil }
 
 type mockApplicationsRepository struct{}
 
@@ -44,7 +44,7 @@ func (m *mockApplicationsRepository) GetByJobID(ctx context.Context, jobID uuid.
 
 type mockReadTracker struct{}
 
-func (m *mockReadTracker) RegisterMessage(appID string, msgID int64) error { return nil }
+func (m *mockReadTracker) RegisterSentMessage(msgID int64, appID uuid.UUID) {}
 
 // TestResolveUsername_StripsAtPrefix tests that @ prefix is stripped.
 func TestResolveUsername_StripsAtPrefix(t *testing.T) {
