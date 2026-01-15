@@ -2,21 +2,18 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/blockedby/positions-os/internal/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 type MockTargetsRepository struct {
@@ -51,31 +48,42 @@ func (m *MockTargetsRepository) GetByID(ctx context.Context, id uuid.UUID) (*rep
 	return args.Get(0).(*repository.ScrapingTarget), args.Error(1)
 }
 
-func setupTargetsHandler(t *testing.T, repo TargetsRepository) (*TargetsHandler, *web.TemplateEngine) {
-	tmpDir := t.TempDir()
-	// Create partials dir
-	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, "partials"), 0755))
+func setupTargetsHandler(t *testing.T, repo TargetsRepository) *TargetsHandler {
+	return NewTargetsHandler(repo)
+}
 
-	// Write dummy target-row template
-	rowTmpl := `{{ define "target-row" }}<div>{{ .Target.Name }}</div>{{ end }}`
-	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "partials", "target-row.html"), []byte(rowTmpl), 0644))
+func TestTargetsHandler_List(t *testing.T) {
+	mockRepo := new(MockTargetsRepository)
+	handler := setupTargetsHandler(t, mockRepo)
 
-	tmpl := web.NewTemplateEngine(tmpDir, false)
-	require.NoError(t, tmpl.Load())
+	targets := []repository.ScrapingTarget{
+		{ID: uuid.New(), Name: "Go Jobs", Type: "TG_CHANNEL"},
+		{ID: uuid.New(), Name: "Python Jobs", Type: "TG_CHANNEL"},
+	}
+	mockRepo.On("List", mock.Anything).Return(targets, nil)
 
-	return NewTargetsHandler(repo, tmpl), tmpl
+	req := httptest.NewRequest("GET", "/targets", nil)
+	rec := httptest.NewRecorder()
+
+	handler.List(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+
+	var result []repository.ScrapingTarget
+	err := json.NewDecoder(rec.Body).Decode(&result)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	mockRepo.AssertExpectations(t)
 }
 
 func TestTargetsHandler_Create(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(t *repository.ScrapingTarget) bool {
 		return t.Name == "Go Jobs" && t.Type == "TG_CHANNEL"
 	})).Return(nil)
-
-	r := chi.NewRouter()
-	r.Post("/targets", handler.Create)
 
 	form := url.Values{}
 	form.Add("name", "Go Jobs")
@@ -84,20 +92,24 @@ func TestTargetsHandler_Create(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/targets", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("HX-Request", "true") // Request HTML partial
 
 	rec := httptest.NewRecorder()
-	handler.Create(rec, req) // calling directly usually bypasses router middleware but here creates struct directly
+	handler.Create(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Code) // RenderContent returns 200 usually
-	assert.Contains(t, rec.Body.String(), "Go Jobs")
+	assert.Equal(t, http.StatusCreated, rec.Code)
+	assert.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+
+	var result repository.ScrapingTarget
+	err := json.NewDecoder(rec.Body).Decode(&result)
+	assert.NoError(t, err)
+	assert.Equal(t, "Go Jobs", result.Name)
 
 	mockRepo.AssertExpectations(t)
 }
 
 func TestTargetsHandler_Create_Validation(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	tests := []struct {
 		name    string
@@ -127,7 +139,7 @@ func TestTargetsHandler_Create_Validation(t *testing.T) {
 
 func TestTargetsHandler_Delete(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
 	mockRepo.On("Delete", mock.Anything, id).Return(nil)
@@ -138,15 +150,15 @@ func TestTargetsHandler_Delete(t *testing.T) {
 	req := httptest.NewRequest("DELETE", "/targets/"+id.String(), nil)
 	rec := httptest.NewRecorder()
 
-	r.ServeHTTP(rec, req) // use router to parse param matches
+	r.ServeHTTP(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
 	mockRepo.AssertExpectations(t)
 }
 
 func TestTargetsHandler_Update(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
 	target := &repository.ScrapingTarget{
@@ -171,11 +183,11 @@ func TestTargetsHandler_Update(t *testing.T) {
 
 	req := httptest.NewRequest("PUT", "/targets/"+id.String(), strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("HX-Request", "true")
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "application/json", rec.Header().Get("Content-Type"))
 	mockRepo.AssertExpectations(t)
 }
