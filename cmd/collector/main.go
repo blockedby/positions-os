@@ -17,8 +17,6 @@ import (
 	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/blockedby/positions-os/internal/web"
 	"github.com/blockedby/positions-os/internal/web/handlers"
-	// "github.com/celestix/gotgproto"
-	// "github.com/celestix/gotgproto/sessionMaker"
 )
 
 func main() {
@@ -33,7 +31,7 @@ func main() {
 		panic("failed to init logger: " + err.Error())
 	}
 	log := logger.Get()
-	log.Info().Msg("starting unified collector & web service")
+	log.Info().Msg("starting unified collector & API service")
 
 	// 3. Setup context with graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -73,7 +71,6 @@ func main() {
 	jobsRepo := repository.NewJobsRepository(db.Pool)
 	rangesRepo := repository.NewRangesRepository(db.Pool)
 	statsRepo := repository.NewStatsRepository(db.Pool)
-	applicationsRepo := repository.NewApplicationsRepository(db.Pool, log)
 
 	// 7. Initialize telegram manager
 	if cfg.TGApiID == 0 || cfg.TGApiHash == "" {
@@ -81,14 +78,6 @@ func main() {
 	}
 
 	tgManager := telegram.NewManager(cfg, db.GORM)
-	// Initialize manager (will check DB and set status)
-	// We run this in a goroutine if it blocks? Init says "tries to restore".
-	// The implementation of Manager.Init calls NewPersistentClient which might connect.
-	// But we want it to be fast.
-	// The current Manager.Init logic does: check DB -> if empty return Unauthorized (Silent Start).
-	// If not empty -> NewPersistentClient -> Connect.
-
-	// Let's call Init.
 	if err := tgManager.Init(ctx); err != nil {
 		log.Error().Err(err).Msg("telegram manager init failed")
 		// We continue, status will be Error/Unauthorized
@@ -110,33 +99,24 @@ func main() {
 	scrapeManager := collector.NewScrapeManager(svc)
 	collectorHandler := collector.NewHandler(scrapeManager, targetsRepo)
 
-	// 9. Initialize Web UI & WebSocket Hub
+	// 9. Initialize WebSocket Hub
 	hub := web.NewHub()
 	go hub.Run()
 
-	tmpl := web.NewTemplateEngine(cfg.TemplatesDir, true) // reload = true for dev
-	if err := tmpl.Load(); err != nil {
-		log.Fatal().Err(err).Msg("failed to load templates")
-	}
-
-	// 10. Initialize Web Handlers
-	pagesHandler := handlers.NewPagesHandler(tmpl, jobsRepo, statsRepo, applicationsRepo)
+	// 10. Initialize API Handlers
 	jobsAPIHandler := handlers.NewJobsHandler(jobsRepo, hub)
-	targetsAPIHandler := handlers.NewTargetsHandler(targetsRepo, tmpl)
+	targetsAPIHandler := handlers.NewTargetsHandler(targetsRepo)
 	statsAPIHandler := handlers.NewStatsHandler(statsRepo)
-	// Create Auth Handler
 	authHandler := handlers.NewAuthHandler(tgClient, hub)
 
 	// 11. Initialize Server
 	webCfg := &web.Config{
-		Port:         cfg.HTTPPort,
-		StaticDir:    cfg.StaticDir,
-		TemplatesDir: cfg.TemplatesDir,
+		Port:      cfg.HTTPPort,
+		StaticDir: cfg.StaticDir,
 	}
 	server := web.NewServer(webCfg, nil, hub)
 
-	// 12. Register all handlers
-	server.RegisterPagesHandler(pagesHandler)
+	// 12. Register API handlers
 	server.RegisterJobsHandler(jobsAPIHandler)
 	server.RegisterTargetsHandler(targetsAPIHandler)
 	server.RegisterStatsHandler(statsAPIHandler)
@@ -144,7 +124,7 @@ func main() {
 	server.RegisterAuthHandler(authHandler)
 
 	// 13. Start Server
-	log.Info().Int("port", cfg.HTTPPort).Msg("starting web server")
+	log.Info().Int("port", cfg.HTTPPort).Msg("starting API server")
 	go func() {
 		if err := server.Start(); err != nil {
 			log.Fatal().Err(err).Msg("server error")

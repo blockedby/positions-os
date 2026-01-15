@@ -13,9 +13,8 @@ import (
 
 // Config holds server configuration
 type Config struct {
-	Port         int
-	StaticDir    string
-	TemplatesDir string
+	Port      int
+	StaticDir string // For PDF templates and other static assets
 }
 
 // Server represents the HTTP server
@@ -56,7 +55,7 @@ func (s *Server) setupMiddleware() {
 }
 
 func (s *Server) setupRoutes() {
-	// Static files
+	// Static files (for PDF templates)
 	if s.config.StaticDir != "" {
 		fileServer := http.FileServer(http.Dir(s.config.StaticDir))
 		s.router.Handle("/static/*", http.StripPrefix("/static/", fileServer))
@@ -108,48 +107,6 @@ func (s *Server) BaseURL() string {
 		return fmt.Sprintf("http://%s", s.listener.Addr().String())
 	}
 	return fmt.Sprintf("http://localhost:%d", s.config.Port)
-}
-
-// RegisterPagesHandler registers page handlers
-func (s *Server) RegisterPagesHandler(handler interface{}) {
-	type pagesHandler interface {
-		Dashboard(w http.ResponseWriter, r *http.Request)
-		Jobs(w http.ResponseWriter, r *http.Request)
-		Settings(w http.ResponseWriter, r *http.Request)
-		JobDetail(w http.ResponseWriter, r *http.Request)
-		JobRow(w http.ResponseWriter, r *http.Request)
-		StatsCards(w http.ResponseWriter, r *http.Request)
-		RecentJobs(w http.ResponseWriter, r *http.Request)
-		DesignTest(w http.ResponseWriter, r *http.Request)
-		JobApplications(w http.ResponseWriter, r *http.Request)
-		ApplicationSendModal(w http.ResponseWriter, r *http.Request)
-		ChannelInfo(w http.ResponseWriter, r *http.Request)
-		CloseModal(w http.ResponseWriter, r *http.Request)
-		ApplicationProgress(w http.ResponseWriter, r *http.Request)
-		ApplicationSuccess(w http.ResponseWriter, r *http.Request)
-		ApplicationError(w http.ResponseWriter, r *http.Request)
-	}
-
-	if h, ok := handler.(pagesHandler); ok {
-		s.router.Get("/", h.Dashboard)
-		s.router.Get("/jobs", h.Jobs)
-		s.router.Get("/jobs/{id}", h.JobDetail)
-		s.router.Get("/settings", h.Settings)
-		s.router.Get("/design-test", h.DesignTest)
-
-		s.router.Get("/partials/jobs/row/{id}", h.JobRow)
-		s.router.Get("/partials/stats-cards", h.StatsCards)
-		s.router.Get("/partials/recent-jobs", h.RecentJobs)
-
-		// Applications partials
-		s.router.Get("/partials/applications", h.JobApplications)
-		s.router.Get("/partials/applications/send", h.ApplicationSendModal)
-		s.router.Get("/partials/applications/channels", h.ChannelInfo)
-		s.router.Get("/partials/close-modal", h.CloseModal)
-		s.router.Get("/partials/application/progress", h.ApplicationProgress)
-		s.router.Get("/partials/application/success", h.ApplicationSuccess)
-		s.router.Get("/partials/application/error", h.ApplicationError)
-	}
 }
 
 // RegisterJobsHandler registers jobs API handlers

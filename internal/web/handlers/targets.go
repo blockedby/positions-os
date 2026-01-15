@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/blockedby/positions-os/internal/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -25,22 +25,16 @@ var validTargetTypes = map[string]bool{
 }
 
 type TargetsHandler struct {
-	repo      TargetsRepository
-	templates *web.TemplateEngine
+	repo TargetsRepository
 }
 
-func NewTargetsHandler(repo TargetsRepository, templates *web.TemplateEngine) *TargetsHandler {
+func NewTargetsHandler(repo TargetsRepository) *TargetsHandler {
 	return &TargetsHandler{
-		repo:      repo,
-		templates: templates,
+		repo: repo,
 	}
 }
 
-// List returns the list of targets.
-// If HTMX request, could return rows? Or typically API returns JSON.
-// Let's support both or stick to one. The plan says API routes.
-// But for UI we need HTML.
-// Let's implement partial rendering if HX-Request is generic, or specific endpoints.
+// List returns the list of targets as JSON
 func (h *TargetsHandler) List(w http.ResponseWriter, r *http.Request) {
 	targets, err := h.repo.List(r.Context())
 	if err != nil {
@@ -48,17 +42,8 @@ func (h *TargetsHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("HX-Request") == "true" {
-		data := map[string]interface{}{
-			"Targets": targets,
-		}
-		// We might need a specific template for just the rows
-		h.templates.RenderContent(w, "targets-list", data)
-		return
-	}
-
-	// JSON fallback
-	// ... implementation ...
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(targets)
 }
 
 func (h *TargetsHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -106,13 +91,9 @@ func (h *TargetsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return the new row HTML
-	if r.Header.Get("HX-Request") == "true" {
-		h.templates.RenderPartial(w, "target-row", map[string]interface{}{"Target": t})
-		return
-	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(t)
 }
 
 func (h *TargetsHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +109,7 @@ func (h *TargetsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK) // Empty response removes element in HTMX if swap is outerHTML
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *TargetsHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -162,10 +143,6 @@ func (h *TargetsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("HX-Request") == "true" {
-		h.templates.RenderPartial(w, "target-row", map[string]interface{}{"Target": t})
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(t)
 }
