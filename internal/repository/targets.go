@@ -18,7 +18,7 @@ type ScrapingTarget struct {
 	URL           string                 `json:"url"`
 	TgAccessHash  *int64                 `json:"tg_access_hash,omitempty"`
 	TgChannelID   *int64                 `json:"tg_channel_id,omitempty"`
-	Metadata      map[string]interface{} `json:"metadata"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
 	LastScrapedAt *time.Time             `json:"last_scraped_at,omitempty"`
 	LastMessageID *int64                 `json:"last_message_id,omitempty"`
 	IsActive      bool                   `json:"is_active"`
