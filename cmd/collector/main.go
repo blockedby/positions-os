@@ -12,12 +12,14 @@ import (
 	"github.com/blockedby/positions-os/internal/config"
 	"github.com/blockedby/positions-os/internal/database"
 	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/migrator"
 	"github.com/blockedby/positions-os/internal/nats"
 	"github.com/blockedby/positions-os/internal/publisher"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/blockedby/positions-os/internal/web"
 	"github.com/blockedby/positions-os/internal/web/handlers"
+	"github.com/blockedby/positions-os/migrations"
 )
 
 func main() {
@@ -33,6 +35,24 @@ func main() {
 	}
 	log := logger.Get()
 	log.Info().Msg("starting unified collector & API service")
+
+	// 2a. Run database migrations
+	log.Info().Msg("running database migrations")
+	m, err := migrator.NewWithFS(migrations.FS)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create migrator")
+	}
+
+	if err := m.Up(context.Background(), cfg.DatabaseURL); err != nil {
+		log.Fatal().Err(err).Msg("failed to run migrations")
+	}
+
+	version, dirty, err := m.Version(context.Background(), cfg.DatabaseURL)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to get migration version")
+	} else {
+		log.Info().Uint("version", version).Bool("dirty", dirty).Msg("migrations complete")
+	}
 
 	// 3. Setup context with graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
