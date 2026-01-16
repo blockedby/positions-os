@@ -38,6 +38,10 @@ func (m *mockJobsRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status st
 	return nil
 }
 
+func (m *mockJobsRepo) BulkDelete(ctx context.Context, ids []uuid.UUID) (int, error) {
+	return len(ids), nil
+}
+
 type mockTargetsRepo struct {
 	targets []repository.ScrapingTarget
 }
