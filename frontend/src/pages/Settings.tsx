@@ -3,6 +3,7 @@ import type { Target, ScrapeRequest } from '@/lib/types'
 import { api } from '@/lib/api'
 import { useWebSocket, useScrapeStatus } from '@/hooks/useWebSocket'
 import { TargetList, TelegramAuth } from '@/components/settings'
+import type { ScrapeOptions } from '@/components/settings'
 import { Card, Button, Spinner } from '@/components/ui'
 
 export default function Settings() {
@@ -12,12 +13,13 @@ export default function Settings() {
   // Enable real-time updates
   useWebSocket({ enabled: true })
 
-  const handleScrape = async (target: Target) => {
+  const handleScrape = async (target: Target, options?: ScrapeOptions) => {
     setScrapeError('')
     try {
       const request: ScrapeRequest = {
         channel: target.url,
-        limit: 100,
+        limit: options?.limit,
+        until: options?.until,
       }
       await api.startScrape(request)
     } catch (err) {

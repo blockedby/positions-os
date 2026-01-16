@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import type { Target } from '@/lib/types'
+import type { Target, TargetMetadata } from '@/lib/types'
 import { Card, Button, Badge, Spinner, type BadgeStatus } from '@/components/ui'
 import { useTargets, useDeleteTarget } from '@/hooks/useTargets'
 import { TargetForm } from './TargetForm'
 
+export interface ScrapeOptions {
+  limit?: number
+  until?: string
+}
+
 export interface TargetListProps {
-  onScrape?: (target: Target) => void
+  onScrape?: (target: Target, options?: ScrapeOptions) => void
 }
 
 const typeToBadge: Record<string, BadgeStatus> = {
@@ -49,6 +54,14 @@ export const TargetList = ({ onScrape }: TargetListProps) => {
   const handleFormSuccess = () => {
     setShowForm(false)
     setEditingTarget(null)
+  }
+
+  const handleScrape = (target: Target) => {
+    const meta = target.metadata as TargetMetadata
+    onScrape?.(target, {
+      limit: meta?.limit,
+      until: meta?.until,
+    })
   }
 
   if (showForm || editingTarget) {
@@ -100,7 +113,7 @@ export const TargetList = ({ onScrape }: TargetListProps) => {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => onScrape?.(target)}
+                  onClick={() => handleScrape(target)}
                   disabled={!target.is_active}
                 >
                   Scrape

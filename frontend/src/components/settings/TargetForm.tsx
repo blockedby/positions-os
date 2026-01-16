@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Target, TargetType, CreateTargetRequest, UpdateTargetRequest } from '@/lib/types'
+import type { Target, TargetType, CreateTargetRequest, UpdateTargetRequest, TargetMetadata } from '@/lib/types'
 import { Input, Select, Button, Card } from '@/components/ui'
 import { useCreateTarget, useUpdateTarget } from '@/hooks/useTargets'
 
@@ -27,6 +27,12 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
   const [url, setUrl] = useState(target?.url || '')
   const [isActive, setIsActive] = useState(target?.is_active ?? true)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [limit, setLimit] = useState<number | ''>(
+    (target?.metadata as TargetMetadata)?.limit || 100
+  )
+  const [until, setUntil] = useState(
+    (target?.metadata as TargetMetadata)?.until || ''
+  )
 
   useEffect(() => {
     if (target) {
@@ -34,6 +40,9 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
       setType(target.type)
       setUrl(target.url)
       setIsActive(target.is_active)
+      const meta = target.metadata as TargetMetadata
+      setLimit(meta?.limit || 100)
+      setUntil(meta?.until || '')
     }
   }, [target])
 
@@ -59,12 +68,21 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
 
     if (!validate()) return
 
+    const metadata: TargetMetadata = {}
+    if (limit !== '' && limit > 0) {
+      metadata.limit = limit
+    }
+    if (until) {
+      metadata.until = until
+    }
+
     try {
       if (isEditing && target) {
         const data: UpdateTargetRequest = {
           name,
           url,
           is_active: isActive,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         }
         await updateTarget.mutateAsync({ id: target.id, data })
       } else {
@@ -73,6 +91,7 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
           type,
           url,
           is_active: isActive,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         }
         await createTarget.mutateAsync(data)
       }
@@ -115,6 +134,27 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
           errorMessage={errors.url}
           helperText={type.startsWith('TG_') ? 'Use @channel_name or full t.me URL' : undefined}
         />
+
+        {type.startsWith('TG_') && (
+          <>
+            <Input
+              label="Message Limit"
+              type="number"
+              placeholder="100"
+              value={limit}
+              onChange={(e) => setLimit(e.target.value ? parseInt(e.target.value, 10) : '')}
+              helperText="Maximum messages to scrape (leave empty for default 100)"
+            />
+
+            <Input
+              label="Until Date"
+              type="date"
+              value={until}
+              onChange={(e) => setUntil(e.target.value)}
+              helperText="Stop scraping at posts older than this date (optional)"
+            />
+          </>
+        )}
 
         <div className="form-checkbox">
           <input
