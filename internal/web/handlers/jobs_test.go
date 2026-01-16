@@ -147,6 +147,11 @@ func TestJobsAPI_UpdateStatus(t *testing.T) {
 	id := uuid.New()
 	status := "INTERESTED"
 
+	// Mock GetByID to return job in ANALYZED status (valid transition to INTERESTED)
+	mockRepo.On("GetByID", mock.Anything, id).Return(&repository.Job{
+		ID:     id,
+		Status: "ANALYZED",
+	}, nil)
 	mockRepo.On("UpdateStatus", mock.Anything, id, status).Return(nil)
 
 	r := chi.NewRouter()
@@ -226,6 +231,38 @@ func TestJobsAPI_PaginationDefault(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
+func TestJobsHandler_UpdateStatus_InvalidTransition(t *testing.T) {
+	mockRepo := new(MockJobsRepository)
+	handler := NewJobsHandler(mockRepo, nil)
+
+	// Job is in RAW status
+	jobID := uuid.New()
+	mockRepo.On("GetByID", mock.Anything, jobID).Return(&repository.Job{
+		ID:     jobID,
+		Status: "RAW",
+	}, nil)
+
+	// Try to transition RAW -> INTERESTED (invalid, must go through ANALYZED)
+	body := `{"status": "INTERESTED"}`
+	req := httptest.NewRequest("PATCH", "/api/v1/jobs/"+jobID.String()+"/status", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add chi context
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", jobID.String())
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+	rr := httptest.NewRecorder()
+	handler.UpdateStatus(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("UpdateStatus() status = %d, want %d", rr.Code, http.StatusBadRequest)
+	}
+	if !strings.Contains(rr.Body.String(), "Invalid status transition") {
+		t.Errorf("UpdateStatus() body = %s, want 'Invalid status transition'", rr.Body.String())
+	}
+}
+
 func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 	mockRepo := new(MockJobsRepository)
 
@@ -238,6 +275,11 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 	id := uuid.New()
 	status := "INTERESTED"
 
+	// Mock GetByID to return job in ANALYZED status (valid transition to INTERESTED)
+	mockRepo.On("GetByID", mock.Anything, id).Return(&repository.Job{
+		ID:     id,
+		Status: "ANALYZED",
+	}, nil)
 	mockRepo.On("UpdateStatus", mock.Anything, id, status).Return(nil)
 
 	// Setup a test server

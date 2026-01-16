@@ -50,6 +50,23 @@ func (h *JobsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get current job to check transition validity
+	job, err := h.repo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if job == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Validate status transition
+	if !job.CanTransitionTo(payload.Status) {
+		http.Error(w, "Invalid status transition", http.StatusBadRequest)
+		return
+	}
+
 	if err := h.repo.UpdateStatus(r.Context(), id, payload.Status); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
