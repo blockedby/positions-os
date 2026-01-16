@@ -33,6 +33,7 @@ task setup                   # Install dev tools (golangci-lint, lefthook)
 task test                    # Run Go tests
 task lint                    # Run golangci-lint
 task e2e                     # Run Playwright E2E tests (requires backend running)
+task e2e-docker              # Run E2E with isolated, ephemeral containers (recommended)
 ```
 
 ### Frontend (in frontend/ directory)
