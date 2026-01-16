@@ -57,3 +57,6 @@ temp/
 *.tmp
 .playwright-mcp-artifacts/
 frontend/test-results/
+
+# worktrees
+.worktrees/
