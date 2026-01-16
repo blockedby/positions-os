@@ -17,7 +17,7 @@ type Job struct {
 	TargetID       uuid.UUID              `json:"target_id"`
 	ExternalID     string                 `json:"external_id"`
 	ContentHash    *string                `json:"content_hash,omitempty"`
-	RawContent     string                 `json:"-"`
+	RawContent     string                 `json:"raw_content"`
 	StructuredData map[string]interface{} `json:"structured_data"`
 	SourceURL      *string                `json:"source_url,omitempty"`
 	SourceDate     *time.Time             `json:"source_date,omitempty"`
