@@ -19,9 +19,9 @@ test.describe('Targets CRUD', () => {
 
     await page.goto('/settings')
 
-    // Should display empty state message
+    // Should display empty state message (actual text: "No targets configured. Add a target to start scraping.")
     await expect(
-      page.getByText(/no targets|no scraping targets|add your first/i)
+      page.getByText(/no targets configured|no scraping targets|add your first/i)
     ).toBeVisible({ timeout: 10000 })
   })
 
@@ -133,13 +133,11 @@ test.describe('Targets CRUD', () => {
     // Try to submit empty form
     await page.getByRole('button', { name: /create|save|submit/i }).click()
 
-    // Should show validation errors or required field indicators
-    // Check for HTML5 validation or custom error messages
-    const nameInput = page.getByLabel(/name/i)
-    const validationMessage = await nameInput.evaluate(
-      (el: HTMLInputElement) => el.validationMessage
-    )
-    expect(validationMessage || '').toBeTruthy()
+    // Should show custom validation errors (TargetForm uses custom validation)
+    // Error messages: "Name is required", "URL is required"
+    await expect(
+      page.getByText(/name is required|url is required|required/i)
+    ).toBeVisible({ timeout: 5000 })
   })
 
   // TG-05: Edit an existing target

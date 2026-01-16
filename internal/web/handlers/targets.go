@@ -155,7 +155,7 @@ func (h *TargetsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // UpdateTargetRequest represents the JSON body for updating a target

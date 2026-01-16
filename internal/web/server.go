@@ -131,6 +131,7 @@ func (s *Server) RegisterTargetsHandler(handler interface{}) {
 	type targetsHandler interface {
 		List(w http.ResponseWriter, r *http.Request)
 		Create(w http.ResponseWriter, r *http.Request)
+		GetByID(w http.ResponseWriter, r *http.Request)
 		Delete(w http.ResponseWriter, r *http.Request)
 		Update(w http.ResponseWriter, r *http.Request)
 	}
@@ -139,6 +140,7 @@ func (s *Server) RegisterTargetsHandler(handler interface{}) {
 		s.router.Route("/api/v1/targets", func(r chi.Router) {
 			r.Get("/", h.List)
 			r.Post("/", h.Create)
+			r.Get("/{id}", h.GetByID)
 			r.Delete("/{id}", h.Delete)
 			r.Put("/{id}", h.Update)
 		})

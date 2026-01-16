@@ -62,11 +62,10 @@ test.describe('API Responses', () => {
     expect(createResponse.status()).toBe(201)
     const created = await createResponse.json()
 
-    // Update the target
+    // Update the target (note: type cannot be changed after creation)
     const updateResponse = await request.put(`${baseURL}/api/v1/targets/${created.id}`, {
       data: {
         name: 'Updated E2E Target',
-        type: 'TG_CHANNEL',
         url: '@e2e_update_test',
         is_active: false,
       },
@@ -139,9 +138,12 @@ test.describe('API Responses', () => {
     expect(response.ok()).toBeTruthy()
 
     const stats = await response.json()
+    // DashboardStats schema: total_jobs, analyzed_jobs, interested_jobs, rejected_jobs, today_jobs, active_targets
     expect(stats).toHaveProperty('total_jobs')
-    expect(stats).toHaveProperty('by_status')
+    expect(stats).toHaveProperty('analyzed_jobs')
+    expect(stats).toHaveProperty('active_targets')
     expect(typeof stats.total_jobs).toBe('number')
+    expect(typeof stats.analyzed_jobs).toBe('number')
   })
 
   // API-07: Jobs endpoint returns paginated response
