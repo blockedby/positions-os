@@ -12,18 +12,18 @@ import (
 
 // ScrapingTarget represents a scraping source
 type ScrapingTarget struct {
-	ID            uuid.UUID
-	Name          string
-	Type          string // TG_CHANNEL, TG_GROUP, TG_FORUM, HH_SEARCH, LINKEDIN_SEARCH
-	URL           string
-	TgAccessHash  *int64
-	TgChannelID   *int64
-	Metadata      map[string]interface{}
-	LastScrapedAt *time.Time
-	LastMessageID *int64
-	IsActive      bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID            uuid.UUID              `json:"id"`
+	Name          string                 `json:"name"`
+	Type          string                 `json:"type"` // TG_CHANNEL, TG_GROUP, TG_FORUM, HH_SEARCH, LINKEDIN_SEARCH
+	URL           string                 `json:"url"`
+	TgAccessHash  *int64                 `json:"tg_access_hash,omitempty"`
+	TgChannelID   *int64                 `json:"tg_channel_id,omitempty"`
+	Metadata      map[string]interface{} `json:"metadata"`
+	LastScrapedAt *time.Time             `json:"last_scraped_at,omitempty"`
+	LastMessageID *int64                 `json:"last_message_id,omitempty"`
+	IsActive      bool                   `json:"is_active"`
+	CreatedAt     time.Time              `json:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at"`
 }
 
 // valid target types
