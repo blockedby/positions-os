@@ -122,7 +122,7 @@ services:
     ports:
       - "3000:80"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -164,9 +164,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.test
     container_name: jhos-frontend-e2e-tests
-    command: ["npx", "playwright", "test", "--reporter=list"]
+    command: ["bun", "playwright", "test", "--reporter=list"]
     environment:
-      BASE_URL: http://collector:3100
+      BASE_URL: http://frontend:80
+      API_BASE_URL: http://collector:3100
     depends_on:
       collector:
         condition: service_started
