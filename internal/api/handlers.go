@@ -64,11 +64,18 @@ func (s *Server) listJobs(c fuego.ContextNoBody) (JobsListResponse, error) {
 		return JobsListResponse{}, fuego.InternalServerError{Detail: err.Error()}
 	}
 
+	// Calculate total pages
+	pages := (total + limit - 1) / limit
+	if pages < 1 {
+		pages = 1
+	}
+
 	return JobsListResponse{
 		Jobs:  JobsFromRepo(jobs),
 		Total: total,
 		Page:  page,
 		Limit: limit,
+		Pages: pages,
 	}, nil
 }
 

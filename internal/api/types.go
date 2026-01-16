@@ -60,6 +60,7 @@ type JobsListResponse struct {
 	Total int           `json:"total" description:"Total number of matching jobs"`
 	Page  int           `json:"page" description:"Current page number"`
 	Limit int           `json:"limit" description:"Items per page"`
+	Pages int           `json:"pages" description:"Total number of pages"`
 }
 
 // JobGetRequest contains path parameters for getting a single job.
