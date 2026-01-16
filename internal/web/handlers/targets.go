@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/blockedby/positions-os/internal/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -27,14 +26,12 @@ var validTargetTypes = map[string]bool{
 }
 
 type TargetsHandler struct {
-	repo      TargetsRepository
-	templates *web.TemplateEngine
+	repo TargetsRepository
 }
 
-func NewTargetsHandler(repo TargetsRepository, templates *web.TemplateEngine) *TargetsHandler {
+func NewTargetsHandler(repo TargetsRepository) *TargetsHandler {
 	return &TargetsHandler{
-		repo:      repo,
-		templates: templates,
+		repo: repo,
 	}
 }
 
@@ -49,14 +46,6 @@ func (h *TargetsHandler) List(w http.ResponseWriter, r *http.Request) {
 	// Ensure we return empty array, not null
 	if targets == nil {
 		targets = []repository.ScrapingTarget{}
-	}
-
-	if r.Header.Get("HX-Request") == "true" {
-		data := map[string]interface{}{
-			"Targets": targets,
-		}
-		h.templates.RenderContent(w, "targets-list", data)
-		return
 	}
 
 	respondJSON(w, http.StatusOK, targets)
@@ -124,12 +113,6 @@ func (h *TargetsHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.repo.Create(r.Context(), t); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	// Return the new row HTML for HTMX
-	if r.Header.Get("HX-Request") == "true" {
-		h.templates.RenderPartial(w, "target-row", map[string]interface{}{"Target": t})
 		return
 	}
 
@@ -238,11 +221,6 @@ func (h *TargetsHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.repo.Update(r.Context(), t); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if r.Header.Get("HX-Request") == "true" {
-		h.templates.RenderPartial(w, "target-row", map[string]interface{}{"Target": t})
 		return
 	}
 

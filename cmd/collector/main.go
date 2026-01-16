@@ -73,20 +73,21 @@ func main() {
 	rangesRepo := repository.NewRangesRepository(db.Pool)
 	statsRepo := repository.NewStatsRepository(db.Pool)
 
-	// 7. Initialize telegram manager
+	// 7. Initialize telegram manager (optional for API-only mode)
+	var tgClient *telegram.Client
 	if cfg.TGApiID == 0 || cfg.TGApiHash == "" {
-		log.Fatal().Msg("TG_API_ID and TG_API_HASH are required")
-	}
+		log.Warn().Msg("TG_API_ID and TG_API_HASH not set, running in API-only mode (Telegram scraping disabled)")
+	} else {
+		tgManager := telegram.NewManager(cfg, db.GORM)
+		if err := tgManager.Init(ctx); err != nil {
+			log.Error().Err(err).Msg("telegram manager init failed")
+			// We continue, status will be Error/Unauthorized
+		}
 
-	tgManager := telegram.NewManager(cfg, db.GORM)
-	if err := tgManager.Init(ctx); err != nil {
-		log.Error().Err(err).Msg("telegram manager init failed")
-		// We continue, status will be Error/Unauthorized
+		// Create the high-level Client wrapper
+		tgClient = telegram.NewClient(tgManager)
+		defer tgClient.Close()
 	}
-
-	// Create the high-level Client wrapper
-	tgClient := telegram.NewClient(tgManager)
-	defer tgClient.Close()
 
 	// 8. Initialize Collector Service & Manager
 	svc := collector.NewService(

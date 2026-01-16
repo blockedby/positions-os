@@ -127,7 +127,7 @@ services:
   # --------------------------------------------------------
   # tests
   # --------------------------------------------------------
-  
+
   integration-tests:
     build:
       context: .
@@ -142,6 +142,33 @@ services:
       INTEGRATION_TEST: "1"
       DATABASE_URL: postgres://${POSTGRES_USER:-jhos}:${POSTGRES_PASSWORD:-jhos_secret}@postgres:5432/${POSTGRES_DB:-jhos}?sslmode=disable
       NATS_URL: nats://nats:4222
+    profiles:
+      - test
+
+  # Frontend unit tests
+  frontend-unit-tests:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    container_name: jhos-frontend-unit-tests
+    command: ["bun", "run", "test"]
+    profiles:
+      - test
+
+  # Frontend e2e tests with Playwright/Chrome
+  frontend-e2e-tests:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    container_name: jhos-frontend-e2e-tests
+    command: ["npx", "playwright", "test", "--reporter=list"]
+    environment:
+      BASE_URL: http://collector:3100
+    depends_on:
+      collector:
+        condition: service_started
+      frontend:
+        condition: service_healthy
     profiles:
       - test
 

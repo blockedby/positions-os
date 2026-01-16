@@ -15,9 +15,6 @@ WORKDIR /root/
 COPY --from=builder /collector .
 # Copy migrations for potential runtime use or inspection
 COPY --from=builder /app/migrations ./migrations
-# Copy Web UI assets
-COPY --from=builder /app/internal/web/templates ./internal/web/templates
-COPY --from=builder /app/static ./static
 
 EXPOSE 3100
 
