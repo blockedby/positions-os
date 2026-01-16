@@ -16,5 +16,7 @@ WORKDIR /root/
 COPY --from=builder /analyzer .
 # Copy prompts required by analyzer
 COPY --from=builder /app/docs/prompts ./docs/prompts
+# Copy migrations for inspection (embedded in binary, but useful for debugging)
+COPY --from=builder /app/migrations ./migrations
 
 CMD ["./analyzer"]

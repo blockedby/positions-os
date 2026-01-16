@@ -42,7 +42,9 @@ services:
       timeout: 5s
       retries: 3
 
-  # database migrations (run with: docker compose run --rm migrate)
+  # DEPRECATED: Migrations now run automatically on collector/analyzer startup.
+  # This service is kept only for manual operations (rollback, force version, etc.)
+  # Usage: docker compose --profile tools run migrate down 1
   migrate:
     image: migrate/migrate:latest
     container_name: jhos-migrate

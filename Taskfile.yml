@@ -16,22 +16,22 @@ tasks:
       - go mod tidy
 
   migrate-up:
-    desc: Run all migrations
+    desc: "Run all migrations (auto-run on service startup)"
     cmds:
       - migrate -path migrations -database "{{.DB_URL}}" up
 
   migrate-down:
-    desc: Rollback last migration
+    desc: "Rollback last migration (dev only)"
     cmds:
       - migrate -path migrations -database "{{.DB_URL}}" down 1
 
   migrate-reset:
-    desc: Rollback all migrations
+    desc: "Rollback all migrations (destroys data)"
     cmds:
       - migrate -path migrations -database "{{.DB_URL}}" down -all
 
   migrate-create:
-    desc: Create new migration (usage: task migrate-create name=create_users)
+    desc: "Create new migration (usage: task migrate-create name=create_users)"
     cmds:
       - migrate create -ext sql -dir migrations -seq {{.name}}
 
@@ -113,7 +113,7 @@ tasks:
       - go run ./cmd/tg-auth/main.go
 
   tg-topics:
-    desc: Run telegram topics lister (usage: task tg-topics channel=@forum)
+    desc: "Run telegram topics lister (usage: task tg-topics channel=@forum)"
     cmds:
       - go run ./cmd/tg-topics/main.go {{.channel}}
 
