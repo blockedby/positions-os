@@ -69,6 +69,7 @@ export const mockInactiveTarget = {
   ...mockTarget,
   id: 'target-2',
   name: 'Inactive Channel',
+  url: '@inactive_channel',
   is_active: false,
 }
 
