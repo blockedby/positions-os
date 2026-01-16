@@ -138,6 +138,11 @@ tasks:
     env:
       BASE_URL: http://localhost:3100
 
+  e2e-docker:
+    desc: Run E2E tests with ephemeral Docker infrastructure
+    cmds:
+      - ./scripts/e2e.sh
+
   e2e-headed:
     desc: Run E2E tests with visible browser
     dir: frontend
