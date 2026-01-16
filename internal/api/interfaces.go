@@ -16,6 +16,7 @@ type JobsRepository interface {
 	List(ctx context.Context, filter repository.JobFilter) ([]*repository.Job, int, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*repository.Job, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
+	BulkDelete(ctx context.Context, ids []uuid.UUID) (int, error)
 }
 
 // TargetsRepository defines the interface for target data access.

@@ -134,6 +134,37 @@ func (s *Server) updateJobStatus(c fuego.ContextWithBody[JobUpdateStatusRequest]
 	return map[string]string{"status": "updated"}, nil
 }
 
+func (s *Server) bulkDeleteJobs(c fuego.ContextWithBody[JobsBulkDeleteRequest]) (JobsBulkDeleteResponse, error) {
+	body, err := c.Body()
+	if err != nil {
+		return JobsBulkDeleteResponse{}, fuego.BadRequestError{Detail: err.Error()}
+	}
+
+	if len(body.IDs) == 0 {
+		return JobsBulkDeleteResponse{}, fuego.BadRequestError{Detail: "No job IDs provided"}
+	}
+
+	if len(body.IDs) > 100 {
+		return JobsBulkDeleteResponse{}, fuego.BadRequestError{Detail: "Cannot delete more than 100 jobs at once"}
+	}
+
+	deleted, err := s.deps.JobsRepo.BulkDelete(c.Context(), body.IDs)
+	if err != nil {
+		return JobsBulkDeleteResponse{}, fuego.InternalServerError{Detail: err.Error()}
+	}
+
+	// Notify WebSocket clients
+	if s.deps.Hub != nil {
+		s.deps.Hub.Broadcast(map[string]interface{}{
+			"type":    "jobs.deleted",
+			"count":   deleted,
+			"job_ids": body.IDs,
+		})
+	}
+
+	return JobsBulkDeleteResponse{Deleted: deleted}, nil
+}
+
 // ============================================================================
 // Targets Handlers
 // ============================================================================

@@ -390,3 +390,18 @@ func (r *JobsRepository) UpdateStructuredData(ctx context.Context, id uuid.UUID,
 	}
 	return nil
 }
+
+// BulkDelete removes multiple jobs by their IDs.
+func (r *JobsRepository) BulkDelete(ctx context.Context, ids []uuid.UUID) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	query := `DELETE FROM jobs WHERE id = ANY($1)`
+	result, err := r.pool.Exec(ctx, query, ids)
+	if err != nil {
+		return 0, fmt.Errorf("bulk delete jobs: %w", err)
+	}
+
+	return int(result.RowsAffected()), nil
+}

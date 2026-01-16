@@ -112,6 +112,11 @@ func (s *Server) registerRoutes() {
 		option.Description("Updates the status of a job"),
 	)
 
+	fuego.Delete(jobsGroup, "/", s.bulkDeleteJobs,
+		option.Summary("Bulk delete jobs"),
+		option.Description("Delete multiple jobs by their IDs (max 100)"),
+	)
+
 	// Targets API
 	targetsGroup := fuego.Group(s.fuego, "/api/v1/targets",
 		option.Tags("Targets"),

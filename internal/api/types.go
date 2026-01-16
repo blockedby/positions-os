@@ -74,6 +74,16 @@ type JobUpdateStatusRequest struct {
 	Status string    `json:"status" validate:"required,oneof=RAW ANALYZED INTERESTED REJECTED TAILORED SENT RESPONDED" description:"New job status"`
 }
 
+// JobsBulkDeleteRequest contains the request body for bulk deleting jobs.
+type JobsBulkDeleteRequest struct {
+	IDs []uuid.UUID `json:"ids" validate:"required,min=1,max=100" description:"Job IDs to delete (max 100)"`
+}
+
+// JobsBulkDeleteResponse contains the response after bulk deleting jobs.
+type JobsBulkDeleteResponse struct {
+	Deleted int `json:"deleted" description:"Number of jobs deleted"`
+}
+
 // ============================================================================
 // Targets Types
 // ============================================================================
