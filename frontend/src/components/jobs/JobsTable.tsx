@@ -9,6 +9,9 @@ export interface JobsTableProps {
   selectedJobId?: string
   onJobClick?: (job: Job) => void
   onPageChange?: (page: number) => void
+  selectionMode?: boolean
+  selectedIds?: Set<string>
+  onSelectionChange?: (ids: Set<string>) => void
 }
 
 export const JobsTable = ({
@@ -17,6 +20,9 @@ export const JobsTable = ({
   selectedJobId,
   onJobClick,
   onPageChange,
+  selectionMode = false,
+  selectedIds = new Set(),
+  onSelectionChange,
 }: JobsTableProps) => {
   if (isLoading) {
     return <JobsTableSkeleton />
@@ -30,11 +36,48 @@ export const JobsTable = ({
     )
   }
 
+  const allSelected = data.jobs.length > 0 &&
+    data.jobs.every((job) => selectedIds.has(job.id))
+
+  const handleSelectAll = (checked: boolean) => {
+    if (!data?.jobs || !onSelectionChange) return
+    if (checked) {
+      const newIds = new Set(selectedIds)
+      data.jobs.forEach((job) => newIds.add(job.id))
+      onSelectionChange(newIds)
+    } else {
+      const newIds = new Set(selectedIds)
+      data.jobs.forEach((job) => newIds.delete(job.id))
+      onSelectionChange(newIds)
+    }
+  }
+
+  const handleRowSelect = (jobId: string, checked: boolean) => {
+    if (!onSelectionChange) return
+    const newIds = new Set(selectedIds)
+    if (checked) {
+      newIds.add(jobId)
+    } else {
+      newIds.delete(jobId)
+    }
+    onSelectionChange(newIds)
+  }
+
   return (
     <div className="jobs-table-container">
       <table className="jobs-table">
         <thead>
           <tr>
+            {selectionMode && (
+              <th className="job-col-checkbox">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  aria-label="Select all jobs on page"
+                />
+              </th>
+            )}
             <th>Job</th>
             <th>Salary</th>
             <th>Technologies</th>
@@ -49,6 +92,9 @@ export const JobsTable = ({
               job={job}
               onClick={onJobClick}
               isSelected={selectedJobId === job.id}
+              showCheckbox={selectionMode}
+              isChecked={selectedIds.has(job.id)}
+              onCheckChange={(checked) => handleRowSelect(job.id, checked)}
             />
           ))}
         </tbody>

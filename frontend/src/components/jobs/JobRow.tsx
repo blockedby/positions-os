@@ -5,6 +5,9 @@ export interface JobRowProps {
   job: Job
   onClick?: (job: Job) => void
   isSelected?: boolean
+  isChecked?: boolean
+  onCheckChange?: (checked: boolean) => void
+  showCheckbox?: boolean
 }
 
 const statusToBadge: Record<JobStatus, BadgeStatus> = {
@@ -50,7 +53,14 @@ const formatDate = (dateStr: string): string => {
   })
 }
 
-export const JobRow = ({ job, onClick, isSelected = false }: JobRowProps) => {
+export const JobRow = ({
+  job,
+  onClick,
+  isSelected = false,
+  isChecked,
+  onCheckChange,
+  showCheckbox,
+}: JobRowProps) => {
   const title = job.structured_data?.title || 'Untitled'
   const company = job.structured_data?.company || '-'
   const technologies = job.structured_data?.technologies || []
@@ -68,6 +78,16 @@ export const JobRow = ({ job, onClick, isSelected = false }: JobRowProps) => {
         }
       }}
     >
+      {showCheckbox && (
+        <td className="job-row-checkbox" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={(e) => onCheckChange?.(e.target.checked)}
+            aria-label={`Select ${title}`}
+          />
+        </td>
+      )}
       <td className="job-title-cell">
         <div className="job-title">{title}</div>
         <div className="job-company text-muted text-xs">{company}</div>

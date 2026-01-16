@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Job, JobsQuery } from '@/lib/types'
-import { useJobs } from '@/hooks/useJobs'
+import { useJobs, useBulkDeleteJobs } from '@/hooks/useJobs'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { FilterBar, JobsTable, JobDetail } from '@/components/jobs'
+import { Button } from '@/components/ui'
 
 export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -16,8 +17,11 @@ export default function Jobs() {
   const [selectedJobId, setSelectedJobId] = useState<string | undefined>(
     searchParams.get('id') || undefined
   )
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const { data, isLoading } = useJobs(filters)
+  const bulkDelete = useBulkDeleteJobs()
 
   // Enable real-time updates
   useWebSocket({ enabled: true })
@@ -48,6 +52,30 @@ export default function Jobs() {
     setFilters({ ...filters, page })
   }
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+
+    const confirmed = window.confirm(
+      `Delete ${selectedIds.size} job(s)? This cannot be undone.`
+    )
+    if (!confirmed) return
+
+    try {
+      await bulkDelete.mutateAsync(Array.from(selectedIds))
+      setSelectedIds(new Set())
+      setSelectionMode(false)
+    } catch (error) {
+      console.error('Failed to delete jobs:', error)
+    }
+  }
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode)
+    if (selectionMode) {
+      setSelectedIds(new Set())
+    }
+  }
+
   return (
     <div className="jobs-page">
       <div className="jobs-header">
@@ -59,6 +87,27 @@ export default function Jobs() {
 
       <FilterBar onFilter={handleFilter} />
 
+      <div className="jobs-actions">
+        <Button
+          variant={selectionMode ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={toggleSelectionMode}
+        >
+          {selectionMode ? 'Cancel' : 'Select'}
+        </Button>
+
+        {selectionMode && selectedIds.size > 0 && (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleBulkDelete}
+            loading={bulkDelete.isPending}
+          >
+            Delete ({selectedIds.size})
+          </Button>
+        )}
+      </div>
+
       <div className="jobs-content">
         <div className={`jobs-list ${selectedJobId ? 'jobs-list-with-detail' : ''}`}>
           <JobsTable
@@ -67,6 +116,9 @@ export default function Jobs() {
             selectedJobId={selectedJobId}
             onJobClick={handleJobClick}
             onPageChange={handlePageChange}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
           />
         </div>
 

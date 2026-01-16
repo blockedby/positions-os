@@ -57,6 +57,14 @@ export interface Job {
   analyzed_at?: string | null
 }
 
+export interface BulkDeleteRequest {
+  ids: string[]
+}
+
+export interface BulkDeleteResponse {
+  deleted: number
+}
+
 // ============================================================================
 // Target Types
 // ============================================================================

@@ -12,6 +12,7 @@ import type {
   ApiError,
   AuthStatusResponse,
   StartQRResponse,
+  BulkDeleteResponse,
 } from './types'
 
 // ============================================================================
@@ -112,6 +113,16 @@ const api = {
       },
       body: JSON.stringify(data),
     }).then(handleResponse<Job>)
+  },
+
+  bulkDeleteJobs(ids: string[]): Promise<BulkDeleteResponse> {
+    return fetch(`${API_BASE}/jobs`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids }),
+    }).then(handleResponse<BulkDeleteResponse>)
   },
 
   // ========================================================================
