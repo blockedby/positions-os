@@ -1,0 +1,104 @@
+# docker-compose.e2e.yml
+# ============================================================
+# Ephemeral E2E test infrastructure
+# Usage: docker compose -f docker-compose.e2e.yml up --abort-on-container-exit
+# ============================================================
+
+services:
+  # ------------------------------------------------------------
+  # Ephemeral PostgreSQL with RAM-based storage
+  # ------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: jhos-e2e-postgres
+    environment:
+      POSTGRES_USER: e2e_user
+      POSTGRES_PASSWORD: e2e_pass
+      POSTGRES_DB: e2e_db
+    tmpfs:
+      - /var/lib/postgresql/data:size=256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e_user -d e2e_db"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  # ------------------------------------------------------------
+  # Ephemeral NATS (no persistence needed for tests)
+  # ------------------------------------------------------------
+  nats:
+    image: nats:2.10-alpine
+    container_name: jhos-e2e-nats
+    command: ["--jetstream"]
+    healthcheck:
+      test: ["CMD", "nats-server", "--help"]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+
+  # ------------------------------------------------------------
+  # Collector (Go backend) - runs migrations on startup
+  # ------------------------------------------------------------
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jhos-e2e-collector
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://e2e_user:e2e_pass@postgres:5432/e2e_db?sslmode=disable
+      NATS_URL: nats://nats:4222
+      HTTP_PORT: 3100
+      LOG_LEVEL: warn
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3100/api/v1/stats"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # ------------------------------------------------------------
+  # Frontend (nginx serving React SPA)
+  # ------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: jhos-e2e-frontend
+    depends_on:
+      collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  # ------------------------------------------------------------
+  # E2E Test Runner (Playwright)
+  # ------------------------------------------------------------
+  e2e-runner:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    container_name: jhos-e2e-runner
+    command: ["bun", "playwright", "test", "--reporter=list"]
+    environment:
+      BASE_URL: http://frontend:80
+      API_BASE_URL: http://collector:3100
+      # Skip backend check in global-setup (we use depends_on)
+      SKIP_BACKEND_CHECK: "1"
+    depends_on:
+      frontend:
+        condition: service_healthy
+    volumes:
+      # Mount test results for viewing after run
+      - ./frontend/test-results:/app/test-results
+      - ./frontend/playwright-report:/app/playwright-report
+
+networks:
+  default:
+    name: jhos-e2e-network
