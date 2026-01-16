@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -55,8 +58,15 @@ func (s *Server) setupMiddleware() {
 }
 
 func (s *Server) setupRoutes() {
-	// Static files (for PDF templates)
+	// SPA static files serving
 	if s.config.StaticDir != "" {
+		distDir := s.config.StaticDir + "/dist"
+
+		// Serve assets directory
+		assetsFS := http.FileServer(http.Dir(distDir + "/assets"))
+		s.router.Handle("/assets/*", http.StripPrefix("/assets/", assetsFS))
+
+		// Also keep legacy static serving for PDF templates
 		fileServer := http.FileServer(http.Dir(s.config.StaticDir))
 		s.router.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 	}
@@ -227,4 +237,36 @@ func (s *Server) RegisterDispatcherHandler(handler interface{}) {
 // Router returns the underlying Chi router for external route mounting.
 func (s *Server) Router() *chi.Mux {
 	return s.router
+}
+
+// SetupSPAFallback adds SPA fallback routing. Call this after all API routes are registered.
+func (s *Server) SetupSPAFallback() {
+	if s.config.StaticDir == "" {
+		return
+	}
+
+	distDir := filepath.Join(s.config.StaticDir, "dist")
+	indexPath := filepath.Join(distDir, "index.html")
+
+	// Check if index.html exists
+	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
+		return
+	}
+
+	// Serve index.html for SPA routes
+	s.router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		// Only serve index.html for non-API, non-asset routes
+		path := r.URL.Path
+		if strings.HasPrefix(path, "/api/") ||
+			strings.HasPrefix(path, "/assets/") ||
+			strings.HasPrefix(path, "/static/") ||
+			path == "/ws" ||
+			path == "/health" {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Serve index.html for SPA routes
+		http.ServeFile(w, r, indexPath)
+	})
 }

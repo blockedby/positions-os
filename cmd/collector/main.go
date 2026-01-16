@@ -150,6 +150,9 @@ func main() {
 	// Mount OpenAPI documentation routes on the main router
 	apiServer.MountDocsOn(server.Router(), apiCfg.Title, apiCfg.Description)
 
+	// Setup SPA fallback (must be last, after all routes are registered)
+	server.SetupSPAFallback()
+
 	// 14. Start Server
 	log.Info().Int("port", cfg.HTTPPort).Msg("starting API server")
 	go func() {

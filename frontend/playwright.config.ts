@@ -40,8 +40,8 @@ export default defineConfig({
     navigationTimeout: 30000,
   },
 
-  // Test timeout
-  timeout: 60000,
+  // Test timeout (15 seconds per test)
+  timeout: 15000,
 
   // Expect timeout
   expect: {
