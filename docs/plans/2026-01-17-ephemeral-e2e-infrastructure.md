@@ -338,7 +338,7 @@ git commit -m "docs: add ephemeral E2E test documentation"
 ---
 
 ### Task 6: Remove Old E2E Service from Main docker-compose.yml (Optional)
-
+no, keep it for now
 **Files:**
 - Modify: `docker-compose.yml:163-179`
 
@@ -348,7 +348,7 @@ Options:
 - **Keep**: Developers can still run `docker-compose up frontend-e2e-tests` for quick iteration
 - **Remove**: Single source of truth for E2E tests
 
-Recommendation: Keep for now, add deprecation comment.
+Recommendation: Keep for now, add deprecation comment. -- yes
 
 **Step 2: Add deprecation notice**
 
