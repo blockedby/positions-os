@@ -240,7 +240,10 @@ describe('TargetList', () => {
       const scrapeButton = screen.getByRole('button', { name: /scrape/i })
       await userEvent.click(scrapeButton)
 
-      expect(onScrape).toHaveBeenCalledWith(mockTarget)
+      expect(onScrape).toHaveBeenCalledWith(mockTarget, {
+        limit: undefined,
+        until: undefined,
+      })
     })
 
     it('should disable scrape button for inactive targets', () => {

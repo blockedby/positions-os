@@ -140,6 +140,7 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
             <Input
               label="Message Limit"
               type="number"
+              min={1}
               placeholder="100"
               value={limit}
               onChange={(e) => setLimit(e.target.value ? parseInt(e.target.value, 10) : '')}
