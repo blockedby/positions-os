@@ -56,3 +56,4 @@ tmp/
 temp/
 *.tmp
 .playwright-mcp-artifacts/
+frontend/test-results/
