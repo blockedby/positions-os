@@ -116,3 +116,94 @@ tasks:
     desc: Run telegram topics lister (usage: task tg-topics channel=@forum)
     cmds:
       - go run ./cmd/tg-topics/main.go {{.channel}}
+
+  # ==========================================================================
+  # E2E Test Tasks
+  # ==========================================================================
+
+  e2e-setup:
+    desc: Install Playwright and browsers
+    dir: frontend
+    cmds:
+      - bun add -D @playwright/test
+      - bunx playwright install chromium
+    status:
+      - test -d node_modules/@playwright
+
+  e2e:
+    desc: Run all E2E tests (requires backend running)
+    dir: frontend
+    cmds:
+      - bunx playwright test
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-headed:
+    desc: Run E2E tests with visible browser
+    dir: frontend
+    cmds:
+      - bunx playwright test --headed
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-ui:
+    desc: Open Playwright UI mode for interactive testing
+    dir: frontend
+    cmds:
+      - bunx playwright test --ui
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-debug:
+    desc: Run E2E tests in debug mode
+    dir: frontend
+    cmds:
+      - bunx playwright test --debug
+    env:
+      BASE_URL: http://localhost:3100
+      PWDEBUG: '1'
+
+  e2e-websocket:
+    desc: Run only WebSocket stability tests
+    dir: frontend
+    cmds:
+      - bunx playwright test websocket.spec.ts
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-targets:
+    desc: Run only Targets CRUD tests
+    dir: frontend
+    cmds:
+      - bunx playwright test targets.spec.ts
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-api:
+    desc: Run only API tests
+    dir: frontend
+    cmds:
+      - bunx playwright test api.spec.ts
+    env:
+      BASE_URL: http://localhost:3100
+
+  e2e-report:
+    desc: Open last E2E test report in browser
+    dir: frontend
+    cmds:
+      - bunx playwright show-report
+
+  e2e-clean:
+    desc: Clean test artifacts (reports, screenshots, videos)
+    dir: frontend
+    cmds:
+      - rm -rf playwright-report test-results
+
+  e2e-ci:
+    desc: Run E2E tests in CI mode
+    dir: frontend
+    cmds:
+      - bunx playwright test --reporter=github,html
+    env:
+      BASE_URL: http://localhost:3100
+      CI: 'true'

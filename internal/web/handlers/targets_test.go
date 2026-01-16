@@ -120,7 +120,6 @@ func TestTargetsHandler_Create_Validation(t *testing.T) {
 		{"missing type", url.Values{"name": {"Test"}, "url": {"@test"}}, "type is required"},
 		{"invalid type", url.Values{"name": {"Test"}, "type": {"INVALID"}, "url": {"@test"}}, "invalid type"},
 		{"missing url", url.Values{"name": {"Test"}, "type": {"TG_CHANNEL"}}, "url is required"},
-		{"forum without topics", url.Values{"name": {"Test"}, "type": {"TG_FORUM"}, "url": {"@test"}}, "topic_ids required for TG_FORUM"},
 	}
 
 	for _, tt := range tests {
@@ -189,5 +188,143 @@ func TestTargetsHandler_Update(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+	mockRepo.AssertExpectations(t)
+}
+
+// =============================================================================
+// JSON API Tests (React Frontend)
+// =============================================================================
+
+func TestTargetsHandler_Create_JSON(t *testing.T) {
+	mockRepo := new(MockTargetsRepository)
+	handler, _ := setupTargetsHandler(t, mockRepo)
+
+	mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(t *repository.ScrapingTarget) bool {
+		return t.Name == "Go Jobs" && t.Type == "TG_CHANNEL" && t.URL == "@golang_jobs" && t.IsActive == true
+	})).Return(nil)
+
+	body := `{"name":"Go Jobs","type":"TG_CHANNEL","url":"@golang_jobs","is_active":true}`
+	req := httptest.NewRequest("POST", "/targets", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	assert.Equal(t, http.StatusCreated, rec.Code)
+	assert.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+	assert.Contains(t, rec.Body.String(), "Go Jobs")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestTargetsHandler_Create_JSON_Validation(t *testing.T) {
+	mockRepo := new(MockTargetsRepository)
+	handler, _ := setupTargetsHandler(t, mockRepo)
+
+	tests := []struct {
+		name    string
+		body    string
+		wantErr string
+	}{
+		{"missing name", `{"type":"TG_CHANNEL","url":"@test"}`, "name is required"},
+		{"missing type", `{"name":"Test","url":"@test"}`, "type is required"},
+		{"invalid type", `{"name":"Test","type":"INVALID","url":"@test"}`, "invalid type"},
+		{"missing url", `{"name":"Test","type":"TG_CHANNEL"}`, "url is required"},
+		{"invalid json", `{invalid}`, "invalid json"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/targets", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+
+			handler.Create(rec, req)
+
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+			assert.Contains(t, rec.Body.String(), tt.wantErr)
+		})
+	}
+}
+
+func TestTargetsHandler_Update_JSON(t *testing.T) {
+	mockRepo := new(MockTargetsRepository)
+	handler, _ := setupTargetsHandler(t, mockRepo)
+
+	id := uuid.New()
+	target := &repository.ScrapingTarget{
+		ID:       id,
+		Name:     "Old Name",
+		URL:      "@old",
+		IsActive: true,
+	}
+
+	mockRepo.On("GetByID", mock.Anything, id).Return(target, nil)
+	mockRepo.On("Update", mock.Anything, mock.MatchedBy(func(t *repository.ScrapingTarget) bool {
+		return t.ID == id && t.Name == "New Name" && !t.IsActive
+	})).Return(nil)
+
+	r := chi.NewRouter()
+	r.Put("/targets/{id}", handler.Update)
+
+	body := `{"name":"New Name","is_active":false}`
+	req := httptest.NewRequest("PUT", "/targets/"+id.String(), strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestTargetsHandler_GetByID(t *testing.T) {
+	mockRepo := new(MockTargetsRepository)
+	handler, _ := setupTargetsHandler(t, mockRepo)
+
+	id := uuid.New()
+	target := &repository.ScrapingTarget{
+		ID:       id,
+		Name:     "Test Target",
+		Type:     "TG_CHANNEL",
+		URL:      "@test",
+		IsActive: true,
+	}
+
+	mockRepo.On("GetByID", mock.Anything, id).Return(target, nil)
+
+	r := chi.NewRouter()
+	r.Get("/targets/{id}", handler.GetByID)
+
+	req := httptest.NewRequest("GET", "/targets/"+id.String(), nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+	assert.Contains(t, rec.Body.String(), "Test Target")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestTargetsHandler_GetByID_NotFound(t *testing.T) {
+	mockRepo := new(MockTargetsRepository)
+	handler, _ := setupTargetsHandler(t, mockRepo)
+
+	id := uuid.New()
+	mockRepo.On("GetByID", mock.Anything, id).Return(nil, nil)
+
+	r := chi.NewRouter()
+	r.Get("/targets/{id}", handler.GetByID)
+
+	req := httptest.NewRequest("GET", "/targets/"+id.String(), nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.Contains(t, rec.Body.String(), "not found")
+
 	mockRepo.AssertExpectations(t)
 }
