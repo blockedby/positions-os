@@ -21,8 +21,8 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for navigation
-    baseURL: process.env.BASE_URL || 'http://localhost:3100',
+    // Base URL for navigation (React frontend on port 3000, API on 3100)
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
     // Capture trace on first retry
     trace: 'on-first-retry',

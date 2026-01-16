@@ -92,6 +92,11 @@ func (h *JobsHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ensure we return empty array, not null
+	if jobs == nil {
+		jobs = []*repository.Job{}
+	}
+
 	resp := struct {
 		Jobs  []*repository.Job `json:"jobs"`
 		Total int               `json:"total"`

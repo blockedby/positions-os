@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test'
 
+// API tests hit the backend directly at port 3100
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3100'
+
 test.describe('API Responses', () => {
   // API-01: Targets endpoint returns empty array, not null
-  test('API-01: should return empty array for empty targets list', async ({ request, baseURL }) => {
-    const response = await request.get(`${baseURL}/api/v1/targets`)
+  test('API-01: should return empty array for empty targets list', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v1/targets`)
 
     expect(response.ok()).toBeTruthy()
     expect(response.status()).toBe(200)
@@ -20,7 +23,7 @@ test.describe('API Responses', () => {
   })
 
   // API-02: Create target via JSON API
-  test('API-02: should create target via JSON API', async ({ request, baseURL }) => {
+  test('API-02: should create target via JSON API', async ({ request }) => {
     const newTarget = {
       name: `E2E Test Target ${Date.now()}`,
       type: 'TG_CHANNEL',
@@ -28,7 +31,7 @@ test.describe('API Responses', () => {
       is_active: true,
     }
 
-    const response = await request.post(`${baseURL}/api/v1/targets`, {
+    const response = await request.post(`${API_BASE_URL}/api/v1/targets`, {
       data: newTarget,
     })
 
@@ -43,14 +46,14 @@ test.describe('API Responses', () => {
 
     // Cleanup: Delete the created target
     if (body.id) {
-      await request.delete(`${baseURL}/api/v1/targets/${body.id}`)
+      await request.delete(`${API_BASE_URL}/api/v1/targets/${body.id}`)
     }
   })
 
   // API-03: Update target via JSON API
-  test('API-03: should update target via JSON API', async ({ request, baseURL }) => {
+  test('API-03: should update target via JSON API', async ({ request }) => {
     // First, create a target
-    const createResponse = await request.post(`${baseURL}/api/v1/targets`, {
+    const createResponse = await request.post(`${API_BASE_URL}/api/v1/targets`, {
       data: {
         name: `E2E Update Test ${Date.now()}`,
         type: 'TG_CHANNEL',
@@ -63,7 +66,7 @@ test.describe('API Responses', () => {
     const created = await createResponse.json()
 
     // Update the target (note: type cannot be changed after creation)
-    const updateResponse = await request.put(`${baseURL}/api/v1/targets/${created.id}`, {
+    const updateResponse = await request.put(`${API_BASE_URL}/api/v1/targets/${created.id}`, {
       data: {
         name: 'Updated E2E Target',
         url: '@e2e_update_test',
@@ -77,13 +80,13 @@ test.describe('API Responses', () => {
     expect(updated.is_active).toBe(false)
 
     // Cleanup
-    await request.delete(`${baseURL}/api/v1/targets/${created.id}`)
+    await request.delete(`${API_BASE_URL}/api/v1/targets/${created.id}`)
   })
 
   // API-04: Get single target by ID
-  test('API-04: should get target by ID', async ({ request, baseURL }) => {
+  test('API-04: should get target by ID', async ({ request }) => {
     // First, create a target
-    const createResponse = await request.post(`${baseURL}/api/v1/targets`, {
+    const createResponse = await request.post(`${API_BASE_URL}/api/v1/targets`, {
       data: {
         name: `E2E GetById Test ${Date.now()}`,
         type: 'TG_CHANNEL',
@@ -96,7 +99,7 @@ test.describe('API Responses', () => {
     const created = await createResponse.json()
 
     // Get by ID
-    const getResponse = await request.get(`${baseURL}/api/v1/targets/${created.id}`)
+    const getResponse = await request.get(`${API_BASE_URL}/api/v1/targets/${created.id}`)
     expect(getResponse.ok()).toBeTruthy()
 
     const target = await getResponse.json()
@@ -104,13 +107,13 @@ test.describe('API Responses', () => {
     expect(target.name).toBe(created.name)
 
     // Cleanup
-    await request.delete(`${baseURL}/api/v1/targets/${created.id}`)
+    await request.delete(`${API_BASE_URL}/api/v1/targets/${created.id}`)
   })
 
   // API-05: Delete target returns 204
-  test('API-05: should delete target and return 204', async ({ request, baseURL }) => {
+  test('API-05: should delete target and return 204', async ({ request }) => {
     // First, create a target
-    const createResponse = await request.post(`${baseURL}/api/v1/targets`, {
+    const createResponse = await request.post(`${API_BASE_URL}/api/v1/targets`, {
       data: {
         name: `E2E Delete Test ${Date.now()}`,
         type: 'TG_CHANNEL',
@@ -123,17 +126,17 @@ test.describe('API Responses', () => {
     const created = await createResponse.json()
 
     // Delete the target
-    const deleteResponse = await request.delete(`${baseURL}/api/v1/targets/${created.id}`)
+    const deleteResponse = await request.delete(`${API_BASE_URL}/api/v1/targets/${created.id}`)
     expect(deleteResponse.status()).toBe(204)
 
     // Verify it's gone
-    const getResponse = await request.get(`${baseURL}/api/v1/targets/${created.id}`)
+    const getResponse = await request.get(`${API_BASE_URL}/api/v1/targets/${created.id}`)
     expect(getResponse.status()).toBe(404)
   })
 
   // API-06: Stats endpoint returns valid response
-  test('API-06: should return stats with correct structure', async ({ request, baseURL }) => {
-    const response = await request.get(`${baseURL}/api/v1/stats`)
+  test('API-06: should return stats with correct structure', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v1/stats`)
 
     expect(response.ok()).toBeTruthy()
 
@@ -147,8 +150,8 @@ test.describe('API Responses', () => {
   })
 
   // API-07: Jobs endpoint returns paginated response
-  test('API-07: should return jobs with pagination', async ({ request, baseURL }) => {
-    const response = await request.get(`${baseURL}/api/v1/jobs`)
+  test('API-07: should return jobs with pagination', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v1/jobs`)
 
     expect(response.ok()).toBeTruthy()
 
@@ -166,16 +169,16 @@ test.describe('API Responses', () => {
   })
 
   // API-08: Content-Type headers are correct
-  test('API-08: should return correct Content-Type header', async ({ request, baseURL }) => {
-    const response = await request.get(`${baseURL}/api/v1/targets`)
+  test('API-08: should return correct Content-Type header', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v1/targets`)
 
     const contentType = response.headers()['content-type']
     expect(contentType).toContain('application/json')
   })
 
   // API-09: Invalid JSON returns appropriate error
-  test('API-09: should handle invalid request body gracefully', async ({ request, baseURL }) => {
-    const response = await request.post(`${baseURL}/api/v1/targets`, {
+  test('API-09: should handle invalid request body gracefully', async ({ request }) => {
+    const response = await request.post(`${API_BASE_URL}/api/v1/targets`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -188,8 +191,8 @@ test.describe('API Responses', () => {
   })
 
   // API-10: Non-existent endpoint returns 404
-  test('API-10: should return 404 for non-existent endpoint', async ({ request, baseURL }) => {
-    const response = await request.get(`${baseURL}/api/v1/nonexistent`)
+  test('API-10: should return 404 for non-existent endpoint', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v1/nonexistent`)
 
     expect(response.status()).toBe(404)
   })
