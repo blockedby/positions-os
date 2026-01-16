@@ -197,7 +197,7 @@ func TestTargetsHandler_Update(t *testing.T) {
 
 func TestTargetsHandler_Create_JSON(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(t *repository.ScrapingTarget) bool {
 		return t.Name == "Go Jobs" && t.Type == "TG_CHANNEL" && t.URL == "@golang_jobs" && t.IsActive == true
@@ -219,7 +219,7 @@ func TestTargetsHandler_Create_JSON(t *testing.T) {
 
 func TestTargetsHandler_Create_JSON_Validation(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	tests := []struct {
 		name    string
@@ -249,7 +249,7 @@ func TestTargetsHandler_Create_JSON_Validation(t *testing.T) {
 
 func TestTargetsHandler_Update_JSON(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
 	target := &repository.ScrapingTarget{
@@ -282,7 +282,7 @@ func TestTargetsHandler_Update_JSON(t *testing.T) {
 
 func TestTargetsHandler_GetByID(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
 	target := &repository.ScrapingTarget{
@@ -311,7 +311,7 @@ func TestTargetsHandler_GetByID(t *testing.T) {
 
 func TestTargetsHandler_GetByID_NotFound(t *testing.T) {
 	mockRepo := new(MockTargetsRepository)
-	handler, _ := setupTargetsHandler(t, mockRepo)
+	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
 	mockRepo.On("GetByID", mock.Anything, id).Return(nil, nil)
