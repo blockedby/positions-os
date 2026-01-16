@@ -3,10 +3,17 @@ package analyzer
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
 
 	"github.com/blockedby/positions-os/internal/nats"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+)
+
+const (
+	maxRetries    = 3
+	retryInterval = 500 * time.Millisecond
 )
 
 // Consumer handles consuming NATS events
@@ -51,11 +58,32 @@ func (c *Consumer) handleMessage(data []byte) error {
 	// or we want to ensure independent execution. However, nats library Consume usually uses closure.
 	ctx := context.Background()
 
-	if err := c.processor.ProcessJob(ctx, event.JobID); err != nil {
-		c.log.Error().Str("job_id", event.JobID.String()).Err(err).Msg("failed to process job")
-		// Return error to Nak and trigger retry
-		return err
+	var lastErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		lastErr = c.processor.ProcessJob(ctx, event.JobID)
+		if lastErr == nil {
+			return nil
+		}
+
+		// If not found, retry after delay (race condition with DB commit)
+		if strings.Contains(lastErr.Error(), "not found") {
+			if attempt < maxRetries {
+				c.log.Debug().
+					Str("job_id", event.JobID.String()).
+					Int("attempt", attempt).
+					Msg("job not found, retrying after delay")
+				time.Sleep(retryInterval)
+				continue
+			}
+			// Max retries reached, skip the message
+			c.log.Warn().Str("job_id", event.JobID.String()).Msg("job not found after retries, skipping")
+			return nil
+		}
+
+		// Other error - don't retry internally, let NATS handle it
+		break
 	}
 
-	return nil
+	c.log.Error().Str("job_id", event.JobID.String()).Err(lastErr).Msg("failed to process job")
+	return lastErr
 }
