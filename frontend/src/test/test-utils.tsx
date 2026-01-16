@@ -1,6 +1,7 @@
 import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, type RenderHookOptions } from '@testing-library/react'
+import { WebSocketProvider } from '@/contexts/WebSocketContext'
 
 /**
  * Creates a fresh QueryClient for testing with disabled retries and caching
@@ -32,6 +33,21 @@ export function createWrapper(queryClient?: QueryClient) {
 }
 
 /**
+ * Creates a wrapper component with QueryClientProvider and WebSocketProvider for testing hooks
+ */
+export function createWrapperWithWebSocket(queryClient?: QueryClient) {
+  const client = queryClient ?? createTestQueryClient()
+
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={client}>
+        <WebSocketProvider>{children}</WebSocketProvider>
+      </QueryClientProvider>
+    )
+  }
+}
+
+/**
  * Renders a hook with QueryClientProvider wrapper
  */
 export function renderHookWithClient<TResult, TProps>(
@@ -40,6 +56,22 @@ export function renderHookWithClient<TResult, TProps>(
 ) {
   const { queryClient, ...restOptions } = options ?? {}
   const wrapper = createWrapper(queryClient)
+
+  return renderHook(hook, {
+    wrapper,
+    ...restOptions,
+  })
+}
+
+/**
+ * Renders a hook with QueryClientProvider and WebSocketProvider wrapper
+ */
+export function renderHookWithWebSocket<TResult, TProps>(
+  hook: (props: TProps) => TResult,
+  options?: Omit<RenderHookOptions<TProps>, 'wrapper'> & { queryClient?: QueryClient }
+) {
+  const { queryClient, ...restOptions } = options ?? {}
+  const wrapper = createWrapperWithWebSocket(queryClient)
 
   return renderHook(hook, {
     wrapper,

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act } from '@testing-library/react'
 import { useWebSocket, useScrapeStatus } from './useWebSocket'
-import { renderHookWithClient, createTestQueryClient } from '@/test/test-utils'
+import { renderHookWithWebSocket, createTestQueryClient } from '@/test/test-utils'
 
 // ============================================================================
 // WebSocket Mock
@@ -77,12 +77,13 @@ describe('useWebSocket', () => {
     vi.useRealTimers()
   })
 
-  describe('connection management', () => {
-    it('should connect to WebSocket when enabled', async () => {
-      const { result } = renderHookWithClient(() => useWebSocket({ enabled: true }))
+  describe('connection state', () => {
+    it('should return isConnected from context', async () => {
+      const { result } = renderHookWithWebSocket(() => useWebSocket({ enabled: true }))
 
       const ws = MockWebSocket.getLastInstance()
       expect(ws).toBeDefined()
+      expect(result.current.isConnected).toBe(false)
 
       act(() => {
         ws?.simulateOpen()
@@ -91,35 +92,8 @@ describe('useWebSocket', () => {
       expect(result.current.isConnected).toBe(true)
     })
 
-    it('should not connect when disabled', () => {
-      renderHookWithClient(() => useWebSocket({ enabled: false }))
-
-      const ws = MockWebSocket.getLastInstance()
-      expect(ws).toBeUndefined()
-    })
-
-    it('should default to enabled', () => {
-      renderHookWithClient(() => useWebSocket())
-
-      const ws = MockWebSocket.getLastInstance()
-      expect(ws).toBeDefined()
-    })
-
-    it('should disconnect on unmount', async () => {
-      const { unmount } = renderHookWithClient(() => useWebSocket({ enabled: true }))
-
-      const ws = MockWebSocket.getLastInstance()
-      act(() => {
-        ws?.simulateOpen()
-      })
-
-      unmount()
-
-      expect(ws?.close).toHaveBeenCalledWith(1000, 'Client closing')
-    })
-
     it('should update isConnected on close', () => {
-      const { result } = renderHookWithClient(() => useWebSocket({ enabled: true }))
+      const { result } = renderHookWithWebSocket(() => useWebSocket({ enabled: true }))
 
       const ws = MockWebSocket.getLastInstance()
 
@@ -141,7 +115,7 @@ describe('useWebSocket', () => {
     it('should call onEvent callback with parsed event', () => {
       const onEvent = vi.fn()
 
-      renderHookWithClient(() => useWebSocket({ enabled: true, onEvent }))
+      renderHookWithWebSocket(() => useWebSocket({ enabled: true, onEvent }))
 
       const ws = MockWebSocket.getLastInstance()
 
@@ -161,34 +135,52 @@ describe('useWebSocket', () => {
       })
     })
 
-    it('should handle invalid JSON gracefully', () => {
+    it('should not subscribe when disabled', () => {
       const onEvent = vi.fn()
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-      renderHookWithClient(() => useWebSocket({ enabled: true, onEvent }))
+      renderHookWithWebSocket(() => useWebSocket({ enabled: false, onEvent }))
 
       const ws = MockWebSocket.getLastInstance()
 
       act(() => {
         ws?.simulateOpen()
-        // Simulate invalid JSON message
-        ws?.onmessage?.(new MessageEvent('message', { data: 'not json' }))
+        ws?.simulateMessage({
+          type: 'job.new',
+          job_id: 'job-1',
+          timestamp: '2026-01-15T10:00:00Z',
+        })
       })
 
       expect(onEvent).not.toHaveBeenCalled()
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to parse WebSocket event:', expect.any(Error))
+    })
 
-      consoleSpy.mockRestore()
+    it('should not subscribe when no onEvent provided', () => {
+      // This should work without errors
+      const { result } = renderHookWithWebSocket(() => useWebSocket({ enabled: true }))
+
+      const ws = MockWebSocket.getLastInstance()
+
+      act(() => {
+        ws?.simulateOpen()
+        ws?.simulateMessage({
+          type: 'job.new',
+          job_id: 'job-1',
+          timestamp: '2026-01-15T10:00:00Z',
+        })
+      })
+
+      // Should still have isConnected
+      expect(result.current.isConnected).toBe(true)
     })
   })
 
-  describe('query invalidation', () => {
+  describe('query invalidation (via context)', () => {
     it('should invalidate jobs queries on job.new event', () => {
       const queryClient = createTestQueryClient()
       queryClient.setQueryData(['jobs'], { jobs: [] })
       queryClient.setQueryData(['stats'], {})
 
-      renderHookWithClient(() => useWebSocket({ enabled: true }), { queryClient })
+      renderHookWithWebSocket(() => useWebSocket({ enabled: true }), { queryClient })
 
       const ws = MockWebSocket.getLastInstance()
 
@@ -210,7 +202,7 @@ describe('useWebSocket', () => {
       queryClient.setQueryData(['targets'], [])
       queryClient.setQueryData(['stats'], {})
 
-      renderHookWithClient(() => useWebSocket({ enabled: true }), { queryClient })
+      renderHookWithWebSocket(() => useWebSocket({ enabled: true }), { queryClient })
 
       const ws = MockWebSocket.getLastInstance()
 
@@ -233,7 +225,7 @@ describe('useWebSocket', () => {
       queryClient.setQueryData(['jobs'], { jobs: [] })
       queryClient.setQueryData(['stats'], {})
 
-      renderHookWithClient(() => useWebSocket({ enabled: true }), { queryClient })
+      renderHookWithWebSocket(() => useWebSocket({ enabled: true }), { queryClient })
 
       const ws = MockWebSocket.getLastInstance()
 
@@ -256,7 +248,7 @@ describe('useWebSocket', () => {
       const queryClient = createTestQueryClient()
       queryClient.setQueryData(['stats'], {})
 
-      renderHookWithClient(() => useWebSocket({ enabled: true }), { queryClient })
+      renderHookWithWebSocket(() => useWebSocket({ enabled: true }), { queryClient })
 
       const ws = MockWebSocket.getLastInstance()
 
@@ -270,29 +262,6 @@ describe('useWebSocket', () => {
       })
 
       expect(queryClient.getQueryState(['stats'])?.isInvalidated).toBe(true)
-    })
-
-    it('should not invalidate queries on auth events', () => {
-      const queryClient = createTestQueryClient()
-      queryClient.setQueryData(['stats'], {})
-      queryClient.setQueryData(['jobs'], { jobs: [] })
-
-      renderHookWithClient(() => useWebSocket({ enabled: true }), { queryClient })
-
-      const ws = MockWebSocket.getLastInstance()
-
-      act(() => {
-        ws?.simulateOpen()
-        ws?.simulateMessage({
-          type: 'tg_qr',
-          url: 'https://telegram.org/qr/...',
-          timestamp: '2026-01-15T10:00:00Z',
-        })
-      })
-
-      // Stats and jobs should NOT be invalidated
-      expect(queryClient.getQueryState(['stats'])?.isInvalidated).toBeFalsy()
-      expect(queryClient.getQueryState(['jobs'])?.isInvalidated).toBeFalsy()
     })
   })
 })
@@ -310,7 +279,7 @@ describe('useScrapeStatus', () => {
   })
 
   it('should start with default values', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     expect(result.current.isScraping).toBe(false)
     expect(result.current.target).toBeUndefined()
@@ -318,7 +287,7 @@ describe('useScrapeStatus', () => {
   })
 
   it('should update state on scrape.started event', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     const ws = MockWebSocket.getLastInstance()
 
@@ -338,7 +307,7 @@ describe('useScrapeStatus', () => {
   })
 
   it('should update progress on scrape.progress event', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     const ws = MockWebSocket.getLastInstance()
 
@@ -368,7 +337,7 @@ describe('useScrapeStatus', () => {
   })
 
   it('should reset state on scrape.completed event', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     const ws = MockWebSocket.getLastInstance()
 
@@ -395,7 +364,7 @@ describe('useScrapeStatus', () => {
   })
 
   it('should reset state on scrape.failed event', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     const ws = MockWebSocket.getLastInstance()
 
@@ -420,7 +389,7 @@ describe('useScrapeStatus', () => {
   })
 
   it('should reset state on scrape.cancelled event', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     const ws = MockWebSocket.getLastInstance()
 
@@ -443,15 +412,28 @@ describe('useScrapeStatus', () => {
     expect(result.current.target).toBeUndefined()
   })
 
-  it('should not connect when disabled', () => {
-    renderHookWithClient(() => useScrapeStatus(false))
+  it('should not subscribe when disabled', () => {
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus(false))
 
     const ws = MockWebSocket.getLastInstance()
-    expect(ws).toBeUndefined()
+
+    act(() => {
+      ws?.simulateOpen()
+      ws?.simulateMessage({
+        type: 'scrape.started',
+        target: '@go_jobs',
+        limit: 100,
+        timestamp: '2026-01-15T10:00:00Z',
+      })
+    })
+
+    // State should remain at defaults since subscription is disabled
+    expect(result.current.isScraping).toBe(false)
+    expect(result.current.target).toBeUndefined()
   })
 
   it('should expose isConnected state', () => {
-    const { result } = renderHookWithClient(() => useScrapeStatus())
+    const { result } = renderHookWithWebSocket(() => useScrapeStatus())
 
     expect(result.current.isConnected).toBe(false)
 
