@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/blockedby/positions-os/internal/logger"
@@ -269,7 +270,7 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 
 			// create job
 			s.log.Debug().Int64("msg_id", msgID).Msg("scrape: creating job for message")
-			if err := s.createJob(ctx, target.ID, &msg); err != nil {
+			if err := s.createJob(ctx, target.ID, target.URL, &msg); err != nil {
 				s.log.Error().Err(err).Int("message_id", msg.ID).Msg("scrape: failed to create job")
 				result.Errors++
 				continue
@@ -385,14 +386,16 @@ func (s *Service) getOrCreateTarget(ctx context.Context, opts ScrapeOptions) (*r
 }
 
 // createJob creates a new job from a telegram message
-func (s *Service) createJob(ctx context.Context, targetID uuid.UUID, msg *telegram.Message) error {
+func (s *Service) createJob(ctx context.Context, targetID uuid.UUID, channelURL string, msg *telegram.Message) error {
 	msgID := int64(msg.ID)
 	sourceDate := msg.Date
+	sourceURL := buildSourceURL(channelURL, msg.ID)
 
 	job := &repository.Job{
 		TargetID:    targetID,
 		ExternalID:  strconv.FormatInt(msgID, 10),
 		RawContent:  msg.Text,
+		SourceURL:   &sourceURL,
 		SourceDate:  &sourceDate,
 		TgMessageID: &msgID,
 		Status:      "RAW",
@@ -438,4 +441,19 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// buildSourceURL creates a Telegram message URL from channel and message ID
+func buildSourceURL(channelURL string, messageID int) string {
+	// Extract channel name from various formats
+	channel := channelURL
+
+	// Remove @ prefix
+	channel = strings.TrimPrefix(channel, "@")
+
+	// Remove https://t.me/ prefix
+	channel = strings.TrimPrefix(channel, "https://t.me/")
+	channel = strings.TrimPrefix(channel, "http://t.me/")
+
+	return fmt.Sprintf("https://t.me/%s/%d", channel, messageID)
 }
