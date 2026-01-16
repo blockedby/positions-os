@@ -55,3 +55,53 @@ func TestJob_ComputeHash(t *testing.T) {
 		t.Error("different content should produce different hash")
 	}
 }
+
+// test valid status transitions
+func TestJob_CanTransitionTo(t *testing.T) {
+	tests := []struct {
+		from string
+		to   string
+		want bool
+	}{
+		// Valid transitions from RAW
+		{"RAW", "ANALYZED", true},
+		{"RAW", "REJECTED", true},
+
+		// Invalid: can't skip ANALYZED to go to INTERESTED
+		{"RAW", "INTERESTED", false},
+		{"RAW", "TAILORED", false},
+		{"RAW", "SENT", false},
+		{"RAW", "RESPONDED", false},
+
+		// Valid transitions from ANALYZED
+		{"ANALYZED", "INTERESTED", true},
+		{"ANALYZED", "REJECTED", true},
+
+		// Valid transitions from INTERESTED
+		{"INTERESTED", "TAILORED", true},
+		{"INTERESTED", "REJECTED", true},
+
+		// Valid transitions from TAILORED
+		{"TAILORED", "SENT", true},
+		{"TAILORED", "REJECTED", true},
+
+		// Valid transitions from SENT
+		{"SENT", "RESPONDED", true},
+		{"SENT", "REJECTED", true},
+
+		// Always allow re-analysis
+		{"ANALYZED", "RAW", true},
+		{"INTERESTED", "RAW", true},
+		{"REJECTED", "RAW", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.from+"->"+tt.to, func(t *testing.T) {
+			job := Job{Status: tt.from}
+			got := job.CanTransitionTo(tt.to)
+			if got != tt.want {
+				t.Errorf("CanTransitionTo(%s) = %v, want %v", tt.to, got, tt.want)
+			}
+		})
+	}
+}

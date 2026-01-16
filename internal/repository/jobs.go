@@ -56,6 +56,50 @@ func (j *Job) IsNew() bool {
 	return j.Status == "RAW"
 }
 
+// validTransitions defines allowed status transitions
+// Key is "from" status, value is set of allowed "to" statuses
+var validTransitions = map[string]map[string]bool{
+	"RAW": {
+		"ANALYZED": true,
+		"REJECTED": true,
+	},
+	"ANALYZED": {
+		"INTERESTED": true,
+		"REJECTED":   true,
+		"RAW":        true, // allow re-analysis
+	},
+	"INTERESTED": {
+		"TAILORED": true,
+		"REJECTED": true,
+		"RAW":      true,
+	},
+	"REJECTED": {
+		"RAW": true, // allow re-processing
+	},
+	"TAILORED": {
+		"SENT":     true,
+		"REJECTED": true,
+		"RAW":      true,
+	},
+	"SENT": {
+		"RESPONDED": true,
+		"REJECTED":  true,
+		"RAW":       true,
+	},
+	"RESPONDED": {
+		"RAW": true,
+	},
+}
+
+// CanTransitionTo checks if status transition is valid
+func (j *Job) CanTransitionTo(newStatus string) bool {
+	allowed, ok := validTransitions[j.Status]
+	if !ok {
+		return false
+	}
+	return allowed[newStatus]
+}
+
 // Title returns job title from structured data or fallback
 func (j *Job) Title() string {
 	if title, ok := j.StructuredData["title"].(string); ok && title != "" {
