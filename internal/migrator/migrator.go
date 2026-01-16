@@ -6,11 +6,24 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
+
+// convertToPgx5URL converts a postgres:// URL to pgx5:// for golang-migrate.
+// The pgx/v5 driver requires the pgx5:// scheme.
+func convertToPgx5URL(databaseURL string) string {
+	if strings.HasPrefix(databaseURL, "postgres://") {
+		return "pgx5://" + strings.TrimPrefix(databaseURL, "postgres://")
+	}
+	if strings.HasPrefix(databaseURL, "postgresql://") {
+		return "pgx5://" + strings.TrimPrefix(databaseURL, "postgresql://")
+	}
+	return databaseURL
+}
 
 // Migrator manages database migrations.
 type Migrator struct {
@@ -41,8 +54,8 @@ func (m *Migrator) Up(ctx context.Context, databaseURL string) error {
 		return fmt.Errorf("create iofs source: %w", err)
 	}
 
-	// Create migrate instance
-	migrator, err := migrate.NewWithSourceInstance("iofs", sourceDriver, databaseURL)
+	// Create migrate instance (convert URL scheme for pgx/v5 driver)
+	migrator, err := migrate.NewWithSourceInstance("iofs", sourceDriver, convertToPgx5URL(databaseURL))
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
@@ -71,7 +84,8 @@ func (m *Migrator) Version(ctx context.Context, databaseURL string) (version uin
 		return 0, false, fmt.Errorf("create iofs source: %w", err)
 	}
 
-	migrator, err := migrate.NewWithSourceInstance("iofs", sourceDriver, databaseURL)
+	// Convert URL scheme for pgx/v5 driver
+	migrator, err := migrate.NewWithSourceInstance("iofs", sourceDriver, convertToPgx5URL(databaseURL))
 	if err != nil {
 		return 0, false, fmt.Errorf("create migrator: %w", err)
 	}

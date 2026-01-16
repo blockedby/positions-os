@@ -52,3 +52,39 @@ func TestMigrator_Up_EmptyURL(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "empty")
 }
+
+func TestConvertToPgx5URL(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "postgres scheme",
+			input:    "postgres://user:pass@localhost:5432/db?sslmode=disable",
+			expected: "pgx5://user:pass@localhost:5432/db?sslmode=disable",
+		},
+		{
+			name:     "postgresql scheme",
+			input:    "postgresql://user:pass@localhost:5432/db",
+			expected: "pgx5://user:pass@localhost:5432/db",
+		},
+		{
+			name:     "already pgx5",
+			input:    "pgx5://user:pass@localhost:5432/db",
+			expected: "pgx5://user:pass@localhost:5432/db",
+		},
+		{
+			name:     "other scheme unchanged",
+			input:    "mysql://user:pass@localhost:3306/db",
+			expected: "mysql://user:pass@localhost:3306/db",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := convertToPgx5URL(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
