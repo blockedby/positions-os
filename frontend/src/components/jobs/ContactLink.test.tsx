@@ -49,5 +49,19 @@ describe('ContactLink', () => {
       const link = screen.getByRole('link')
       expect(link).toHaveAttribute('href', 'https://t.me/username')
     })
+
+    it('should detect E.164 formatted phone number', () => {
+      render(<ContactLink contact="+14155550123" />)
+
+      const link = screen.getByRole('link')
+      expect(link).toHaveAttribute('href', 'tel:+14155550123')
+    })
+
+    it('should reject phone number without + prefix', () => {
+      render(<ContactLink contact="14155550123" />)
+
+      // Should fall through to unknown (plain text)
+      expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    })
   })
 })

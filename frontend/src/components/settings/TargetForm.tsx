@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Target, TargetType, CreateTargetRequest, UpdateTargetRequest, TargetMetadata } from '@/lib/types'
 import { Input, Select, Button, Card } from '@/components/ui'
 import { useCreateTarget, useUpdateTarget } from '@/hooks/useTargets'
@@ -34,17 +34,7 @@ export const TargetForm = ({ target, onCancel, onSuccess }: TargetFormProps) => 
     (target?.metadata as TargetMetadata)?.until || ''
   )
 
-  useEffect(() => {
-    if (target) {
-      setName(target.name)
-      setType(target.type)
-      setUrl(target.url)
-      setIsActive(target.is_active)
-      const meta = target.metadata as TargetMetadata
-      setLimit(meta?.limit || 100)
-      setUntil(meta?.until || '')
-    }
-  }, [target])
+  // Note: Parent component should use key={target?.id} to reset form when editing different target
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}

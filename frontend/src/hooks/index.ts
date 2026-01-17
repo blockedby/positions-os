@@ -16,3 +16,4 @@ export { useStats, useStatsCards } from './useStats'
 
 // WebSocket hooks
 export { useWebSocket, useScrapeStatus } from './useWebSocket'
+export { useWebSocketContext } from './useWebSocketContext'

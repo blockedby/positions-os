@@ -37,7 +37,7 @@ class MockWebSocket {
   }
 
   send = vi.fn()
-  close = vi.fn((_code?: number, _reason?: string) => {
+  close = vi.fn(() => {
     this.readyState = MockWebSocket.CLOSED
   })
 

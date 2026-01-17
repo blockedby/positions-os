@@ -13,7 +13,8 @@ const detectContactType = (contact: string): ContactType => {
   if (trimmed.startsWith('@')) {
     return 'telegram'
   }
-  if (/^\+?[\d\s-]{7,}$/.test(trimmed)) {
+  // E.164 format: + followed by 1-15 digits, first digit must be 1-9
+  if (/^\+[1-9]\d{1,14}$/.test(trimmed)) {
     return 'phone'
   }
   if (trimmed.includes('@') && !trimmed.startsWith('@') && trimmed.includes('.')) {

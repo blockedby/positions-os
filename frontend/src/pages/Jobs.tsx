@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Job, JobsQuery } from '@/lib/types'
 import { useBulkDeleteJobs } from '@/hooks/useJobs'
@@ -12,9 +12,8 @@ export default function Jobs() {
     sort_by: 'created_at',
     sort_order: 'desc',
   })
-  const [selectedJobId, setSelectedJobId] = useState<string | undefined>(
-    searchParams.get('id') || undefined
-  )
+  // Derive selectedJobId directly from URL - no useState needed
+  const selectedJobId = searchParams.get('id') || undefined
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -23,28 +22,29 @@ export default function Jobs() {
   // Enable real-time updates
   useWebSocket({ enabled: true })
 
-  // Sync URL params with selected job
-  useEffect(() => {
-    const urlJobId = searchParams.get('id')
-    if (urlJobId !== selectedJobId) {
-      setSelectedJobId(urlJobId || undefined)
-    }
-  }, [searchParams, selectedJobId])
-
   const handleJobClick = (job: Job) => {
-    setSelectedJobId(job.id)
     setSearchParams({ id: job.id })
   }
 
   const handleCloseDetail = () => {
-    setSelectedJobId(undefined)
     setSearchParams({})
   }
 
   const handleFilter = (newFilters: JobsQuery) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { page, limit, ...rest } = newFilters
-    setFilters((prev) => ({ ...prev, ...rest }))
+    // Omit page/limit as they're handled by infinite scroll
+    const { status, sort_by, sort_order, search, technologies, salary_min, salary_max, is_remote } =
+      newFilters
+    setFilters((prev) => ({
+      ...prev,
+      status,
+      sort_by,
+      sort_order,
+      search,
+      technologies,
+      salary_min,
+      salary_max,
+      is_remote,
+    }))
   }
 
   const handleBulkDelete = async () => {
