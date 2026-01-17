@@ -209,3 +209,15 @@ func (r *RangesRepository) NewFilter(ctx context.Context, targetID uuid.UUID) (*
 	}
 	return NewMessageIDFilter(pr.MinMsgID, pr.MaxMsgID), nil
 }
+
+// NewSmartFilter creates a smart message filter that checks both range AND job existence
+func (r *RangesRepository) NewSmartFilter(ctx context.Context, targetID uuid.UUID, existingJobIDs []int64) (*SmartMessageFilter, error) {
+	pr, err := r.GetRange(ctx, targetID)
+	if err != nil {
+		return nil, err
+	}
+	if pr == nil {
+		return NewSmartMessageFilter(0, 0, existingJobIDs), nil
+	}
+	return NewSmartMessageFilter(pr.MinMsgID, pr.MaxMsgID, existingJobIDs), nil
+}

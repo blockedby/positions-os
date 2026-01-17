@@ -1,7 +1,10 @@
 package repository
 
 import (
+	"context"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 // test message id filter for deduplication using min/max range
@@ -322,4 +325,11 @@ func TestSmartMessageFilter_FilterNew(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestRangesRepository_NewSmartFilter_Interface verifies the method signature exists
+func TestRangesRepository_NewSmartFilter_Interface(t *testing.T) {
+	var _ interface {
+		NewSmartFilter(ctx context.Context, targetID uuid.UUID, existingJobIDs []int64) (*SmartMessageFilter, error)
+	} = (*RangesRepository)(nil)
 }
