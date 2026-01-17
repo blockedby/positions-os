@@ -707,15 +707,47 @@ Expected: Find the CSS file with badge styles
 }
 ```
 
-**Step 3: Visual verification**
+**Step 3: Write E2E test for badge rendering**
 
-Run: `cd frontend && bun dev`
-Open browser and verify badge colors appear correctly
+```typescript
+// File: frontend/e2e/application-workflow.spec.ts (add to existing or create)
+import { test, expect } from '@playwright/test'
 
-**Step 4: Commit**
+test.describe('Badge Status Rendering', () => {
+  test('renders TAILORED badge with correct styling', async ({ page }) => {
+    await page.route('**/api/v1/jobs*', (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          jobs: [{
+            id: 'test-job-1',
+            status: 'TAILORED',
+            structured_data: { title: 'Go Developer' },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }],
+          total: 1, page: 1, limit: 10, pages: 1,
+        }),
+      })
+    })
+
+    await page.goto('/jobs')
+    const badge = page.locator('.badge-tailored')
+    await expect(badge).toBeVisible()
+  })
+})
+```
+
+**Step 4: Run E2E test**
+
+Run: `task e2e -- --grep "Badge Status Rendering"`
+Expected: PASS
+
+**Step 5: Commit**
 
 ```bash
-git add frontend/src/
+git add frontend/src/ frontend/e2e/
 git commit -m "feat: add CSS for tailored/sent/responded badges"
 ```
 
@@ -750,15 +782,34 @@ const statusOptions = [
 ]
 ```
 
-**Step 3: Verify in browser**
+**Step 3: E2E test for FilterBar status options**
 
-Run: `cd frontend && bun dev`
-Navigate to Jobs page, check status dropdown includes "Ready to Send"
+```typescript
+// File: frontend/e2e/application-workflow.spec.ts (add to existing)
+test('FilterBar includes Ready to Send status option', async ({ page }) => {
+  await page.route('**/api/v1/jobs*', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ jobs: [], total: 0, page: 1, limit: 10, pages: 0 }),
+    })
+  })
 
-**Step 4: Commit**
+  await page.goto('/jobs')
+  const statusSelect = page.locator('select').filter({ hasText: /status/i })
+  await expect(statusSelect.locator('option[value="TAILORED_APPROVED"]')).toBeAttached()
+})
+```
+
+**Step 4: Run E2E test**
+
+Run: `task e2e -- --grep "FilterBar includes"`
+Expected: PASS
+
+**Step 5: Commit**
 
 ```bash
-git add frontend/src/components/jobs/FilterBar.tsx
+git add frontend/src/components/jobs/FilterBar.tsx frontend/e2e/
 git commit -m "feat: add TAILORED_APPROVED to status filter"
 ```
 
@@ -937,12 +988,7 @@ const prepareApplication = usePrepareJob()
 )}
 ```
 
-**Step 3: Visual verification**
-
-Run: `cd frontend && bun dev`
-Navigate to an INTERESTED job, verify "Prepare Application" button appears
-
-**Step 4: Commit**
+**Step 3: Commit (E2E test in Task 3.4 will verify)**
 
 ```bash
 git add frontend/src/components/jobs/JobDetail.tsx
@@ -1173,15 +1219,54 @@ export interface Stats {
 },
 ```
 
-**Step 3: Verify in browser**
+**Step 3: E2E test for dashboard stats**
 
-Run: `cd frontend && bun dev`
-Navigate to Dashboard, verify new stats appear
+```typescript
+// File: frontend/e2e/application-workflow.spec.ts (add to existing)
+test('Dashboard shows tailored/sent/responded stats', async ({ page }) => {
+  await page.route('**/api/v1/stats', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        total_jobs: 100,
+        analyzed_jobs: 80,
+        interested_jobs: 20,
+        rejected_jobs: 10,
+        tailored_jobs: 5,
+        sent_jobs: 3,
+        responded_jobs: 1,
+        today_jobs: 5,
+        active_targets: 2,
+      }),
+    })
+  })
 
-**Step 4: Commit**
+  await page.route('**/api/v1/jobs*', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ jobs: [], total: 0, page: 1, limit: 8, pages: 0 }),
+    })
+  })
+
+  await page.goto('/')
+  await expect(page.getByText('Tailored')).toBeVisible()
+  await expect(page.getByText('5').first()).toBeVisible()  // tailored count
+  await expect(page.getByText('Sent')).toBeVisible()
+  await expect(page.getByText('Responded')).toBeVisible()
+})
+```
+
+**Step 4: Run E2E test**
+
+Run: `task e2e -- --grep "Dashboard shows tailored"`
+Expected: PASS
+
+**Step 5: Commit**
 
 ```bash
-git add frontend/src/lib/types.ts frontend/src/hooks/useStats.ts
+git add frontend/src/lib/types.ts frontend/src/hooks/useStats.ts frontend/e2e/
 git commit -m "feat: add tailored/sent/responded stats to frontend"
 ```
 
@@ -1212,6 +1297,58 @@ git commit -m "feat: add tailored/sent/responded stats to frontend"
 - Task 6.6: Create SendApplicationModal Component
 - Task 6.7: Integrate Send Modal in JobDetail
 - Task 6.8: E2E Test for Send Flow
+
+---
+
+## Regression Testing
+
+**Run after completing each phase to catch regressions early.**
+
+### Backend Regression
+
+```bash
+# Run all Go tests
+task test
+
+# Run linter
+task lint
+```
+
+Expected: All tests pass, no lint errors.
+
+### Frontend Regression
+
+```bash
+cd frontend
+
+# Unit tests
+bunx vitest --run
+
+# Lint
+bun lint
+
+# Type check
+bunx tsc --noEmit
+```
+
+Expected: All tests pass, no lint/type errors.
+
+### E2E Regression
+
+```bash
+# Run full E2E suite with isolated containers
+task e2e-docker
+```
+
+Expected: All existing E2E tests pass (targets, api, websocket, filters).
+
+### Fix Any Regressions Before Proceeding
+
+If any test fails:
+1. Identify the breaking change
+2. Fix the issue (update test or fix implementation)
+3. Re-run the full regression suite
+4. Only proceed to next phase when all tests pass
 
 ---
 
