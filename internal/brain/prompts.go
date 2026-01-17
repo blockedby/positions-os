@@ -24,11 +24,7 @@ func LoadResumePrompt() (string, string, error) {
 		return "", "", fmt.Errorf("read resume prompt: %w", err)
 	}
 
-	system, user, err := parseXMLPrompt(string(data))
-	if err != nil {
-		return "", "", fmt.Errorf("parse resume prompt: %w", err)
-	}
-
+	system, user := parseXMLPrompt(string(data))
 	return system, user, nil
 }
 
@@ -40,26 +36,22 @@ func LoadCoverPrompt() (string, map[string]string, error) {
 		return "", nil, fmt.Errorf("read cover prompt: %w", err)
 	}
 
-	system, templates, err := parseXMLPromptWithTemplates(string(data))
-	if err != nil {
-		return "", nil, fmt.Errorf("parse cover prompt: %w", err)
-	}
-
+	system, templates := parseXMLPromptWithTemplates(string(data))
 	return system, templates, nil
 }
 
 // parseXMLPrompt extracts system and user prompts from XML.
-func parseXMLPrompt(xml string) (string, string, error) {
+func parseXMLPrompt(xml string) (string, string) {
 	system := extractTagContent(xml, "system")
 	user := extractTagContent(xml, "user")
-	return system, user, nil
+	return system, user
 }
 
 // parseXMLPromptWithTemplates extracts system prompt and templates from XML.
-func parseXMLPromptWithTemplates(xml string) (string, map[string]string, error) {
+func parseXMLPromptWithTemplates(xml string) (string, map[string]string) {
 	system := extractTagContent(xml, "system")
 	templates := extractTemplates(xml)
-	return system, templates, nil
+	return system, templates
 }
 
 // extractTagContent extracts text content from an XML tag (multiline).
