@@ -65,7 +65,7 @@ func main() {
 	})
 	if err != nil {
 		fmt.Printf("error resolving username: %v\n", err)
-		os.Exit(1)
+		os.Exit(1) //nolint:gocritic // os.Exit in main is acceptable pattern
 	}
 
 	if len(resolved.Chats) == 0 {

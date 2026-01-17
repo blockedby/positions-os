@@ -175,7 +175,7 @@ func authWithQR(apiID int, apiHash string) {
 	if err != nil {
 		if err == context.Canceled {
 			fmt.Println("\n\nAuthentication cancelled by user.")
-			os.Exit(0)
+			os.Exit(0) //nolint:gocritic // os.Exit in main is acceptable pattern
 		}
 		fmt.Printf("\nError during QR login: %v\n", err)
 		os.Exit(1)

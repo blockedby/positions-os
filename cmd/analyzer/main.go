@@ -69,7 +69,7 @@ func main() {
 	// Database
 	db, err := database.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to database")
+		log.Fatal().Err(err).Msg("failed to connect to database") //nolint:gocritic // log.Fatal in main is acceptable pattern
 	}
 	defer db.Close()
 	log.Info().Msg("connected to database")
