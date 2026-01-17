@@ -13,7 +13,8 @@ class MockWebSocket {
   onerror: ((event: Event) => void) | null = null
   readyState = WebSocket.CONNECTING
 
-  constructor(_url: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(url: string) {
     MockWebSocket.instances.push(this)
     // Simulate async connection
     setTimeout(() => {
@@ -22,11 +23,11 @@ class MockWebSocket {
     }, 0)
   }
 
-  close(_code?: number, _reason?: string) {
+  close() {
     this.readyState = WebSocket.CLOSED
   }
 
-  send(_data: string) {}
+  send() {}
 
   static reset() {
     MockWebSocket.instances = []
