@@ -85,8 +85,18 @@ func TestJob_CanTransitionTo(t *testing.T) {
 		{"INTERESTED", "REJECTED", true},
 
 		// Valid transitions from TAILORED
-		{"TAILORED", "SENT", true},
+		{"TAILORED", "TAILORED_APPROVED", true}, // NEW: can approve after tailoring
+		{"TAILORED", "SENT", false},             // UPDATE: can't skip approval
 		{"TAILORED", "REJECTED", true},
+
+		// Valid transitions from TAILORED_APPROVED (NEW)
+		{"TAILORED_APPROVED", "SENT", true},
+		{"TAILORED_APPROVED", "REJECTED", true},
+		{"TAILORED_APPROVED", "RAW", true},
+
+		// Invalid: can't skip TAILORED_APPROVED
+		{"TAILORED", "RESPONDED", false},
+		{"TAILORED_APPROVED", "RESPONDED", false},
 
 		// Valid transitions from SENT
 		{"SENT", "RESPONDED", true},

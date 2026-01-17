@@ -77,6 +77,11 @@ var validTransitions = map[string]map[string]bool{
 		"RAW": true, // allow re-processing
 	},
 	"TAILORED": {
+		"TAILORED_APPROVED": true,
+		"REJECTED":          true,
+		"RAW":               true,
+	},
+	"TAILORED_APPROVED": {
 		"SENT":     true,
 		"REJECTED": true,
 		"RAW":      true,
