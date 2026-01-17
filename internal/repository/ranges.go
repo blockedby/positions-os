@@ -75,6 +75,60 @@ func (f *MessageIDFilter) FilterNew(messageIDs []int64) []int64 {
 	return newIDs
 }
 
+// SmartMessageFilter filters messages based on both range AND existing jobs.
+// A message is "new" if:
+// 1. It's outside the parsed range [min, max], OR
+// 2. It's inside the range but no job exists for it
+type SmartMessageFilter struct {
+	minParsed    int64
+	maxParsed    int64
+	existingJobs map[int64]bool
+}
+
+// NewSmartMessageFilter creates a filter with range and existing job IDs
+func NewSmartMessageFilter(minParsed, maxParsed int64, existingJobIDs []int64) *SmartMessageFilter {
+	jobSet := make(map[int64]bool, len(existingJobIDs))
+	for _, id := range existingJobIDs {
+		jobSet[id] = true
+	}
+	return &SmartMessageFilter{
+		minParsed:    minParsed,
+		maxParsed:    maxParsed,
+		existingJobs: jobSet,
+	}
+}
+
+// FilterNew returns message IDs that should be processed.
+// Messages are new if outside range OR if inside range but no job exists.
+func (f *SmartMessageFilter) FilterNew(messageIDs []int64) []int64 {
+	if len(messageIDs) == 0 {
+		return []int64{}
+	}
+
+	// If no range exists, all messages are new
+	if f.minParsed == 0 && f.maxParsed == 0 {
+		return messageIDs
+	}
+
+	var newIDs []int64
+	for _, id := range messageIDs {
+		// Outside range = definitely new
+		if id < f.minParsed || id > f.maxParsed {
+			newIDs = append(newIDs, id)
+			continue
+		}
+		// Inside range but no job exists = also new
+		if !f.existingJobs[id] {
+			newIDs = append(newIDs, id)
+		}
+	}
+
+	if newIDs == nil {
+		return []int64{}
+	}
+	return newIDs
+}
+
 // RangesRepository handles parsed_ranges table operations
 type RangesRepository struct {
 	pool *pgxpool.Pool
@@ -154,4 +208,16 @@ func (r *RangesRepository) NewFilter(ctx context.Context, targetID uuid.UUID) (*
 		return NewMessageIDFilter(0, 0), nil
 	}
 	return NewMessageIDFilter(pr.MinMsgID, pr.MaxMsgID), nil
+}
+
+// NewSmartFilter creates a smart message filter that checks both range AND job existence
+func (r *RangesRepository) NewSmartFilter(ctx context.Context, targetID uuid.UUID, existingJobIDs []int64) (*SmartMessageFilter, error) {
+	pr, err := r.GetRange(ctx, targetID)
+	if err != nil {
+		return nil, err
+	}
+	if pr == nil {
+		return NewSmartMessageFilter(0, 0, existingJobIDs), nil
+	}
+	return NewSmartMessageFilter(pr.MinMsgID, pr.MaxMsgID, existingJobIDs), nil
 }

@@ -405,3 +405,31 @@ func (r *JobsRepository) BulkDelete(ctx context.Context, ids []uuid.UUID) (int, 
 
 	return int(result.RowsAffected()), nil
 }
+
+// GetExistingMessageIDs returns all tg_message_ids for jobs belonging to a target.
+// Used to check which messages already have jobs created (vs just being in parsed range).
+func (r *JobsRepository) GetExistingMessageIDs(ctx context.Context, targetID uuid.UUID) ([]int64, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT tg_message_id
+		FROM jobs
+		WHERE target_id = $1 AND tg_message_id IS NOT NULL
+	`, targetID)
+	if err != nil {
+		return nil, fmt.Errorf("get existing message ids: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan message id: %w", err)
+		}
+		ids = append(ids, id)
+	}
+
+	if ids == nil {
+		return []int64{}, nil
+	}
+	return ids, nil
+}

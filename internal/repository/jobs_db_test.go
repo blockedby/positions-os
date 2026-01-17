@@ -238,3 +238,85 @@ func requireNoError(t *testing.T, err error) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestJobsRepository_GetExistingMessageIDs(t *testing.T) {
+	if os.Getenv("INTEGRATION_TEST") == "" {
+		t.Skip("Skipping integration test; set INTEGRATION_TEST=1 to run")
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		t.Skip("DATABASE_URL not set")
+	}
+
+	ctx := context.Background()
+	db, err := database.New(ctx, dbURL)
+	if err != nil {
+		t.Fatalf("failed to connect to db: %v", err)
+	}
+	defer db.Close()
+
+	setupSchema(t, db)
+
+	repo := NewJobsRepository(db.Pool)
+	targetID := uuid.New()
+
+	// Create target
+	_, err = db.Pool.Exec(ctx,
+		"INSERT INTO scraping_targets (id, name, url, type, is_active, created_at, updated_at) VALUES ($1, $2, $3, 'TG_CHANNEL', true, NOW(), NOW())",
+		targetID, "Test Channel for MessageIDs", "http://t.me/msgidtest")
+	requireNoError(t, err)
+
+	// Create jobs with different message IDs
+	messageIDs := []int64{1001, 1005, 1010}
+	for i, msgID := range messageIDs {
+		job := &Job{
+			TargetID:    targetID,
+			ExternalID:  string(rune('a' + i)),
+			RawContent:  "test content",
+			Status:      "RAW",
+			TgMessageID: &msgID,
+		}
+		err = repo.Create(ctx, job)
+		requireNoError(t, err)
+	}
+
+	// Create a job without message ID (should not be returned)
+	jobNoMsgID := &Job{
+		TargetID:   targetID,
+		ExternalID: "no-msg-id",
+		RawContent: "no message id",
+		Status:     "RAW",
+	}
+	err = repo.Create(ctx, jobNoMsgID)
+	requireNoError(t, err)
+
+	// Test GetExistingMessageIDs
+	existingIDs, err := repo.GetExistingMessageIDs(ctx, targetID)
+	requireNoError(t, err)
+
+	if len(existingIDs) != 3 {
+		t.Errorf("expected 3 message IDs, got %d", len(existingIDs))
+	}
+
+	// Verify all expected IDs are present
+	idSet := make(map[int64]bool)
+	for _, id := range existingIDs {
+		idSet[id] = true
+	}
+
+	for _, expectedID := range messageIDs {
+		if !idSet[expectedID] {
+			t.Errorf("expected message ID %d to be in result", expectedID)
+		}
+	}
+
+	// Test with non-existent target (should return empty slice)
+	nonExistentTarget := uuid.New()
+	emptyIDs, err := repo.GetExistingMessageIDs(ctx, nonExistentTarget)
+	requireNoError(t, err)
+
+	if len(emptyIDs) != 0 {
+		t.Errorf("expected empty slice for non-existent target, got %d items", len(emptyIDs))
+	}
+}

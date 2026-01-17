@@ -134,9 +134,18 @@ func (s *Service) Scrape(ctx context.Context, opts ScrapeOptions) (*ScrapeResult
 		s.log.Warn().Err(err).Msg("scrape: failed to update telegram info")
 	}
 
-	// get message filter for deduplication
-	s.log.Debug().Msg("scrape: creating message filter")
-	filter, err := s.ranges.NewFilter(ctx, target.ID)
+	// get existing job message IDs for smart filtering
+	s.log.Debug().Msg("scrape: fetching existing job message IDs")
+	existingJobIDs, err := s.jobs.GetExistingMessageIDs(ctx, target.ID)
+	if err != nil {
+		s.log.Error().Err(err).Msg("scrape: failed to get existing job IDs")
+		return nil, fmt.Errorf("get existing job IDs: %w", err)
+	}
+	s.log.Debug().Int("existing_jobs", len(existingJobIDs)).Msg("scrape: found existing jobs")
+
+	// get smart message filter for deduplication (checks range AND job existence)
+	s.log.Debug().Msg("scrape: creating smart message filter")
+	filter, err := s.ranges.NewSmartFilter(ctx, target.ID, existingJobIDs)
 	if err != nil {
 		s.log.Error().Err(err).Msg("scrape: failed to create filter")
 		return nil, fmt.Errorf("create filter: %w", err)

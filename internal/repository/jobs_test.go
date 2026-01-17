@@ -1,7 +1,10 @@
 package repository
 
 import (
+	"context"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 // test job status validation
@@ -104,4 +107,12 @@ func TestJob_CanTransitionTo(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestJobsRepository_GetExistingMessageIDs_Interface verifies the method exists
+func TestJobsRepository_GetExistingMessageIDs_Interface(t *testing.T) {
+	// Verify the method signature exists on JobsRepository
+	var _ interface {
+		GetExistingMessageIDs(ctx context.Context, targetID uuid.UUID) ([]int64, error)
+	} = (*JobsRepository)(nil)
 }
