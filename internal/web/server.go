@@ -236,11 +236,29 @@ func (s *Server) RegisterDispatcherHandler(handler interface{}) {
 	}
 }
 
-// RegisterBrainHandler registers brain service handlers for job preparation
+// RegisterBrainHandler registers brain service handlers for job preparation.
+// The brain service handles the AI-powered document generation workflow:
+//   - PrepareJob: Initiates resume tailoring and cover letter generation
+//   - GetDocuments: Returns generated document metadata for a job
+//   - DownloadResume: Serves the generated PDF resume
 func (s *Server) RegisterBrainHandler(handler interface{}) {
+	// brainHandler defines the interface for brain service HTTP handlers.
+	// Implementations should handle document generation and retrieval
+	// for the job application workflow.
 	type brainHandler interface {
+		// PrepareJob initiates the document generation pipeline for a job.
+		// POST /api/v1/jobs/{id}/prepare
+		// Returns status and WebSocket channel for progress updates.
 		PrepareJob(w http.ResponseWriter, r *http.Request)
+
+		// GetDocuments returns metadata about generated documents for a job.
+		// GET /api/v1/jobs/{id}/documents
+		// Returns JSON with resume and cover letter paths/content.
 		GetDocuments(w http.ResponseWriter, r *http.Request)
+
+		// DownloadResume serves the generated PDF resume file.
+		// GET /api/v1/jobs/{id}/documents/resume.pdf
+		// Returns application/pdf content.
 		DownloadResume(w http.ResponseWriter, r *http.Request)
 	}
 
