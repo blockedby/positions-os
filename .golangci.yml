@@ -1,32 +1,31 @@
 # golangci-lint v2 configuration
 # See: https://golangci-lint.run/usage/configuration/
+version: "2"
 
 run:
   timeout: 5m
-  # v2 defaults to relative-path-mode: config-file
-  # issues are found relative to this file
-  relative-path-mode: config-file
 
 linters:
-  # In v2, we specify the default set. 'fast' is a good baseline for IDE performance.
-  default: fast
+  default: none
   enable:
-    # --- Fundamentals ---
-    - errcheck # Checks for unhandled errors
-    - gosimple # Suggests code simplifications
-    - govet # Standard Go analysis tool
-    - staticcheck # Advanced static analysis
-    - unused # Identifies dead code
-
+    # --- Defaults (from staticcheck suite) ---
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
     # --- Extended Best Practices ---
-    - revive # Flexible replacement for golint
-    - gocritic # Opinionated code quality checks
-    - gosec # Security scanner
-    - bodyclose # Ensures HTTP response bodies are closed
-    - nilnil # Catches confusing (nil, nil) returns
-    - unparam # Finds unused function parameters
-    - gci # Enforces import grouping and order
-    - misspell # Finds commonly misspelled English words
+    - revive
+    - gocritic
+    - gosec
+    - bodyclose
+    - nilnil
+    - unparam
+    - misspell
+
+formatters:
+  enable:
+    - gci
 
 linters-settings:
   revive:
@@ -35,21 +34,18 @@ linters-settings:
         severity: warning
   gci:
     sections:
-      - standard # Standard package.
-      - default # Default section: contains all unknown packages.
-      - prefix(github.com/blockedby/positions-os) # Internal packages.
+      - standard
+      - default
+      - prefix(github.com/blockedby/positions-os)
   govet:
     enable-all: true
     disable:
-      - fieldalignment # Often too noisy for non-performance critical code
+      - fieldalignment
 
 issues:
-  # Maximize visibility during setup
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-
-  # Allow some common patterns that aren't bugs
   exclude-rules:
     - path: _test\.go
       linters:
