@@ -72,7 +72,7 @@ describe('useStats', () => {
         expect(result.current.isSuccess).toBe(true)
       })
 
-      expect(result.current.data).toHaveLength(6)
+      expect(result.current.data).toHaveLength(9)
 
       // Check Total Jobs card
       expect(result.current.data[0]).toEqual({
@@ -102,15 +102,36 @@ describe('useStats', () => {
         description: 'Jobs rejected',
       })
 
-      // Check Active Targets card
+      // Check Tailored card (tailored_jobs + tailored_approved_jobs)
       expect(result.current.data[4]).toEqual({
+        label: 'Tailored',
+        value: 8, // 5 + 3
+        description: 'Applications prepared',
+      })
+
+      // Check Sent card
+      expect(result.current.data[5]).toEqual({
+        label: 'Sent',
+        value: 2,
+        description: 'Applications sent',
+      })
+
+      // Check Responded card
+      expect(result.current.data[6]).toEqual({
+        label: 'Responded',
+        value: 1,
+        description: 'Recruiter responses',
+      })
+
+      // Check Active Targets card
+      expect(result.current.data[7]).toEqual({
         label: 'Active Targets',
         value: 3,
         description: 'Active scraping sources',
       })
 
       // Check Today card
-      expect(result.current.data[5]).toEqual({
+      expect(result.current.data[8]).toEqual({
         label: 'Today',
         value: 5,
         description: 'New jobs today',
@@ -134,6 +155,10 @@ describe('useStats', () => {
         analyzed_jobs: 0,
         interested_jobs: 0,
         rejected_jobs: 0,
+        tailored_jobs: 0,
+        tailored_approved_jobs: 0,
+        sent_jobs: 0,
+        responded_jobs: 0,
         today_jobs: 0,
         active_targets: 0,
       }
@@ -146,9 +171,10 @@ describe('useStats', () => {
         expect(result.current.isSuccess).toBe(true)
       })
 
-      expect(result.current.data).toHaveLength(6)
+      expect(result.current.data).toHaveLength(9)
       expect(result.current.data[0].value).toBe(0)
-      expect(result.current.data[4].value).toBe(0)
+      expect(result.current.data[4].value).toBe(0) // Tailored
+      expect(result.current.data[7].value).toBe(0) // Active Targets
     })
 
     it('should handle large numbers in stats', async () => {
@@ -157,6 +183,10 @@ describe('useStats', () => {
         analyzed_jobs: 999999,
         interested_jobs: 500000,
         rejected_jobs: 400000,
+        tailored_jobs: 50000,
+        tailored_approved_jobs: 25000,
+        sent_jobs: 10000,
+        responded_jobs: 5000,
         today_jobs: 10000,
         active_targets: 100,
       }
@@ -171,6 +201,7 @@ describe('useStats', () => {
 
       expect(result.current.data[0].value).toBe(1000000)
       expect(result.current.data[1].value).toBe(999999)
+      expect(result.current.data[4].value).toBe(75000) // Tailored (50000 + 25000)
     })
   })
 })

@@ -13,20 +13,22 @@ import (
 
 // Job represents a job posting
 type Job struct {
-	ID             uuid.UUID              `json:"id"`
-	TargetID       uuid.UUID              `json:"target_id"`
-	ExternalID     string                 `json:"external_id"`
-	ContentHash    *string                `json:"content_hash,omitempty"`
-	RawContent     string                 `json:"raw_content"`
-	StructuredData map[string]interface{} `json:"structured_data"`
-	SourceURL      *string                `json:"source_url,omitempty"`
-	SourceDate     *time.Time             `json:"source_date,omitempty"`
-	TgMessageID    *int64                 `json:"tg_message_id,omitempty"`
-	TgTopicID      *int64                 `json:"tg_topic_id,omitempty"`
-	Status         string                 `json:"status"` // RAW, ANALYZED, REJECTED, INTERESTED, TAILORED, SENT, RESPONDED
-	CreatedAt      time.Time              `json:"created_at"`
-	UpdatedAt      time.Time              `json:"updated_at"`
-	AnalyzedAt     *time.Time             `json:"analyzed_at,omitempty"`
+	ID                 uuid.UUID              `json:"id"`
+	TargetID           uuid.UUID              `json:"target_id"`
+	ExternalID         string                 `json:"external_id"`
+	ContentHash        *string                `json:"content_hash,omitempty"`
+	RawContent         string                 `json:"raw_content"`
+	StructuredData     map[string]interface{} `json:"structured_data"`
+	SourceURL          *string                `json:"source_url,omitempty"`
+	SourceDate         *time.Time             `json:"source_date,omitempty"`
+	TgMessageID        *int64                 `json:"tg_message_id,omitempty"`
+	TgTopicID          *int64                 `json:"tg_topic_id,omitempty"`
+	Status             string                 `json:"status"` // RAW, ANALYZED, REJECTED, INTERESTED, TAILORED, SENT, RESPONDED
+	TailoredResumePath string                 `json:"tailored_resume_path,omitempty"`
+	CoverLetterText    string                 `json:"cover_letter_text,omitempty"`
+	CreatedAt          time.Time              `json:"created_at"`
+	UpdatedAt          time.Time              `json:"updated_at"`
+	AnalyzedAt         *time.Time             `json:"analyzed_at,omitempty"`
 }
 
 // JobFilter defines criteria for listing jobs
@@ -46,7 +48,7 @@ type JobFilter struct {
 func (j *Job) IsValidStatus() bool {
 	valid := map[string]bool{
 		"RAW": true, "ANALYZED": true, "REJECTED": true,
-		"INTERESTED": true, "TAILORED": true, "SENT": true, "RESPONDED": true,
+		"INTERESTED": true, "TAILORED": true, "TAILORED_APPROVED": true, "SENT": true, "RESPONDED": true,
 	}
 	return valid[j.Status]
 }
@@ -77,6 +79,11 @@ var validTransitions = map[string]map[string]bool{
 		"RAW": true, // allow re-processing
 	},
 	"TAILORED": {
+		"TAILORED_APPROVED": true,
+		"REJECTED":          true,
+		"RAW":               true,
+	},
+	"TAILORED_APPROVED": {
 		"SENT":     true,
 		"REJECTED": true,
 		"RAW":      true,
@@ -387,6 +394,21 @@ func (r *JobsRepository) UpdateStructuredData(ctx context.Context, id uuid.UUID,
 	`, id, data)
 	if err != nil {
 		return fmt.Errorf("update structured data: %w", err)
+	}
+	return nil
+}
+
+// UpdateBrainOutputs updates the tailored resume path and cover letter text for a job.
+func (r *JobsRepository) UpdateBrainOutputs(ctx context.Context, id uuid.UUID, resumePath, coverLetterText string) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE jobs
+		SET tailored_resume_path = $2,
+		    cover_letter_text = $3,
+		    updated_at = NOW()
+		WHERE id = $1
+	`, id, resumePath, coverLetterText)
+	if err != nil {
+		return fmt.Errorf("update brain outputs: %w", err)
 	}
 	return nil
 }

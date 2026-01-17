@@ -55,4 +55,28 @@ describe('Badge', () => {
     const badge = screen.getByText('RAW')
     expect(badge.tagName).toBe('SPAN')
   })
+
+  it('should apply tailored status class', () => {
+    render(<Badge status="tailored">TAILORED</Badge>)
+    const badge = screen.getByText('TAILORED')
+    expect(badge).toHaveClass('badge-tailored')
+  })
+
+  it('should apply tailored_approved status class', () => {
+    render(<Badge status="tailored_approved">READY</Badge>)
+    const badge = screen.getByText('READY')
+    expect(badge).toHaveClass('badge-tailored')
+  })
+
+  it('should apply sent status class', () => {
+    render(<Badge status="sent">SENT</Badge>)
+    const badge = screen.getByText('SENT')
+    expect(badge).toHaveClass('badge-sent')
+  })
+
+  it('should apply responded status class', () => {
+    render(<Badge status="responded">RESPONDED</Badge>)
+    const badge = screen.getByText('RESPONDED')
+    expect(badge).toHaveClass('badge-responded')
+  })
 })

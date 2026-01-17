@@ -30,6 +30,9 @@ type Config struct {
 	HTTPPort  int
 	StaticDir string
 
+	// storage
+	StorageDir string
+
 	// logging
 	LogLevel string
 	LogFile  string
@@ -50,6 +53,7 @@ func Load() (*Config, error) {
 		LogFile:       getEnv("LOG_FILE", "./logs/app.log"),
 		HTTPPort:      getEnvInt("HTTP_PORT", 3100),
 		StaticDir:     getEnv("STATIC_DIR", "./static"),
+		StorageDir:    getEnv("STORAGE_DIR", "./storage"),
 		TGApiID:       getEnvInt("TG_API_ID", 0),
 	}
 

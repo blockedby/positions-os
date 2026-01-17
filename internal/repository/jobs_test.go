@@ -9,7 +9,7 @@ import (
 
 // test job status validation
 func TestJob_IsValidStatus(t *testing.T) {
-	validStatuses := []string{"RAW", "ANALYZED", "REJECTED", "INTERESTED", "TAILORED", "SENT", "RESPONDED"}
+	validStatuses := []string{"RAW", "ANALYZED", "REJECTED", "INTERESTED", "TAILORED", "TAILORED_APPROVED", "SENT", "RESPONDED"}
 
 	for _, status := range validStatuses {
 		job := Job{Status: status}
@@ -59,6 +59,22 @@ func TestJob_ComputeHash(t *testing.T) {
 	}
 }
 
+// test BrainOutput fields exist in Job struct
+func TestJob_HasBrainOutputFields(t *testing.T) {
+	job := Job{
+		TailoredResumePath: "/path/to/resume.pdf",
+		CoverLetterText:    "Dear Hiring Manager...",
+	}
+
+	if job.TailoredResumePath != "/path/to/resume.pdf" {
+		t.Errorf("TailoredResumePath = %q, want %q", job.TailoredResumePath, "/path/to/resume.pdf")
+	}
+
+	if job.CoverLetterText != "Dear Hiring Manager..." {
+		t.Errorf("CoverLetterText = %q, want %q", job.CoverLetterText, "Dear Hiring Manager...")
+	}
+}
+
 // test valid status transitions
 func TestJob_CanTransitionTo(t *testing.T) {
 	tests := []struct {
@@ -85,8 +101,18 @@ func TestJob_CanTransitionTo(t *testing.T) {
 		{"INTERESTED", "REJECTED", true},
 
 		// Valid transitions from TAILORED
-		{"TAILORED", "SENT", true},
+		{"TAILORED", "TAILORED_APPROVED", true}, // NEW: can approve after tailoring
+		{"TAILORED", "SENT", false},             // UPDATE: can't skip approval
 		{"TAILORED", "REJECTED", true},
+
+		// Valid transitions from TAILORED_APPROVED (NEW)
+		{"TAILORED_APPROVED", "SENT", true},
+		{"TAILORED_APPROVED", "REJECTED", true},
+		{"TAILORED_APPROVED", "RAW", true},
+
+		// Invalid: can't skip TAILORED_APPROVED
+		{"TAILORED", "RESPONDED", false},
+		{"TAILORED_APPROVED", "RESPONDED", false},
 
 		// Valid transitions from SENT
 		{"SENT", "RESPONDED", true},
@@ -115,4 +141,13 @@ func TestJobsRepository_GetExistingMessageIDs_Interface(t *testing.T) {
 	var _ interface {
 		GetExistingMessageIDs(ctx context.Context, targetID uuid.UUID) ([]int64, error)
 	} = (*JobsRepository)(nil)
+}
+
+// TestJobsRepository_UpdateBrainOutputs_MethodExists verifies the UpdateBrainOutputs method exists
+// with the correct signature. This is a compile-time check.
+func TestJobsRepository_UpdateBrainOutputs_MethodExists(t *testing.T) {
+	// This test verifies that the UpdateBrainOutputs method exists with the correct signature.
+	// If this compiles, the method exists.
+	var repo *JobsRepository
+	_ = repo.UpdateBrainOutputs
 }

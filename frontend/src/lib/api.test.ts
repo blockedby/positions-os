@@ -384,6 +384,76 @@ describe('Jobs API', () => {
 })
 
 // ============================================================================
+// Prepare Job API Tests
+// ============================================================================
+
+describe('Prepare Job API', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  describe('prepareJob', () => {
+    it('should prepare job for application', async () => {
+      const prepareResponse = {
+        job_id: 'job-1',
+        status: 'TAILORED_APPROVED',
+        resume_path: '/storage/jobs/job-1/resume.pdf',
+        cover_letter_path: '/storage/jobs/job-1/cover_letter.md',
+      }
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(prepareResponse),
+      } as Response)
+
+      const result = await api.prepareJob('job-1')
+
+      expect(result).toEqual(prepareResponse)
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/v1/jobs/job-1/prepare',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    })
+
+    it('should throw APIError when job not in INTERESTED status', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: () => Promise.resolve({ message: 'Job must be in INTERESTED status' }),
+      } as Response)
+
+      await expect(api.prepareJob('job-1')).rejects.toMatchObject({
+        message: 'Job must be in INTERESTED status',
+        status: 400,
+      })
+    })
+
+    it('should throw APIError when job not found', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: () => Promise.resolve({ message: 'Job not found' }),
+      } as Response)
+
+      await expect(api.prepareJob('invalid-id')).rejects.toMatchObject({
+        message: 'Job not found',
+        status: 404,
+      })
+    })
+  })
+})
+
+// ============================================================================
 // Targets API Tests
 // ============================================================================
 

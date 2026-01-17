@@ -36,6 +36,21 @@ export function useStatsCards() {
           description: 'Jobs rejected',
         },
         {
+          label: 'Tailored',
+          value: data.tailored_jobs + data.tailored_approved_jobs,
+          description: 'Applications prepared',
+        },
+        {
+          label: 'Sent',
+          value: data.sent_jobs,
+          description: 'Applications sent',
+        },
+        {
+          label: 'Responded',
+          value: data.responded_jobs,
+          description: 'Recruiter responses',
+        },
+        {
           label: 'Active Targets',
           value: data.active_targets,
           description: 'Active scraping sources',

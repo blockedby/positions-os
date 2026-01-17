@@ -57,6 +57,24 @@ export function useBulkDeleteJobs() {
   })
 }
 
+export function usePrepareJob() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.prepareJob(id),
+    onSuccess: (data) => {
+      // Invalidate job detail
+      queryClient.invalidateQueries({ queryKey: queryKeys.job(data.job_id) })
+
+      // Invalidate jobs list
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+
+      // Invalidate stats
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+    },
+  })
+}
+
 // ============================================================================
 // Selectors
 // ============================================================================

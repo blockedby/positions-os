@@ -138,19 +138,22 @@
 }
 
 /* Tailored, Sent, Responded statuses */
-.status-badge.tailored {
+.status-badge.tailored,
+.badge-tailored {
   background: rgba(168, 85, 247, 0.2);
   border: 1px solid rgba(168, 85, 247, 0.3);
   color: #a855f7;
 }
 
-.status-badge.sent {
+.status-badge.sent,
+.badge-sent {
   background: rgba(14, 165, 233, 0.2);
   border: 1px solid rgba(14, 165, 233, 0.3);
   color: #0ea5e9;
 }
 
-.status-badge.responded {
+.status-badge.responded,
+.badge-responded {
   background: rgba(236, 72, 153, 0.2);
   border: 1px solid rgba(236, 72, 153, 0.3);
   color: #ec4899;

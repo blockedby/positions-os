@@ -4,6 +4,38 @@ import userEvent from '@testing-library/user-event'
 import { FilterBar } from './FilterBar'
 
 describe('FilterBar', () => {
+  describe('Status Filter', () => {
+    it('should include TAILORED_APPROVED in status options', () => {
+      const onFilter = vi.fn()
+      render(<FilterBar onFilter={onFilter} />)
+
+      const statusSelect = screen.getByRole('combobox', { name: /filter by status/i })
+      expect(statusSelect).toBeInTheDocument()
+
+      // Check that the Ready option exists (label for TAILORED_APPROVED)
+      const readyOption = screen.getByRole('option', { name: /ready/i })
+      expect(readyOption).toBeInTheDocument()
+      expect(readyOption).toHaveValue('TAILORED_APPROVED')
+    })
+
+    it('should filter by TAILORED_APPROVED status when selected', async () => {
+      const onFilter = vi.fn()
+      render(<FilterBar onFilter={onFilter} />)
+
+      const statusSelect = screen.getByRole('combobox', { name: /filter by status/i })
+      await userEvent.selectOptions(statusSelect, 'TAILORED_APPROVED')
+
+      const applyButton = screen.getByRole('button', { name: /apply/i })
+      await userEvent.click(applyButton)
+
+      expect(onFilter).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'TAILORED_APPROVED',
+        })
+      )
+    })
+  })
+
   describe('Technology Filter', () => {
     it('should render technology input field', () => {
       const onFilter = vi.fn()

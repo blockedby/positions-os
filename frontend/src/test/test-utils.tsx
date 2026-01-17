@@ -145,6 +145,10 @@ export const mockStats = {
   analyzed_jobs: 80,
   interested_jobs: 20,
   rejected_jobs: 30,
+  tailored_jobs: 5,
+  tailored_approved_jobs: 3,
+  sent_jobs: 2,
+  responded_jobs: 1,
   today_jobs: 5,
   active_targets: 3,
 }

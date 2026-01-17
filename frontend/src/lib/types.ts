@@ -8,6 +8,7 @@ export type JobStatus =
   | 'REJECTED'
   | 'INTERESTED'
   | 'TAILORED'
+  | 'TAILORED_APPROVED'
   | 'SENT'
   | 'RESPONDED'
 
@@ -101,6 +102,10 @@ export interface Stats {
   analyzed_jobs: number
   interested_jobs: number
   rejected_jobs: number
+  tailored_jobs: number
+  tailored_approved_jobs: number
+  sent_jobs: number
+  responded_jobs: number
   today_jobs: number
   active_targets: number
 }
@@ -344,4 +349,15 @@ export interface AuthStatusResponse {
 export interface StartQRResponse {
   status: 'started' | 'already in progress'
   error?: string
+}
+
+// ============================================================================
+// Brain/Prepare Types
+// ============================================================================
+
+export interface PrepareJobResponse {
+  job_id: string
+  status: string
+  resume_path?: string
+  cover_letter_path?: string
 }

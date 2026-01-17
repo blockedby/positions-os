@@ -108,3 +108,73 @@ func (m *InMemoryRepository) GetJobData(id uuid.UUID) (map[string]string, error)
 	}
 	return job.StructuredData, nil
 }
+
+// JobsRepositoryAdapter adapts JobsRepository to brain.JobRepository.
+type JobsRepositoryAdapter struct {
+	getByID            func(ctx context.Context, id uuid.UUID) (status string, data map[string]interface{}, err error)
+	updateBrainOutputs func(ctx context.Context, id uuid.UUID, resumePath, coverLetterText string) error
+}
+
+// NewJobsRepositoryAdapterFunc creates a new adapter with custom functions.
+func NewJobsRepositoryAdapterFunc(
+	getByID func(ctx context.Context, id uuid.UUID) (status string, data map[string]interface{}, err error),
+	updateBrainOutputs func(ctx context.Context, id uuid.UUID, resumePath, coverLetterText string) error,
+) *JobsRepositoryAdapter {
+	return &JobsRepositoryAdapter{
+		getByID:            getByID,
+		updateBrainOutputs: updateBrainOutputs,
+	}
+}
+
+// GetByID implements Repository.
+func (a *JobsRepositoryAdapter) GetByID(id uuid.UUID) (*BrainJob, error) {
+	if a.getByID == nil {
+		return nil, ErrJobNotFound
+	}
+
+	status, data, err := a.getByID(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BrainJob{
+		ID:             id,
+		Status:         status,
+		StructuredData: convertToStringMap(data),
+	}, nil
+}
+
+// UpdateBrainOutputs implements Repository.
+func (a *JobsRepositoryAdapter) UpdateBrainOutputs(id uuid.UUID, resumePath, coverText string) error {
+	if a.updateBrainOutputs == nil {
+		return nil // No-op if not configured
+	}
+	return a.updateBrainOutputs(context.Background(), id, resumePath, coverText)
+}
+
+// GetJobData implements JobRepository.
+func (a *JobsRepositoryAdapter) GetJobData(id uuid.UUID) (map[string]string, error) {
+	if a.getByID == nil {
+		return nil, ErrJobNotFound
+	}
+
+	_, data, err := a.getByID(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertToStringMap(data), nil
+}
+
+// convertToStringMap converts map[string]interface{} to map[string]string.
+func convertToStringMap(data map[string]interface{}) map[string]string {
+	result := make(map[string]string)
+	for k, v := range data {
+		if s, ok := v.(string); ok {
+			result[k] = s
+		} else if v != nil {
+			result[k] = fmt.Sprintf("%v", v)
+		}
+	}
+	return result
+}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { JobStatus } from '@/lib/types'
 import { Badge, Button, Card, Spinner, type BadgeStatus } from '@/components/ui'
-import { useJob, useUpdateJobStatus } from '@/hooks/useJobs'
+import { useJob, useUpdateJobStatus, usePrepareJob } from '@/hooks/useJobs'
 import { ContactLink } from './ContactLink'
 
 export interface JobDetailProps {
@@ -14,9 +14,10 @@ const statusToBadge: Record<JobStatus, BadgeStatus> = {
   ANALYZED: 'analyzed',
   INTERESTED: 'interested',
   REJECTED: 'rejected',
-  TAILORED: 'analyzed',
-  SENT: 'interested',
-  RESPONDED: 'interested',
+  TAILORED: 'tailored',
+  TAILORED_APPROVED: 'tailored_approved',
+  SENT: 'sent',
+  RESPONDED: 'responded',
 }
 
 const statusActions: { status: JobStatus; label: string; variant: 'success' | 'danger' | 'primary' }[] = [
@@ -27,6 +28,7 @@ const statusActions: { status: JobStatus; label: string; variant: 'success' | 'd
 export const JobDetail = ({ jobId, onClose }: JobDetailProps) => {
   const { data: job, isLoading, error } = useJob(jobId)
   const updateStatus = useUpdateJobStatus()
+  const prepareJob = usePrepareJob()
   const [expandRaw, setExpandRaw] = useState(false)
 
   if (isLoading) {
@@ -144,6 +146,16 @@ export const JobDetail = ({ jobId, onClose }: JobDetailProps) => {
       </div>
 
       <div className="job-detail-actions">
+        {job.status === 'INTERESTED' && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => prepareJob.mutate(job.id)}
+            loading={prepareJob.isPending}
+          >
+            Prepare Application
+          </Button>
+        )}
         {statusActions.map(({ status, label, variant }) => (
           <Button
             key={status}
