@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -142,6 +143,7 @@ func TestServer_RegisterJobsHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+// mockJobsAPIHandler implements jobsHandler interface for testing
 type mockJobsAPIHandler struct{}
 
 func (h *mockJobsAPIHandler) List(w http.ResponseWriter, _ *http.Request) {
@@ -149,3 +151,47 @@ func (h *mockJobsAPIHandler) List(w http.ResponseWriter, _ *http.Request) {
 }
 func (h *mockJobsAPIHandler) GetByID(_ http.ResponseWriter, _ *http.Request)      {}
 func (h *mockJobsAPIHandler) UpdateStatus(_ http.ResponseWriter, _ *http.Request) {}
+
+// mockBrainHandler implements brainHandler interface for testing
+type mockBrainHandler struct{}
+
+func (m *mockBrainHandler) PrepareJob(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (m *mockBrainHandler) GetDocuments(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (m *mockBrainHandler) DownloadResume(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func TestServer_RegisterBrainHandler(t *testing.T) {
+	// Create server with minimal config
+	cfg := &Config{Port: 0, StaticDir: ""}
+	server := NewServer(cfg, nil, nil)
+
+	// Register mock handler
+	mockHandler := &mockBrainHandler{}
+	server.RegisterBrainHandler(mockHandler)
+
+	// Test that POST /api/v1/jobs/{id}/prepare route exists
+	req := httptest.NewRequest("POST", "/api/v1/jobs/test-id/prepare", nil)
+	w := httptest.NewRecorder()
+	server.router.ServeHTTP(w, req)
+
+	// Should not be 404 (route exists)
+	if w.Code == http.StatusNotFound {
+		t.Error("POST /api/v1/jobs/{id}/prepare should be registered")
+	}
+
+	// Test that GET /api/v1/jobs/{id}/documents route exists
+	req2 := httptest.NewRequest("GET", "/api/v1/jobs/test-id/documents", nil)
+	w2 := httptest.NewRecorder()
+	server.router.ServeHTTP(w2, req2)
+
+	if w2.Code == http.StatusNotFound {
+		t.Error("GET /api/v1/jobs/{id}/documents should be registered")
+	}
+}

@@ -236,6 +236,21 @@ func (s *Server) RegisterDispatcherHandler(handler interface{}) {
 	}
 }
 
+// RegisterBrainHandler registers brain service handlers for job preparation
+func (s *Server) RegisterBrainHandler(handler interface{}) {
+	type brainHandler interface {
+		PrepareJob(w http.ResponseWriter, r *http.Request)
+		GetDocuments(w http.ResponseWriter, r *http.Request)
+		DownloadResume(w http.ResponseWriter, r *http.Request)
+	}
+
+	if h, ok := handler.(brainHandler); ok {
+		s.router.Post("/api/v1/jobs/{id}/prepare", h.PrepareJob)
+		s.router.Get("/api/v1/jobs/{id}/documents", h.GetDocuments)
+		s.router.Get("/api/v1/jobs/{id}/documents/resume.pdf", h.DownloadResume)
+	}
+}
+
 // Router returns the underlying Chi router for external route mounting.
 func (s *Server) Router() *chi.Mux {
 	return s.router
