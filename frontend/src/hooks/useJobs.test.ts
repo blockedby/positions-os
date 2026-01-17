@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { waitFor } from '@testing-library/react'
-import { useJobs, useJob, useUpdateJobStatus, useJobStatusCounts } from './useJobs'
+import { useJobs, useJob, useUpdateJobStatus, useJobStatusCounts, usePrepareJob } from './useJobs'
 import { renderHookWithClient, mockJob } from '@/test/test-utils'
 import { api } from '@/lib/api'
 
@@ -10,6 +10,7 @@ vi.mock('@/lib/api', () => ({
     getJobs: vi.fn(),
     getJob: vi.fn(),
     updateJobStatus: vi.fn(),
+    prepareJob: vi.fn(),
   },
 }))
 
@@ -210,6 +211,44 @@ describe('useJobs', () => {
       // Initially loading
       expect(result.current.isLoading).toBe(true)
       expect(result.current.total).toBe(0)
+    })
+  })
+
+  describe('usePrepareJob', () => {
+    it('should prepare job and invalidate queries on success', async () => {
+      const prepareResponse = {
+        job_id: 'job-1',
+        status: 'TAILORED_APPROVED',
+        resume_path: '/storage/jobs/job-1/resume.pdf',
+        cover_letter_path: '/storage/jobs/job-1/cover_letter.md',
+      }
+      vi.mocked(api.prepareJob).mockResolvedValueOnce(prepareResponse)
+
+      const { result } = renderHookWithClient(() => usePrepareJob())
+
+      result.current.mutate('job-1')
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true)
+      })
+
+      expect(api.prepareJob).toHaveBeenCalledWith('job-1')
+      expect(result.current.data).toEqual(prepareResponse)
+    })
+
+    it('should handle preparation error', async () => {
+      const error = new Error('Job must be in INTERESTED status')
+      vi.mocked(api.prepareJob).mockRejectedValueOnce(error)
+
+      const { result } = renderHookWithClient(() => usePrepareJob())
+
+      result.current.mutate('job-1')
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true)
+      })
+
+      expect(result.current.error).toBe(error)
     })
   })
 })

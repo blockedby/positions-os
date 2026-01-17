@@ -14,6 +14,7 @@ const statusOptions = [
   { value: 'INTERESTED', label: 'Interested' },
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'TAILORED', label: 'Tailored' },
+  { value: 'TAILORED_APPROVED', label: 'Ready' },
   { value: 'SENT', label: 'Sent' },
   { value: 'RESPONDED', label: 'Responded' },
 ]

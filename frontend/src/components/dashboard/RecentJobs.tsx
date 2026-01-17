@@ -13,9 +13,10 @@ const statusToBadge: Record<JobStatus, BadgeStatus> = {
   ANALYZED: 'analyzed',
   INTERESTED: 'interested',
   REJECTED: 'rejected',
-  TAILORED: 'analyzed',
-  SENT: 'interested',
-  RESPONDED: 'interested',
+  TAILORED: 'tailored',
+  TAILORED_APPROVED: 'tailored_approved',
+  SENT: 'sent',
+  RESPONDED: 'responded',
 }
 
 export const RecentJobs = ({ limit = 5, className = '' }: RecentJobsProps) => {

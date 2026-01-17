@@ -13,6 +13,7 @@ import type {
   AuthStatusResponse,
   StartQRResponse,
   BulkDeleteResponse,
+  PrepareJobResponse,
 } from './types'
 
 // ============================================================================
@@ -123,6 +124,15 @@ const api = {
       },
       body: JSON.stringify({ ids }),
     }).then(handleResponse<BulkDeleteResponse>)
+  },
+
+  prepareJob(id: string): Promise<PrepareJobResponse> {
+    return fetch(`${API_BASE}/jobs/${id}/prepare`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then(handleResponse<PrepareJobResponse>)
   },
 
   // ========================================================================

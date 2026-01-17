@@ -346,3 +346,14 @@ export interface StartQRResponse {
   status: 'started' | 'already in progress'
   error?: string
 }
+
+// ============================================================================
+// Brain/Prepare Types
+// ============================================================================
+
+export interface PrepareJobResponse {
+  job_id: string
+  status: string
+  resume_path?: string
+  cover_letter_path?: string
+}
