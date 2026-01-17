@@ -34,7 +34,7 @@ func TestDBSession(t *testing.T) {
 	db := setupTestDB()
 	// Manually migrate the session table to ensure it exists
 	// In real app, gotgproto handles this, but here we want to maniplate it
-	db.AutoMigrate(&MockSession{})
+	_ = db.AutoMigrate(&MockSession{})
 
 	cfg := &config.Config{
 		TGApiID:   12345,

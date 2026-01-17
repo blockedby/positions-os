@@ -52,8 +52,8 @@ func TestApplicationsRepository_Integration(t *testing.T) {
 
 	// Clean up any existing test data
 	testJobID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
-	pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
+	_, _ = pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
+	_, _ = pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
 
 	// Create a test job first (foreign key constraint)
 	_, err = pool.Exec(ctx, `
@@ -162,8 +162,8 @@ func TestApplicationsRepository_Integration(t *testing.T) {
 	})
 
 	// Cleanup
-	pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
-	pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
+	_, _ = pool.Exec(ctx, "DELETE FROM job_applications WHERE job_id = $1", testJobID)
+	_, _ = pool.Exec(ctx, "DELETE FROM jobs WHERE id = $1", testJobID)
 }
 
 // Helper to create a test application
