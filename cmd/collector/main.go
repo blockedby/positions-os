@@ -160,16 +160,19 @@ func main() {
 	brainService.SetBroadcaster(hub)
 	brainService.SetStorageDir(cfg.StorageDir)
 
-	brainRepoAdapter := brain.NewJobsRepositoryAdapterFunc(func(ctx context.Context, id uuid.UUID) (string, map[string]interface{}, error) {
-		job, err := jobsRepo.GetByID(ctx, id)
-		if err != nil {
-			return "", nil, err
-		}
-		if job == nil {
-			return "", nil, brain.ErrJobNotFound
-		}
-		return job.Status, job.StructuredData, nil
-	})
+	brainRepoAdapter := brain.NewJobsRepositoryAdapterFunc(
+		func(ctx context.Context, id uuid.UUID) (string, map[string]interface{}, error) {
+			job, err := jobsRepo.GetByID(ctx, id)
+			if err != nil {
+				return "", nil, err
+			}
+			if job == nil {
+				return "", nil, brain.ErrJobNotFound
+			}
+			return job.Status, job.StructuredData, nil
+		},
+		jobsRepo.UpdateBrainOutputs,
+	)
 	prepareService := brain.NewPrepareService(brainService, brainRepoAdapter)
 	brainHandler := brain.NewHandler(brainRepoAdapter, prepareService)
 

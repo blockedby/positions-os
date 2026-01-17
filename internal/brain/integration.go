@@ -111,14 +111,19 @@ func (m *InMemoryRepository) GetJobData(id uuid.UUID) (map[string]string, error)
 
 // JobsRepositoryAdapter adapts JobsRepository to brain.JobRepository.
 type JobsRepositoryAdapter struct {
-	getByID func(ctx context.Context, id uuid.UUID) (status string, data map[string]interface{}, err error)
+	getByID            func(ctx context.Context, id uuid.UUID) (status string, data map[string]interface{}, err error)
+	updateBrainOutputs func(ctx context.Context, id uuid.UUID, resumePath, coverLetterText string) error
 }
 
-// NewJobsRepositoryAdapterFunc creates a new adapter with a custom getByID function.
+// NewJobsRepositoryAdapterFunc creates a new adapter with custom functions.
 func NewJobsRepositoryAdapterFunc(
 	getByID func(ctx context.Context, id uuid.UUID) (status string, data map[string]interface{}, err error),
+	updateBrainOutputs func(ctx context.Context, id uuid.UUID, resumePath, coverLetterText string) error,
 ) *JobsRepositoryAdapter {
-	return &JobsRepositoryAdapter{getByID: getByID}
+	return &JobsRepositoryAdapter{
+		getByID:            getByID,
+		updateBrainOutputs: updateBrainOutputs,
+	}
 }
 
 // GetByID implements Repository.
@@ -141,10 +146,10 @@ func (a *JobsRepositoryAdapter) GetByID(id uuid.UUID) (*BrainJob, error) {
 
 // UpdateBrainOutputs implements Repository.
 func (a *JobsRepositoryAdapter) UpdateBrainOutputs(id uuid.UUID, resumePath, coverText string) error {
-	// For now, this is a no-op. The actual update will be handled
-	// by a separate update call in the repository.
-	// TODO: Add UpdateBrainOutputs to JobsRepository
-	return nil
+	if a.updateBrainOutputs == nil {
+		return nil // No-op if not configured
+	}
+	return a.updateBrainOutputs(context.Background(), id, resumePath, coverText)
 }
 
 // GetJobData implements JobRepository.
