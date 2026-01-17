@@ -15,3 +15,9 @@ export type { PaginationProps } from './Pagination'
 
 export { JobDetail } from './JobDetail'
 export type { JobDetailProps } from './JobDetail'
+
+export { InfiniteJobsList } from './InfiniteJobsList'
+export type { InfiniteJobsListProps } from './InfiniteJobsList'
+
+export { ContactLink } from './ContactLink'
+export type { ContactLinkProps } from './ContactLink'

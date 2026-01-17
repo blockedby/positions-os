@@ -1021,6 +1021,15 @@
   padding: 0.25rem 0;
 }
 
+.contacts-list a {
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+.contacts-list a:hover {
+  text-decoration: underline;
+}
+
 .raw-content {
   background: rgba(0, 0, 0, 0.2);
   padding: 1rem;
@@ -1374,4 +1383,27 @@
     width: 100%;
     justify-content: flex-end;
   }
+}
+
+/* Infinite Scroll */
+.infinite-jobs-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.load-more-trigger {
+  padding: 1rem;
+  text-align: center;
+  min-height: 60px;
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.jobs-count {
+  font-size: 0.875rem;
 }

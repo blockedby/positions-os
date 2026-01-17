@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Job, JobsQuery } from '@/lib/types'
-import { useJobs, useBulkDeleteJobs } from '@/hooks/useJobs'
+import { useBulkDeleteJobs } from '@/hooks/useJobs'
 import { useWebSocket } from '@/hooks/useWebSocket'
-import { FilterBar, JobsTable, JobDetail } from '@/components/jobs'
+import { FilterBar, InfiniteJobsList, JobDetail } from '@/components/jobs'
 import { Button } from '@/components/ui'
 
 export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [filters, setFilters] = useState<JobsQuery>({
-    page: 1,
-    limit: 20,
+  const [filters, setFilters] = useState<Omit<JobsQuery, 'page' | 'limit'>>({
     sort_by: 'created_at',
     sort_order: 'desc',
   })
@@ -20,7 +18,6 @@ export default function Jobs() {
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const { data, isLoading } = useJobs(filters)
   const bulkDelete = useBulkDeleteJobs()
 
   // Enable real-time updates
@@ -45,11 +42,9 @@ export default function Jobs() {
   }
 
   const handleFilter = (newFilters: JobsQuery) => {
-    setFilters({ ...filters, ...newFilters, page: 1 })
-  }
-
-  const handlePageChange = (page: number) => {
-    setFilters({ ...filters, page })
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { page, limit, ...rest } = newFilters
+    setFilters((prev) => ({ ...prev, ...rest }))
   }
 
   const handleBulkDelete = async () => {
@@ -80,9 +75,6 @@ export default function Jobs() {
     <div className="jobs-page">
       <div className="jobs-header">
         <h1>Jobs</h1>
-        <span className="text-muted text-xs">
-          {data?.total ? `${data.total} jobs` : ''}
-        </span>
       </div>
 
       <FilterBar onFilter={handleFilter} />
@@ -110,12 +102,10 @@ export default function Jobs() {
 
       <div className="jobs-content">
         <div className={`jobs-list ${selectedJobId ? 'jobs-list-with-detail' : ''}`}>
-          <JobsTable
-            data={data}
-            isLoading={isLoading}
+          <InfiniteJobsList
+            filters={filters}
+            onJobSelect={handleJobClick}
             selectedJobId={selectedJobId}
-            onJobClick={handleJobClick}
-            onPageChange={handlePageChange}
             selectionMode={selectionMode}
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
