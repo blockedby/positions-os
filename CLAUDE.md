@@ -42,7 +42,7 @@ task e2e-docker              # Run E2E with isolated, ephemeral containers (reco
 bun install                  # Install dependencies
 bun dev                      # Dev server at http://localhost:5173
 bun build                    # Build to ../static/dist
-bun test                     # Unit tests with Vitest
+bunx vitest --run            # Unit tests with Vitest
 bun lint                     # ESLint
 ```
 
