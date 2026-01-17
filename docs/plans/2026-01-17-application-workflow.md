@@ -500,6 +500,8 @@ git commit -m "feat: wire brain service in collector"
 
 ## Phase 2: Frontend Status Visibility
 
+**Note:** The frontend types.ts already has TAILORED, but the Badge component is missing TAILORED, SENT, and RESPONDED variants. This phase adds all missing workflow statuses to frontend components.
+
 ### Task 2.1: Add TAILORED_APPROVED to Frontend Types
 
 **Files:**
@@ -571,7 +573,9 @@ git commit -m "feat: add TAILORED_APPROVED to frontend types"
 
 ---
 
-### Task 2.2: Add Badge Status Variants
+### Task 2.2: Add Missing Badge Status Variants (TAILORED, TAILORED_APPROVED, SENT, RESPONDED)
+
+**Note:** Badge component currently only has: raw, analyzed, interested, rejected, paused. Missing: tailored, tailored_approved, sent, responded.
 
 **Files:**
 - Modify: `frontend/src/components/ui/Badge.tsx`
