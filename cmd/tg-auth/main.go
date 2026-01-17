@@ -153,7 +153,7 @@ func authWithQR(apiID int, apiHash string) {
 			}
 
 			// Export session string in gotgproto format
-			sessionString, err = exportSessionString(memStorage, ctx)
+			sessionString, err = exportSessionString(ctx, memStorage)
 			if err != nil {
 				return fmt.Errorf("failed to export session: %w", err)
 			}
@@ -184,7 +184,7 @@ func authWithQR(apiID int, apiHash string) {
 }
 
 // exportSessionString converts gotd session to gotgproto session string
-func exportSessionString(memStorage *session.StorageMemory, ctx context.Context) (string, error) {
+func exportSessionString(ctx context.Context, memStorage *session.StorageMemory) (string, error) {
 	// Get raw session bytes directly (this is what gotgproto does!)
 	// LoadSession returns raw bytes that are already properly formatted
 	rawSessionBytes, err := memStorage.LoadSession(ctx)

@@ -444,14 +444,6 @@ func (s *Service) GetTelegramStatus() telegram.Status {
 	return s.tgClient.GetStatus()
 }
 
-// helper function
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // buildSourceURL creates a Telegram message URL from channel and message ID
 func buildSourceURL(channelURL string, messageID int) string {
 	// Extract channel name from various formats

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5" // pgx/v5 driver for database migrations
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 

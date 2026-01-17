@@ -22,7 +22,7 @@ func setupTestDB() *gorm.DB {
 }
 
 type MockSession struct {
-	SessionId string `gorm:"primaryKey"`
+	SessionID string `gorm:"primaryKey"`
 	Data      []byte
 }
 
@@ -73,7 +73,7 @@ func TestDBSession(t *testing.T) {
 
 	// 2. Populated DB -> Expect Ready
 	// Simulate a session
-	db.Create(&MockSession{SessionId: "1", Data: []byte(`{"mock":"data"}`)})
+	db.Create(&MockSession{SessionID: "1", Data: []byte(`{"mock":"data"}`)})
 
 	// We need to reset manager state effectively
 	// But since we are mocking the connection part via expectation that logic exists:
