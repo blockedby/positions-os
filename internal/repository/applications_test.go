@@ -5,13 +5,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/blockedby/positions-os/internal/logger"
-	"github.com/blockedby/positions-os/internal/models"
 )
 
 // This test file follows TDD Red-Green-Refactor pattern

@@ -4,10 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // TestReadTracker_NewReadTracker tests the constructor

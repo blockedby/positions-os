@@ -102,7 +102,7 @@ func TestManager_GetStatus_Concurrent(t *testing.T) {
 func TestManager_Stop_Graceful(t *testing.T) {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	m := NewManager(&config.Config{}, db)
-	
+
 	// Should not panic
 	assert.NotPanics(t, func() {
 		m.Stop()

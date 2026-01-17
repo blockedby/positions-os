@@ -5,15 +5,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/web"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestDeliveryTracker_NewDeliveryTracker tests the constructor

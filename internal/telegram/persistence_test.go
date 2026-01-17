@@ -98,5 +98,5 @@ func TestDBSession(t *testing.T) {
 // or Manager works with an interface.
 //
 // Compromise for TDD step:
-// The critical part of "Persistance Test" is that the Application *knows* to look in DB.
+// The critical part of "Persistence Test" is that the Application *knows* to look in DB.
 // Let's implement the `CheckSession` logic in Manager.

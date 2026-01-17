@@ -3,12 +3,11 @@ package api
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
+	"github.com/google/uuid"
 )
 
 // JobsRepository defines the interface for job data access.

@@ -6,12 +6,11 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // ApplicationsRepository defines the interface for application data access.
@@ -108,12 +107,12 @@ func (h *ApplicationsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // POST /api/v1/applications
 func (h *ApplicationsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		JobID           string    `json:"job_id"`
-		TailoredResume  *string   `json:"tailored_resume,omitempty"`
-		CoverLetter     *string   `json:"cover_letter,omitempty"`
-		ResumePDFPath   *string   `json:"resume_pdf_path,omitempty"`
-		CoverPDFPath    *string   `json:"cover_pdf_path,omitempty"`
-		DeliveryChannel string    `json:"delivery_channel"`
+		JobID           string  `json:"job_id"`
+		TailoredResume  *string `json:"tailored_resume,omitempty"`
+		CoverLetter     *string `json:"cover_letter,omitempty"`
+		ResumePDFPath   *string `json:"resume_pdf_path,omitempty"`
+		CoverPDFPath    *string `json:"cover_pdf_path,omitempty"`
+		DeliveryChannel string  `json:"delivery_channel"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -145,14 +144,14 @@ func (h *ApplicationsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app := &models.JobApplication{
-		ID:                uuid.New(),
-		JobID:             jobID,
-		TailoredResumeMD:  payload.TailoredResume,
-		CoverLetterMD:     payload.CoverLetter,
-		ResumePDFPath:     payload.ResumePDFPath,
+		ID:                 uuid.New(),
+		JobID:              jobID,
+		TailoredResumeMD:   payload.TailoredResume,
+		CoverLetterMD:      payload.CoverLetter,
+		ResumePDFPath:      payload.ResumePDFPath,
 		CoverLetterPDFPath: payload.CoverPDFPath,
-		DeliveryChannel:   &channel,
-		DeliveryStatus:    models.DeliveryStatusPending,
+		DeliveryChannel:    &channel,
+		DeliveryStatus:     models.DeliveryStatusPending,
 	}
 
 	if err := h.repo.Create(r.Context(), app); err != nil {

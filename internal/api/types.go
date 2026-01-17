@@ -3,10 +3,9 @@ package api
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
+	"github.com/google/uuid"
 )
 
 // ============================================================================
@@ -196,18 +195,18 @@ type AuthQRStartResponse struct {
 
 // ApplicationResponse represents a job application in API responses.
 type ApplicationResponse struct {
-	ID                 uuid.UUID              `json:"id" description:"Application unique identifier"`
-	JobID              uuid.UUID              `json:"job_id" description:"Associated job ID"`
-	TailoredResumeMD   *string                `json:"tailored_resume_md,omitempty" description:"Tailored resume in Markdown"`
-	CoverLetterMD      *string                `json:"cover_letter_md,omitempty" description:"Cover letter in Markdown"`
-	ResumePDFPath      *string                `json:"resume_pdf_path,omitempty" description:"Path to generated resume PDF"`
-	CoverLetterPDFPath *string                `json:"cover_letter_pdf_path,omitempty" description:"Path to generated cover letter PDF"`
-	DeliveryChannel    *string                `json:"delivery_channel,omitempty" description:"Delivery channel: TG_DM, EMAIL, HH_RESPONSE"`
-	DeliveryStatus     string                 `json:"delivery_status" description:"Delivery status: PENDING, SENT, DELIVERED, READ, FAILED"`
-	Recipient          *string                `json:"recipient,omitempty" description:"Delivery recipient"`
-	SentAt             *time.Time             `json:"sent_at,omitempty" description:"When the application was sent"`
-	CreatedAt          time.Time              `json:"created_at" description:"Record creation timestamp"`
-	UpdatedAt          time.Time              `json:"updated_at" description:"Last update timestamp"`
+	ID                 uuid.UUID  `json:"id" description:"Application unique identifier"`
+	JobID              uuid.UUID  `json:"job_id" description:"Associated job ID"`
+	TailoredResumeMD   *string    `json:"tailored_resume_md,omitempty" description:"Tailored resume in Markdown"`
+	CoverLetterMD      *string    `json:"cover_letter_md,omitempty" description:"Cover letter in Markdown"`
+	ResumePDFPath      *string    `json:"resume_pdf_path,omitempty" description:"Path to generated resume PDF"`
+	CoverLetterPDFPath *string    `json:"cover_letter_pdf_path,omitempty" description:"Path to generated cover letter PDF"`
+	DeliveryChannel    *string    `json:"delivery_channel,omitempty" description:"Delivery channel: TG_DM, EMAIL, HH_RESPONSE"`
+	DeliveryStatus     string     `json:"delivery_status" description:"Delivery status: PENDING, SENT, DELIVERED, READ, FAILED"`
+	Recipient          *string    `json:"recipient,omitempty" description:"Delivery recipient"`
+	SentAt             *time.Time `json:"sent_at,omitempty" description:"When the application was sent"`
+	CreatedAt          time.Time  `json:"created_at" description:"Record creation timestamp"`
+	UpdatedAt          time.Time  `json:"updated_at" description:"Last update timestamp"`
 }
 
 // ApplicationsListRequest contains query parameters for listing applications.

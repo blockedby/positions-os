@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/blockedby/positions-os/internal/telegram"
-	// "github.com/blockedby/positions-os/internal/web" // for Hub interface if we had one here, pass generic for now
 )
 
 // AuthHandler handles authentication related requests

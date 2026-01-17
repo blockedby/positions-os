@@ -8,11 +8,11 @@ import (
 
 // Mock implementations for testing
 type mockStorage struct {
-	baseResume   string
-	loadErr      error
-	saveErr      error
-	savedJobs    map[string]string
-	savedCovers  map[string]string
+	baseResume  string
+	loadErr     error
+	saveErr     error
+	savedJobs   map[string]string
+	savedCovers map[string]string
 }
 
 func (m *mockStorage) LoadBaseResume() (string, error) {
@@ -133,9 +133,9 @@ func TestService_TailorResumePipeline_LLMErrors_Propagated(t *testing.T) {
 func TestService_TailorResumePipeline_PDFError_SavesMarkdown(t *testing.T) {
 	// Setup
 	storage := &mockStorage{
-		baseResume:   "# Base Resume",
-		savedJobs:    make(map[string]string),
-		savedCovers:  make(map[string]string),
+		baseResume:  "# Base Resume",
+		savedJobs:   make(map[string]string),
+		savedCovers: make(map[string]string),
 	}
 	llm := &mockLLM{
 		tailoredResume: "# Tailored",

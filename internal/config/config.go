@@ -48,9 +48,9 @@ func Load() (*Config, error) {
 		TGApiHash:     getEnv("TG_API_HASH", ""),
 		LogLevel:      getEnv("LOG_LEVEL", "info"),
 		LogFile:       getEnv("LOG_FILE", "./logs/app.log"),
-		HTTPPort:  getEnvInt("HTTP_PORT", 3100),
-		StaticDir: getEnv("STATIC_DIR", "./static"),
-		TGApiID:   getEnvInt("TG_API_ID", 0),
+		HTTPPort:      getEnvInt("HTTP_PORT", 3100),
+		StaticDir:     getEnv("STATIC_DIR", "./static"),
+		TGApiID:       getEnvInt("TG_API_ID", 0),
 	}
 
 	// float parsing helper
