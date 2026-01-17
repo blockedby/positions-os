@@ -8,7 +8,7 @@ export { expect } from '@playwright/test'
 export const test = base.extend<{
   mockApi: void
 }>({
-  mockApi: async ({ page }, use) => {
+  mockApi: async ({ page }, applyMocks) => {
     // Mock all API endpoints
     await page.route('**/api/v1/targets', (route) => {
       const method = route.request().method()
@@ -89,6 +89,6 @@ export const test = base.extend<{
       })
     })
 
-    await use()
+    await applyMocks()
   },
 })
