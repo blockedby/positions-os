@@ -99,7 +99,8 @@ func (s *Server) Start() error {
 	s.listener = listener
 
 	s.httpServer = &http.Server{
-		Handler: s.router,
+		Handler:           s.router,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	return s.httpServer.Serve(listener)
