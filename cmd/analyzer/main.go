@@ -27,7 +27,9 @@ func main() {
 	}
 
 	// 2. Setup Logger
-	logger.Init(cfg.LogLevel, cfg.LogFile)
+	if err := logger.Init(cfg.LogLevel, cfg.LogFile); err != nil {
+		panic("failed to initialize logger: " + err.Error())
+	}
 	log := logger.Get()
 	log.Info().Msg("starting analyzer service")
 
