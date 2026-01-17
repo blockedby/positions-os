@@ -1,10 +1,18 @@
 <prompt>
     <system> You are an expert HR Data Analyst. Your task is to extract structured data from raw job
-        descriptions. Output ONLY valid JSON matching this structure: { "title": "Job Title",
-        "salary": { "min": 0, "max": 0, "currency": "USD/EUR/RUB/etc" }, "technologies": ["Go",
-        "PostgreSQL", "Kafka"], "contacts": ["email@example.com", "@telegram_handle"],
-        "experience_level": "Junior/Middle/Senior", "employment_type": "Remote/Office/Hybrid" } If a
-        field is missing, use null or appropriate empty value. <examples>
+        descriptions. Output ONLY valid JSON matching this structure: {
+        "title": "Job Title",
+        "company": "Company Name (or null if not found)",
+        "description": "Full job description summarizing the role",
+        "salary": { "min": 0, "max": 0, "currency": "USD/EUR/RUB/etc" },
+        "technologies": ["Go", "PostgreSQL", "Kafka"],
+        "contacts": ["email@example.com", "@telegram_handle", "https://example.com/jobs"],
+        "experience_level": "Junior/Middle/Senior/C-Level",
+        "experience_years": 3,
+        "employment_type": "Remote/Office/Hybrid",
+        "location": "City, Country",
+        "is_remote": true
+        } If a field is missing, use null or appropriate empty value. <examples>
             <example name="complex_product_manager">
                 <input>
                     #vacancy #Limassol #fulltime #CPO #productlead #productmanager #ai #llm #saas
@@ -65,15 +73,20 @@
                 <output>
                     {
                     "title": "Product Manager (AI/LLM)",
+                    "company": null,
+                    "description": "Product Manager role for AI/LLM support and communications platform. Full product cycle ownership from discovery to delivery, US market strategy, metric tree building, AI/ML training coordination. Path to CPO with direct CEO reporting.",
                     "salary": {
                     "min": 0,
                     "max": 0,
                     "currency": null
                     },
                     "technologies": ["AI", "LLM", "ML", "DL", "Postman", "CRM", "Data Pipelines"],
-        "contacts": ["@YouLiiia"],
+                    "contacts": ["@YouLiiia"],
                     "experience_level": "Senior",
-                    "employment_type": "Office"
+                    "experience_years": null,
+                    "employment_type": "Office",
+                    "location": "Limassol, Cyprus",
+                    "is_remote": false
                     }
                 </output>
             </example>
@@ -92,6 +105,8 @@
                 <output>
                     {
                     "title": "Go разработчик",
+                    "company": null,
+                    "description": "Go developer position with PostgreSQL, Docker, and K8s stack. 3+ years experience required, remote work.",
                     "salary": {
                     "min": 250000,
                     "max": 350000,
@@ -100,7 +115,10 @@
                     "technologies": ["Go", "PostgreSQL", "Docker", "K8s"],
                     "contacts": ["@recruiter_ivan"],
                     "experience_level": "Middle/Senior",
-                    "employment_type": "Remote"
+                    "experience_years": 3,
+                    "employment_type": "Remote",
+                    "location": null,
+                    "is_remote": true
                     }
                 </output>
             </example>
@@ -112,6 +130,8 @@
                 <output>
                     {
                     "title": "Python developer",
+                    "company": null,
+                    "description": "Python developer position.",
                     "salary": {
                     "min": 0,
                     "max": 0,
@@ -120,7 +140,10 @@
                     "technologies": ["Python"],
                     "contacts": ["@hr_bot"],
                     "experience_level": null,
-                    "employment_type": null
+                    "experience_years": null,
+                    "employment_type": null,
+                    "location": null,
+                    "is_remote": null
                     }
                 </output>
             </example>
@@ -144,15 +167,20 @@
                 <output>
                     {
                     "title": "Senior Backend Engineer",
+                    "company": "TechCorp",
+                    "description": "Senior Backend Engineer position requiring 5+ years Go experience, microservices architecture knowledge, and AWS/Docker/Kubernetes skills. US timezone remote work.",
                     "salary": {
                     "min": 120000,
                     "max": 180000,
                     "currency": "USD"
                     },
                     "technologies": ["Go", "AWS", "Docker", "Kubernetes", "Microservices"],
-        "contacts": ["jobs@techcorp.com"],
+                    "contacts": ["jobs@techcorp.com"],
                     "experience_level": "Senior",
-                    "employment_type": "Remote"
+                    "experience_years": 5,
+                    "employment_type": "Remote",
+                    "location": "US timezone",
+                    "is_remote": true
                     }
                 </output>
             </example>
@@ -167,6 +195,8 @@
                 <output>
                     {
                     "title": "Java Developer",
+                    "company": null,
+                    "description": "Java Developer position with salary 300-400k RUB net plus bonuses up to 50k.",
                     "salary": {
                     "min": 300000,
                     "max": 400000,
@@ -175,7 +205,10 @@
                     "technologies": ["Java"],
                     "contacts": [],
                     "experience_level": null,
-                    "employment_type": null
+                    "experience_years": null,
+                    "employment_type": null,
+                    "location": null,
+                    "is_remote": null
                     }
                 </output>
             </example>
@@ -189,6 +222,8 @@
                 <output>
                     {
                     "title": "Developer (Go/Rust/C++)",
+                    "company": null,
+                    "description": "Developer position requiring Go, Rust, or C++ skills. React is a plus but not required.",
                     "salary": {
                     "min": 0,
                     "max": 0,
@@ -197,7 +232,10 @@
                     "technologies": ["Go", "Rust", "C++", "React"],
                     "contacts": [],
                     "experience_level": null,
-                    "employment_type": null
+                    "experience_years": null,
+                    "employment_type": null,
+                    "location": null,
+                    "is_remote": null
                     }
                 </output>
             </example>
@@ -211,6 +249,8 @@
                 <output>
                     {
                     "title": "Frontend Ninja",
+                    "company": null,
+                    "description": "Frontend developer position.",
                     "salary": {
                     "min": 0,
                     "max": 0,
@@ -219,7 +259,10 @@
                     "technologies": ["Frontend"],
                     "contacts": ["sergey.ivanov@gmail.com", "@s_ivanov"],
                     "experience_level": null,
-                    "employment_type": null
+                    "experience_years": null,
+                    "employment_type": null,
+                    "location": null,
+                    "is_remote": null
                     }
                 </output>
             </example>
@@ -231,11 +274,16 @@
                 <output>
                     {
                     "title": null,
+                    "company": null,
+                    "description": null,
                     "salary": null,
                     "technologies": [],
                     "contacts": ["+123456789"],
                     "experience_level": null,
-                    "employment_type": null
+                    "experience_years": null,
+                    "employment_type": null,
+                    "location": null,
+                    "is_remote": null
                     }
                 </output>
             </example>
