@@ -20,8 +20,8 @@ func TestServer_Starts(t *testing.T) {
 	cfg := &Config{Port: 0} // random port
 	srv := NewServer(cfg, nil, nil)
 
-	go srv.Start()
-	defer srv.Stop(context.Background())
+	go func() { _ = srv.Start() }()
+	defer func() { _ = srv.Stop(context.Background()) }()
 
 	// wait for server to be ready
 	require.Eventually(t, func() bool {
