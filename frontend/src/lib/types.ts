@@ -8,6 +8,7 @@ export type JobStatus =
   | 'REJECTED'
   | 'INTERESTED'
   | 'TAILORED'
+  | 'TAILORED_APPROVED'
   | 'SENT'
   | 'RESPONDED'
 
