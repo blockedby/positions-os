@@ -398,6 +398,21 @@ func (r *JobsRepository) UpdateStructuredData(ctx context.Context, id uuid.UUID,
 	return nil
 }
 
+// UpdateBrainOutputs updates the tailored resume path and cover letter text for a job.
+func (r *JobsRepository) UpdateBrainOutputs(ctx context.Context, id uuid.UUID, resumePath, coverLetterText string) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE jobs
+		SET tailored_resume_path = $2,
+		    cover_letter_text = $3,
+		    updated_at = NOW()
+		WHERE id = $1
+	`, id, resumePath, coverLetterText)
+	if err != nil {
+		return fmt.Errorf("update brain outputs: %w", err)
+	}
+	return nil
+}
+
 // BulkDelete removes multiple jobs by their IDs.
 func (r *JobsRepository) BulkDelete(ctx context.Context, ids []uuid.UUID) (int, error) {
 	if len(ids) == 0 {

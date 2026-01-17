@@ -142,3 +142,12 @@ func TestJobsRepository_GetExistingMessageIDs_Interface(t *testing.T) {
 		GetExistingMessageIDs(ctx context.Context, targetID uuid.UUID) ([]int64, error)
 	} = (*JobsRepository)(nil)
 }
+
+// TestJobsRepository_UpdateBrainOutputs_MethodExists verifies the UpdateBrainOutputs method exists
+// with the correct signature. This is a compile-time check.
+func TestJobsRepository_UpdateBrainOutputs_MethodExists(t *testing.T) {
+	// This test verifies that the UpdateBrainOutputs method exists with the correct signature.
+	// If this compiles, the method exists.
+	var repo *JobsRepository
+	_ = repo.UpdateBrainOutputs
+}
