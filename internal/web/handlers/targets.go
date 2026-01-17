@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/blockedby/positions-os/internal/repository"
@@ -135,11 +136,11 @@ func (h *TargetsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	t, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "target not found")
+			return
+		}
 		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if t == nil {
-		respondError(w, http.StatusNotFound, "target not found")
 		return
 	}
 
@@ -182,11 +183,11 @@ func (h *TargetsHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	t, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "target not found")
+			return
+		}
 		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if t == nil {
-		respondError(w, http.StatusNotFound, "target not found")
 		return
 	}
 

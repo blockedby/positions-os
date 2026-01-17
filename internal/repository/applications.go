@@ -86,7 +86,7 @@ func (r *ApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("get application by id: %w", err)
 	}

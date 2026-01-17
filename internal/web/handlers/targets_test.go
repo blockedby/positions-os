@@ -314,7 +314,7 @@ func TestTargetsHandler_GetByID_NotFound(t *testing.T) {
 	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
-	mockRepo.On("GetByID", mock.Anything, id).Return(nil, nil)
+	mockRepo.On("GetByID", mock.Anything, id).Return(nil, repository.ErrNotFound)
 
 	r := chi.NewRouter()
 	r.Get("/targets/{id}", handler.GetByID)

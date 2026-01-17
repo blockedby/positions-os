@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -52,11 +53,11 @@ func (h *JobsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	// Get current job to check transition validity
 	job, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.NotFound(w, r)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if job == nil {
-		http.NotFound(w, r)
 		return
 	}
 
@@ -143,11 +144,11 @@ func (h *JobsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	job, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.NotFound(w, r)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if job == nil {
-		http.NotFound(w, r)
 		return
 	}
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -150,7 +151,7 @@ func (r *RangesRepository) GetRange(ctx context.Context, targetID uuid.UUID) (*P
 
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil // no range exists yet
+			return nil, ErrNotFound // no range exists yet
 		}
 		return nil, fmt.Errorf("get parsed range: %w", err)
 	}
@@ -202,10 +203,10 @@ func (r *RangesRepository) GetMaxMessageID(ctx context.Context, targetID uuid.UU
 func (r *RangesRepository) NewFilter(ctx context.Context, targetID uuid.UUID) (*MessageIDFilter, error) {
 	pr, err := r.GetRange(ctx, targetID)
 	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return NewMessageIDFilter(0, 0), nil
+		}
 		return nil, err
-	}
-	if pr == nil {
-		return NewMessageIDFilter(0, 0), nil
 	}
 	return NewMessageIDFilter(pr.MinMsgID, pr.MaxMsgID), nil
 }
@@ -214,10 +215,10 @@ func (r *RangesRepository) NewFilter(ctx context.Context, targetID uuid.UUID) (*
 func (r *RangesRepository) NewSmartFilter(ctx context.Context, targetID uuid.UUID, existingJobIDs []int64) (*SmartMessageFilter, error) {
 	pr, err := r.GetRange(ctx, targetID)
 	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return NewSmartMessageFilter(0, 0, existingJobIDs), nil
+		}
 		return nil, err
-	}
-	if pr == nil {
-		return NewSmartMessageFilter(0, 0, existingJobIDs), nil
 	}
 	return NewSmartMessageFilter(pr.MinMsgID, pr.MaxMsgID, existingJobIDs), nil
 }

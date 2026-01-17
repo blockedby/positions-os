@@ -7,6 +7,7 @@ import (
 
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
+	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/celestix/gotgproto"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -44,10 +45,10 @@ func (m *mockApplicationsRepository) Create(ctx context.Context, app *models.Job
 	return nil
 }
 func (m *mockApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.JobApplication, error) {
-	return nil, nil
+	return nil, repository.ErrNotFound
 }
 func (m *mockApplicationsRepository) GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error) {
-	return nil, nil
+	return []*models.JobApplication{}, nil
 }
 
 type mockReadTracker struct{}

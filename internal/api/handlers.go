@@ -88,10 +88,10 @@ func (s *Server) getJob(c fuego.ContextNoBody) (JobResponse, error) {
 
 	job, err := s.deps.JobsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return JobResponse{}, fuego.NotFoundError{Detail: "Job not found"}
+		}
 		return JobResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if job == nil {
-		return JobResponse{}, fuego.NotFoundError{Detail: "Job not found"}
 	}
 
 	return JobFromRepo(job), nil
@@ -221,10 +221,10 @@ func (s *Server) getTarget(c fuego.ContextNoBody) (TargetResponse, error) {
 
 	target, err := s.deps.TargetsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
+		}
 		return TargetResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if target == nil {
-		return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
 	}
 
 	return TargetFromRepo(target), nil
@@ -239,10 +239,10 @@ func (s *Server) updateTarget(c fuego.ContextWithBody[TargetUpdateRequest]) (Tar
 
 	target, err := s.deps.TargetsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
+		}
 		return TargetResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if target == nil {
-		return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
 	}
 
 	body, err := c.Body()
@@ -503,10 +503,10 @@ func (s *Server) getApplication(c fuego.ContextNoBody) (ApplicationResponse, err
 
 	app, err := s.deps.ApplicationsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ApplicationResponse{}, fuego.NotFoundError{Detail: "Application not found"}
+		}
 		return ApplicationResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if app == nil {
-		return ApplicationResponse{}, fuego.NotFoundError{Detail: "Application not found"}
 	}
 
 	return ApplicationFromModel(app), nil
@@ -521,10 +521,10 @@ func (s *Server) sendApplication(c fuego.ContextWithBody[ApplicationSendRequest]
 
 	app, err := s.deps.ApplicationsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ApplicationSendResponse{}, fuego.NotFoundError{Detail: "Application not found"}
+		}
 		return ApplicationSendResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if app == nil {
-		return ApplicationSendResponse{}, fuego.NotFoundError{Detail: "Application not found"}
 	}
 
 	if app.ResumePDFPath == nil || *app.ResumePDFPath == "" {
@@ -598,11 +598,12 @@ func (s *Server) updateDeliveryStatus(c fuego.ContextWithBody[ApplicationUpdateD
 	// Check application exists
 	app, err := s.deps.ApplicationsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, fuego.NotFoundError{Detail: "Application not found"}
+		}
 		return nil, fuego.InternalServerError{Detail: err.Error()}
 	}
-	if app == nil {
-		return nil, fuego.NotFoundError{Detail: "Application not found"}
-	}
+	_ = app // app is used to verify existence
 
 	if err := s.deps.ApplicationsRepo.UpdateDeliveryStatus(c.Context(), id, status); err != nil {
 		return nil, fuego.InternalServerError{Detail: err.Error()}

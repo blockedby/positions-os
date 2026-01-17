@@ -191,7 +191,7 @@ func (r *JobsRepository) GetByExternalID(ctx context.Context, targetID uuid.UUID
 	)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("get job by external id: %w", err)
 	}
@@ -368,7 +368,7 @@ func (r *JobsRepository) GetByID(ctx context.Context, id uuid.UUID) (*Job, error
 	)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("get job by id: %w", err)
 	}

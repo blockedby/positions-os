@@ -10,6 +10,7 @@ import (
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
+	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -90,11 +91,11 @@ func (h *ApplicationsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	app, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.Error(w, `{"error":"application not found"}`, http.StatusNotFound)
+			return
+		}
 		http.Error(w, `{"error":"failed to fetch application"}`, http.StatusInternalServerError)
-		return
-	}
-	if app == nil {
-		http.Error(w, `{"error":"application not found"}`, http.StatusNotFound)
 		return
 	}
 
@@ -185,11 +186,11 @@ func (h *ApplicationsHandler) Send(w http.ResponseWriter, r *http.Request) {
 	// Get application
 	app, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.Error(w, `{"error":"application not found"}`, http.StatusNotFound)
+			return
+		}
 		http.Error(w, `{"error":"failed to fetch application"}`, http.StatusInternalServerError)
-		return
-	}
-	if app == nil {
-		http.Error(w, `{"error":"application not found"}`, http.StatusNotFound)
 		return
 	}
 
@@ -286,13 +287,14 @@ func (h *ApplicationsHandler) UpdateDeliveryStatus(w http.ResponseWriter, r *htt
 	// Check application exists
 	app, err := h.repo.GetByID(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.Error(w, `{"error":"application not found"}`, http.StatusNotFound)
+			return
+		}
 		http.Error(w, `{"error":"failed to fetch application"}`, http.StatusInternalServerError)
 		return
 	}
-	if app == nil {
-		http.Error(w, `{"error":"application not found"}`, http.StatusNotFound)
-		return
-	}
+	_ = app // app is used to verify existence
 
 	// Update status
 	if err := h.repo.UpdateDeliveryStatus(r.Context(), id, req.Status); err != nil {
