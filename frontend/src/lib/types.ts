@@ -102,6 +102,10 @@ export interface Stats {
   analyzed_jobs: number
   interested_jobs: number
   rejected_jobs: number
+  tailored_jobs: number
+  tailored_approved_jobs: number
+  sent_jobs: number
+  responded_jobs: number
   today_jobs: number
   active_targets: number
 }
