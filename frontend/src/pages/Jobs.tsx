@@ -32,16 +32,18 @@ export default function Jobs() {
 
   const handleFilter = (newFilters: JobsQuery) => {
     // Omit page/limit as they're handled by infinite scroll
-    const { status, sort_by, sort_order, title, technologies, locations, company } = newFilters
+    const { status, sort_by, sort_order, search, technologies, salary_min, salary_max, is_remote } =
+      newFilters
     setFilters((prev) => ({
       ...prev,
       status,
       sort_by,
       sort_order,
-      title,
+      search,
       technologies,
-      locations,
-      company,
+      salary_min,
+      salary_max,
+      is_remote,
     }))
   }
 
