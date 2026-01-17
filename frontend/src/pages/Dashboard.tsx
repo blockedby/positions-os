@@ -1,5 +1,5 @@
 import { useWebSocket } from '@/hooks/useWebSocket'
-import { StatsCards, RecentJobs } from '@/components/dashboard'
+import { StatsCards, RecentJobs, ScrapeStatus } from '@/components/dashboard'
 
 export default function Dashboard() {
   // Enable real-time updates
@@ -12,6 +12,7 @@ export default function Dashboard() {
         Welcome to Positions OS. View your job search statistics and recent activity.
       </p>
 
+      <ScrapeStatus className="mb-4" />
       <StatsCards className="mb-6" />
       <RecentJobs limit={8} />
     </div>

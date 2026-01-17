@@ -6,3 +6,6 @@ export type { StatsCardsProps } from './StatsCards'
 
 export { RecentJobs } from './RecentJobs'
 export type { RecentJobsProps } from './RecentJobs'
+
+export { ScrapeStatus } from './ScrapeStatus'
+export type { ScrapeStatusProps } from './ScrapeStatus'
