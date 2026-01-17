@@ -1021,6 +1021,15 @@
   padding: 0.25rem 0;
 }
 
+.contacts-list a {
+  color: var(--pico-primary);
+  text-decoration: none;
+}
+
+.contacts-list a:hover {
+  text-decoration: underline;
+}
+
 .raw-content {
   background: rgba(0, 0, 0, 0.2);
   padding: 1rem;

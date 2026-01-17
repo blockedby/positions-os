@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { JobStatus } from '@/lib/types'
 import { Badge, Button, Card, Spinner, type BadgeStatus } from '@/components/ui'
 import { useJob, useUpdateJobStatus } from '@/hooks/useJobs'
+import { ContactLink } from './ContactLink'
 
 export interface JobDetailProps {
   jobId: string
@@ -114,7 +115,9 @@ export const JobDetail = ({ jobId, onClose }: JobDetailProps) => {
           <h4>Contacts</h4>
           <ul className="contacts-list">
             {data.contacts.map((contact, i) => (
-              <li key={i}>{contact}</li>
+              <li key={i}>
+                <ContactLink contact={contact} />
+              </li>
             ))}
           </ul>
         </div>
