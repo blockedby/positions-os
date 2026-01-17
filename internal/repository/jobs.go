@@ -13,20 +13,22 @@ import (
 
 // Job represents a job posting
 type Job struct {
-	ID             uuid.UUID              `json:"id"`
-	TargetID       uuid.UUID              `json:"target_id"`
-	ExternalID     string                 `json:"external_id"`
-	ContentHash    *string                `json:"content_hash,omitempty"`
-	RawContent     string                 `json:"raw_content"`
-	StructuredData map[string]interface{} `json:"structured_data"`
-	SourceURL      *string                `json:"source_url,omitempty"`
-	SourceDate     *time.Time             `json:"source_date,omitempty"`
-	TgMessageID    *int64                 `json:"tg_message_id,omitempty"`
-	TgTopicID      *int64                 `json:"tg_topic_id,omitempty"`
-	Status         string                 `json:"status"` // RAW, ANALYZED, REJECTED, INTERESTED, TAILORED, SENT, RESPONDED
-	CreatedAt      time.Time              `json:"created_at"`
-	UpdatedAt      time.Time              `json:"updated_at"`
-	AnalyzedAt     *time.Time             `json:"analyzed_at,omitempty"`
+	ID                 uuid.UUID              `json:"id"`
+	TargetID           uuid.UUID              `json:"target_id"`
+	ExternalID         string                 `json:"external_id"`
+	ContentHash        *string                `json:"content_hash,omitempty"`
+	RawContent         string                 `json:"raw_content"`
+	StructuredData     map[string]interface{} `json:"structured_data"`
+	SourceURL          *string                `json:"source_url,omitempty"`
+	SourceDate         *time.Time             `json:"source_date,omitempty"`
+	TgMessageID        *int64                 `json:"tg_message_id,omitempty"`
+	TgTopicID          *int64                 `json:"tg_topic_id,omitempty"`
+	Status             string                 `json:"status"` // RAW, ANALYZED, REJECTED, INTERESTED, TAILORED, SENT, RESPONDED
+	TailoredResumePath string                 `json:"tailored_resume_path,omitempty"`
+	CoverLetterText    string                 `json:"cover_letter_text,omitempty"`
+	CreatedAt          time.Time              `json:"created_at"`
+	UpdatedAt          time.Time              `json:"updated_at"`
+	AnalyzedAt         *time.Time             `json:"analyzed_at,omitempty"`
 }
 
 // JobFilter defines criteria for listing jobs

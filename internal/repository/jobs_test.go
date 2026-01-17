@@ -59,6 +59,22 @@ func TestJob_ComputeHash(t *testing.T) {
 	}
 }
 
+// test BrainOutput fields exist in Job struct
+func TestJob_HasBrainOutputFields(t *testing.T) {
+	job := Job{
+		TailoredResumePath: "/path/to/resume.pdf",
+		CoverLetterText:    "Dear Hiring Manager...",
+	}
+
+	if job.TailoredResumePath != "/path/to/resume.pdf" {
+		t.Errorf("TailoredResumePath = %q, want %q", job.TailoredResumePath, "/path/to/resume.pdf")
+	}
+
+	if job.CoverLetterText != "Dear Hiring Manager..." {
+		t.Errorf("CoverLetterText = %q, want %q", job.CoverLetterText, "Dear Hiring Manager...")
+	}
+}
+
 // test valid status transitions
 func TestJob_CanTransitionTo(t *testing.T) {
 	tests := []struct {
