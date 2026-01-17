@@ -296,7 +296,7 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 	u := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws"
 	wsConn, wsResp, err := websocket.DefaultDialer.Dial(u, nil)
 	require.NoError(t, err)
-	defer wsConn.Close()
+	defer func() { _ = wsConn.Close() }()
 	if wsResp != nil && wsResp.Body != nil {
 		defer wsResp.Body.Close()
 	}
@@ -315,7 +315,7 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Check WS message
-	wsConn.SetReadDeadline(time.Now().Add(time.Second))
+	_ = wsConn.SetReadDeadline(time.Now().Add(time.Second))
 	_, msg, err := wsConn.ReadMessage()
 	require.NoError(t, err)
 

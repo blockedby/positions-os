@@ -127,7 +127,9 @@ func (h *JobsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 func (h *JobsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -149,5 +151,7 @@ func (h *JobsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		_ = err // Client disconnected
+	}
 }

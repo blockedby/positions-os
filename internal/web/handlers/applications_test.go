@@ -240,7 +240,7 @@ func TestApplicationsHandler_Create_InvalidPayload(t *testing.T) {
 			assert.Equal(t, tt.expectCode, w.Code)
 
 			var resp map[string]string
-			json.NewDecoder(w.Body).Decode(&resp)
+			_ = json.NewDecoder(w.Body).Decode(&resp)
 			assert.Contains(t, resp["error"], tt.expectErr)
 		})
 	}

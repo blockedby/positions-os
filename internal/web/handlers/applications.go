@@ -73,7 +73,9 @@ func (h *ApplicationsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // GetByID returns a single application by ID.
@@ -97,7 +99,9 @@ func (h *ApplicationsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(app)
+	if err := json.NewEncoder(w).Encode(app); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // Create creates a new job application.
@@ -158,7 +162,9 @@ func (h *ApplicationsHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(app)
+	if err := json.NewEncoder(w).Encode(app); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // SendRequest is the payload for sending an application.
@@ -233,10 +239,12 @@ func (h *ApplicationsHandler) Send(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status":  "sent",
 		"message": "application sent successfully",
-	})
+	}); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // UpdateDeliveryStatusRequest is the payload for updating delivery status.
@@ -294,9 +302,11 @@ func (h *ApplicationsHandler) UpdateDeliveryStatus(w http.ResponseWriter, r *htt
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status": "updated",
-	})
+	}); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // ListByJobID is an alias for List for clearer naming.
