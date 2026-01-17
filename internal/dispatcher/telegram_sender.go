@@ -286,6 +286,6 @@ func (s *TelegramSender) isFloodWait(err error) int {
 
 	// Parse the number (may have suffix like " (caused by...)")
 	var waitSeconds int
-	fmt.Sscanf(parts[1], "%d", &waitSeconds)
+	_, _ = fmt.Sscanf(parts[1], "%d", &waitSeconds)
 	return waitSeconds
 }
