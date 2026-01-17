@@ -160,7 +160,3 @@ func TestProcessor_ProcessJob(t *testing.T) {
 		}
 	})
 }
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[0:len(substr)] == substr // simplistic check or stdlib strings.Contains
-}

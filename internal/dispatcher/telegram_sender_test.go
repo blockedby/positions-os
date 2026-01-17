@@ -105,21 +105,6 @@ func TestUploadAndSend_ValidatesInputs(t *testing.T) {
 	assert.Error(t, err, "Empty PDF path should return error")
 }
 
-// Mock JobApplication for testing SendApplication
-type mockJobApplication struct {
-	id              string
-	coverLetterMD   string
-	resumePDFPath   string
-	recipient       string
-	deliveryChannel string
-	deliveryStatus  string
-}
-
-func (m *mockJobApplication) GetID() string            { return m.id }
-func (m *mockJobApplication) GetCoverLetterMD() string { return m.coverLetterMD }
-func (m *mockJobApplication) GetResumePDFPath() string { return m.resumePDFPath }
-func (m *mockJobApplication) GetRecipient() string     { return m.recipient }
-
 // TestSendApplication_ValidatesApplication tests that SendApplication validates the application.
 func TestSendApplication_ValidatesApplication(t *testing.T) {
 	mockClient := &gotgproto.Client{}
