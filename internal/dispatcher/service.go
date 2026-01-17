@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
-	"github.com/google/uuid"
 )
 
 // TelegramSenderInterface defines the interface for sending via Telegram.

@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/nats"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+
+	"github.com/blockedby/positions-os/internal/nats"
 )
 
 const (

@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/blockedby/positions-os/internal/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/repository"
+	"github.com/blockedby/positions-os/internal/web"
 )
 
 // JobsHandler handles job-related requests

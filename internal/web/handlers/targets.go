@@ -6,9 +6,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // TargetsRepository defines the interface for target data access.

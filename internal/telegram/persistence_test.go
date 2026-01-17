@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/celestix/gotgproto"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 // Setup in-memory DB for testing

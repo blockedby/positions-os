@@ -3,8 +3,9 @@ package handlers
 import (
 	"context"
 
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // JobsRepository defines interface for jobs data access

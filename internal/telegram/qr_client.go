@@ -1,10 +1,11 @@
 package telegram
 
 import (
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/tg"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 // QRClientBundle contains all components needed for QR authentication

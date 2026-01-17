@@ -7,12 +7,13 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 // ApplicationsRepository defines the interface for application data access.

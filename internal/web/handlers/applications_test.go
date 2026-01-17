@@ -8,13 +8,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/dispatcher"
-	"github.com/blockedby/positions-os/internal/models"
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/blockedby/positions-os/internal/dispatcher"
+	"github.com/blockedby/positions-os/internal/models"
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // MockApplicationsRepository is a mock for ApplicationsRepository

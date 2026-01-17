@@ -5,12 +5,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/logger"
-	"github.com/blockedby/positions-os/internal/models"
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/celestix/gotgproto"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/models"
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // TestNewTelegramSender_RedPhase tests that the sender can be created with proper rate limiting.

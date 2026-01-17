@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/blockedby/positions-os/internal/collector"
 	"github.com/nats-io/nats.go"
+
+	"github.com/blockedby/positions-os/internal/collector"
 )
 
 // NATSClient interface to allow mocking

@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 const (

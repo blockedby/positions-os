@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/celestix/gotgproto"
 	"github.com/celestix/gotgproto/sessionMaker"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 // NewPersistentClient creates a telegram client that uses the database for session storage.

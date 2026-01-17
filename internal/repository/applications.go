@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/logger"
-	"github.com/blockedby/positions-os/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/models"
 )
 
 // ApplicationsRepository handles job applications CRUD operations

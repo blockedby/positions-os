@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/telegram"
 )
 
 // errors

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // ReadTracker handles Telegram read receipt detection

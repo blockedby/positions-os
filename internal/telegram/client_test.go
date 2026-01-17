@@ -4,11 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 func TestClient_API_UnauthorizedError(t *testing.T) {

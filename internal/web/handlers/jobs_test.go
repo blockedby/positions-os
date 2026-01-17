@@ -10,14 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/blockedby/positions-os/internal/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/blockedby/positions-os/internal/repository"
+	"github.com/blockedby/positions-os/internal/web"
 )
 
 // MockJobsRepository is a mock for JobsRepository

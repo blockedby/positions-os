@@ -5,10 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Mock EmailSender for testing

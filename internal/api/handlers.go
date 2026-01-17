@@ -6,12 +6,13 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/go-fuego/fuego"
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
-	"github.com/go-fuego/fuego"
-	"github.com/google/uuid"
 )
 
 // ============================================================================

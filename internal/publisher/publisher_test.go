@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/collector"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/collector"
 )
 
 // MockNATSClient mocks the nats client operations we need

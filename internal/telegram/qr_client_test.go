@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 func TestQRClientFactory_ReturnsRawClient(t *testing.T) {

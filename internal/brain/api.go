@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Common errors

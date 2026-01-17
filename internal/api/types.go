@@ -3,9 +3,10 @@ package api
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/google/uuid"
 )
 
 // ============================================================================

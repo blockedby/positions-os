@@ -8,12 +8,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/config"
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/celestix/gotgproto" // Added this import
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram/auth/qrlogin"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Status represents the Telegram client status.
