@@ -333,3 +333,10 @@ func TestRangesRepository_NewSmartFilter_Interface(t *testing.T) {
 		NewSmartFilter(ctx context.Context, targetID uuid.UUID, existingJobIDs []int64) (*SmartMessageFilter, error)
 	} = (*RangesRepository)(nil)
 }
+
+// TestMessageFilter_Interface verifies both filter types implement MessageFilter
+func TestMessageFilter_Interface(t *testing.T) {
+	// Compile-time check that both filter types implement MessageFilter
+	var _ MessageFilter = (*MessageIDFilter)(nil)
+	var _ MessageFilter = (*SmartMessageFilter)(nil)
+}
