@@ -9,7 +9,7 @@ import (
 
 // test job status validation
 func TestJob_IsValidStatus(t *testing.T) {
-	validStatuses := []string{"RAW", "ANALYZED", "REJECTED", "INTERESTED", "TAILORED", "SENT", "RESPONDED"}
+	validStatuses := []string{"RAW", "ANALYZED", "REJECTED", "INTERESTED", "TAILORED", "TAILORED_APPROVED", "SENT", "RESPONDED"}
 
 	for _, status := range validStatuses {
 		job := Job{Status: status}

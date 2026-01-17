@@ -10,13 +10,14 @@ import (
 type JobStatus string
 
 const (
-	JobStatusRaw        JobStatus = "RAW"
-	JobStatusAnalyzed   JobStatus = "ANALYZED"
-	JobStatusRejected   JobStatus = "REJECTED"
-	JobStatusInterested JobStatus = "INTERESTED"
-	JobStatusTailored   JobStatus = "TAILORED"
-	JobStatusSent       JobStatus = "SENT"
-	JobStatusResponded  JobStatus = "RESPONDED"
+	JobStatusRaw             JobStatus = "RAW"
+	JobStatusAnalyzed        JobStatus = "ANALYZED"
+	JobStatusRejected        JobStatus = "REJECTED"
+	JobStatusInterested      JobStatus = "INTERESTED"
+	JobStatusTailored        JobStatus = "TAILORED"
+	JobStatusTailoredApproved JobStatus = "TAILORED_APPROVED"
+	JobStatusSent            JobStatus = "SENT"
+	JobStatusResponded       JobStatus = "RESPONDED"
 )
 
 // Job represents a job posting from any source.

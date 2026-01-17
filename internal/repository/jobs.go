@@ -46,7 +46,7 @@ type JobFilter struct {
 func (j *Job) IsValidStatus() bool {
 	valid := map[string]bool{
 		"RAW": true, "ANALYZED": true, "REJECTED": true,
-		"INTERESTED": true, "TAILORED": true, "SENT": true, "RESPONDED": true,
+		"INTERESTED": true, "TAILORED": true, "TAILORED_APPROVED": true, "SENT": true, "RESPONDED": true,
 	}
 	return valid[j.Status]
 }
