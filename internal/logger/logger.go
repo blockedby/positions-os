@@ -1,4 +1,4 @@
-// package logger provides structured logging with file and console output.
+// Package logger provides structured logging with file and console output.
 package logger
 
 import (

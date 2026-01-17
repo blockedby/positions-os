@@ -1,3 +1,4 @@
+// Package web provides WebSocket event types and formatting.
 package web
 
 import (

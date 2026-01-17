@@ -1,3 +1,4 @@
+// Package main implements a YAML validation CLI tool.
 package main
 
 import (

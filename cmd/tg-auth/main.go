@@ -1,3 +1,4 @@
+// Package main implements the Telegram authentication CLI tool.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Package main implements the analyzer service that processes jobs through LLM.
 package main
 
 import (

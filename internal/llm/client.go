@@ -1,3 +1,4 @@
+// Package llm provides OpenAI-compatible LLM client.
 package llm
 
 import (

@@ -1,3 +1,4 @@
+// Package analyzer provides NATS consumer for job analysis.
 package analyzer
 
 import (

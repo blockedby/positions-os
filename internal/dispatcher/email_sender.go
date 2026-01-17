@@ -1,3 +1,4 @@
+// Package dispatcher provides job application dispatching via multiple channels.
 package dispatcher
 
 import (

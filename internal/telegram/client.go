@@ -1,3 +1,4 @@
+// Package telegram provides Telegram MTProto client wrapper.
 package telegram
 
 import (

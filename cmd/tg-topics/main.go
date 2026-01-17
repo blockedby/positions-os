@@ -1,3 +1,4 @@
+// Package main implements a CLI tool to list Telegram forum topics.
 package main
 
 import (

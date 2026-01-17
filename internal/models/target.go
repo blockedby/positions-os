@@ -1,4 +1,4 @@
-// package models defines shared data types for the application.
+// Package models defines shared data types for the application.
 package models
 
 import (

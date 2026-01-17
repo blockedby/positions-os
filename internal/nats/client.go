@@ -1,4 +1,4 @@
-// package nats provides a client for nats jetstream pub/sub messaging.
+// Package nats provides a client for NATS JetStream pub/sub messaging.
 package nats
 
 import (

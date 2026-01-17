@@ -1,3 +1,4 @@
+// Package main implements the collector service that scrapes and serves jobs.
 package main
 
 import (

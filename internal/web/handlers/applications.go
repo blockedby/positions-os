@@ -1,3 +1,4 @@
+// Package handlers provides HTTP handlers for job applications.
 package handlers
 
 import (

@@ -1,3 +1,4 @@
+// Package collector provides HTTP handlers for the collector service.
 package collector
 
 import (

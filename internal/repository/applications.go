@@ -1,3 +1,4 @@
+// Package repository provides database access for job applications.
 package repository
 
 import (

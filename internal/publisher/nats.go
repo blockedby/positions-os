@@ -1,3 +1,4 @@
+// Package publisher provides NATS JetStream publishing for job events.
 package publisher
 
 import (

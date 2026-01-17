@@ -1,3 +1,4 @@
+// Package brain provides job tailoring services using LLM.
 package brain
 
 import (
