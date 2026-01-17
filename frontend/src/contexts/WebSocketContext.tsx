@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { WSClient } from '@/lib/api'
 import { queryKeys } from '@/lib/types'
@@ -11,15 +11,9 @@ interface WebSocketContextValue {
   subscribe: (callback: EventSubscriber) => () => void
 }
 
-const WebSocketContext = createContext<WebSocketContextValue | null>(null)
-
-export function useWebSocketContext() {
-  const context = useContext(WebSocketContext)
-  if (!context) {
-    throw new Error('useWebSocketContext must be used within WebSocketProvider')
-  }
-  return context
-}
+// Exported for useWebSocketContext hook - disable fast refresh warning as this is a context file
+// eslint-disable-next-line react-refresh/only-export-components
+export const WebSocketContext = createContext<WebSocketContextValue | null>(null)
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const clientRef = useRef<WSClient | null>(null)

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WebSocketProvider, useWebSocketContext } from './WebSocketContext'
+import { WebSocketProvider } from './WebSocketContext'
+import { useWebSocketContext } from '@/hooks/useWebSocketContext'
 import type { ReactNode } from 'react'
 
 // Mock WebSocket

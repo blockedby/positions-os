@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useWebSocketContext } from '@/contexts/WebSocketContext'
+import { useWebSocketContext } from './useWebSocketContext'
 import type { WSEvent } from '@/lib/types'
 
 interface WebSocketOptions {
