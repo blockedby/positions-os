@@ -72,7 +72,7 @@ Tone: professional but not formal.
 Language: matches the template.`
 
 	templates := map[string]string{
-		"formal_ru":     `Уважаемый(-ая) {{CONTACT_NAME}},
+		"formal_ru": `Уважаемый(-ая) {{CONTACT_NAME}},
 
 Меня заинтересовала позиция {{POSITION}} в {{COMPANY}}.
 

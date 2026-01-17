@@ -32,15 +32,23 @@ func TestNewTelegramSender_RedPhase(t *testing.T) {
 // Mock interfaces for testing (will be replaced by real interfaces from Thread A)
 type mockDeliveryTracker struct{}
 
-func (m *mockDeliveryTracker) TrackStart(ctx context.Context, appID uuid.UUID) error { return nil }
+func (m *mockDeliveryTracker) TrackStart(ctx context.Context, appID uuid.UUID) error   { return nil }
 func (m *mockDeliveryTracker) TrackSuccess(ctx context.Context, appID uuid.UUID) error { return nil }
-func (m *mockDeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err error) error { return nil }
+func (m *mockDeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err error) error {
+	return nil
+}
 
 type mockApplicationsRepository struct{}
 
-func (m *mockApplicationsRepository) Create(ctx context.Context, app *models.JobApplication) error { return nil }
-func (m *mockApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.JobApplication, error) { return nil, nil }
-func (m *mockApplicationsRepository) GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error) { return nil, nil }
+func (m *mockApplicationsRepository) Create(ctx context.Context, app *models.JobApplication) error {
+	return nil
+}
+func (m *mockApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.JobApplication, error) {
+	return nil, nil
+}
+func (m *mockApplicationsRepository) GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error) {
+	return nil, nil
+}
 
 type mockReadTracker struct{}
 
@@ -98,16 +106,16 @@ func TestUploadAndSend_ValidatesInputs(t *testing.T) {
 
 // Mock JobApplication for testing SendApplication
 type mockJobApplication struct {
-	id               string
-	coverLetterMD    string
-	resumePDFPath    string
-	recipient        string
-	deliveryChannel  string
-	deliveryStatus   string
+	id              string
+	coverLetterMD   string
+	resumePDFPath   string
+	recipient       string
+	deliveryChannel string
+	deliveryStatus  string
 }
 
-func (m *mockJobApplication) GetID() string               { return m.id }
-func (m *mockJobApplication) GetCoverLetterMD() string  { return m.coverLetterMD }
+func (m *mockJobApplication) GetID() string            { return m.id }
+func (m *mockJobApplication) GetCoverLetterMD() string { return m.coverLetterMD }
 func (m *mockJobApplication) GetResumePDFPath() string { return m.resumePDFPath }
 func (m *mockJobApplication) GetRecipient() string     { return m.recipient }
 

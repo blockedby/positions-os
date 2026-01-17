@@ -28,18 +28,18 @@ type Broadcaster interface {
 
 // Service orchestrates the resume tailoring pipeline.
 type Service struct {
-	storage    Storage
-	llm        LLM
-	pdf        Renderer
-	storageDir string
+	storage     Storage
+	llm         LLM
+	pdf         Renderer
+	storageDir  string
 	broadcaster Broadcaster // Optional: for WebSocket events
 }
 
 // PipelineResult contains the output paths from the pipeline.
 type PipelineResult struct {
-	ResumeMDPath   string // Path to tailored resume markdown
-	ResumePDFPath  string // Path to resume PDF (for attachment)
-	CoverLetterMD  string // Cover letter content (for email/message)
+	ResumeMDPath  string // Path to tailored resume markdown
+	ResumePDFPath string // Path to resume PDF (for attachment)
+	CoverLetterMD string // Cover letter content (for email/message)
 }
 
 // NewService creates a new brain service.
@@ -242,4 +242,3 @@ func extractResumeData(markdown string) map[string]string {
 	data["education"] = "Education"
 	return data
 }
-

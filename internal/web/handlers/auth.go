@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/blockedby/positions-os/internal/telegram"
-	// "github.com/blockedby/positions-os/internal/web" // for Hub interface if we had one here, pass generic for now
 )
 
 // AuthHandler handles authentication related requests
@@ -32,11 +31,13 @@ func (h *AuthHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 	status := h.client.GetStatus()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":         string(status),
 		"is_ready":       status == telegram.StatusReady,
 		"qr_in_progress": h.client.IsQRInProgress(),
-	})
+	}); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // StartQR initiates the QR code login flow
@@ -44,14 +45,18 @@ func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
 	// 1. Check current status
 	if h.client.GetStatus() == telegram.StatusReady {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "already logged in"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error": "already logged in"}); err != nil {
+			_ = err // Client disconnected
+		}
 		return
 	}
 
 	// 2. Check if QR flow is already in progress
 	if h.client.IsQRInProgress() {
 		w.WriteHeader(http.StatusAccepted)
-		json.NewEncoder(w).Encode(map[string]string{"status": "already in progress"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "already in progress"}); err != nil {
+			_ = err // Client disconnected
+		}
 		return
 	}
 
@@ -88,5 +93,7 @@ func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "started"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "started"}); err != nil {
+		_ = err // Client disconnected
+	}
 }

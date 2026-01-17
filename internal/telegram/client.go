@@ -342,7 +342,7 @@ func (c *Client) checkFloodWait(err error) int {
 			// take the number part
 			numStr := strings.TrimSpace(parts[1])
 			// sometimes it has " (caused by...)" or other suffix, simple scan
-			fmt.Sscanf(numStr, "%d", &seconds)
+			_, _ = fmt.Sscanf(numStr, "%d", &seconds)
 			return seconds
 		}
 	}

@@ -12,8 +12,8 @@ import (
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/celestix/gotgproto"
-	"github.com/gotd/td/tg"
 	"github.com/google/uuid"
+	"github.com/gotd/td/tg"
 	"golang.org/x/time/rate"
 )
 
@@ -133,9 +133,9 @@ func (s *TelegramSender) uploadFile(ctx context.Context, path string) (*tg.Input
 		chunk := data[i:end]
 
 		_, err := api.UploadSaveFilePart(ctx, &tg.UploadSaveFilePartRequest{
-			FileID:     fileID,
-			FilePart:   parts,
-			Bytes:      chunk,
+			FileID:   fileID,
+			FilePart: parts,
+			Bytes:    chunk,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("upload part %d: %w", parts, err)
@@ -146,9 +146,9 @@ func (s *TelegramSender) uploadFile(ctx context.Context, path string) (*tg.Input
 	}
 
 	return &tg.InputFile{
-		ID:     fileID,
-		Parts:  parts,
-		Name:   filepath.Base(path),
+		ID:          fileID,
+		Parts:       parts,
+		Name:        filepath.Base(path),
 		MD5Checksum: "", // Optional
 	}, nil
 }
@@ -188,8 +188,8 @@ func (s *TelegramSender) UploadAndSend(ctx context.Context, recipient, text, pdf
 
 	// Send media with caption
 	media := &tg.InputMediaUploadedDocument{
-		File:       uploadedFile,
-		MimeType:   "application/pdf",
+		File:     uploadedFile,
+		MimeType: "application/pdf",
 		Attributes: []tg.DocumentAttributeClass{
 			&tg.DocumentAttributeFilename{
 				FileName: filepath.Base(pdfPath),
@@ -199,9 +199,9 @@ func (s *TelegramSender) UploadAndSend(ctx context.Context, recipient, text, pdf
 
 	api := s.client.API()
 	_, err = api.MessagesSendMedia(ctx, &tg.MessagesSendMediaRequest{
-		Peer:     peer,
-		Media:    media,
-		Message:  text,
+		Peer:    peer,
+		Media:   media,
+		Message: text,
 	})
 	if err != nil {
 		return fmt.Errorf("send media: %w", err)
@@ -286,6 +286,6 @@ func (s *TelegramSender) isFloodWait(err error) int {
 
 	// Parse the number (may have suffix like " (caused by...)")
 	var waitSeconds int
-	fmt.Sscanf(parts[1], "%d", &waitSeconds)
+	_, _ = fmt.Sscanf(parts[1], "%d", &waitSeconds)
 	return waitSeconds
 }

@@ -54,8 +54,8 @@ type Manager struct {
 	qrMu         sync.Mutex
 
 	// Read receipt callback for dispatcher integration
-	readReceiptCallback      ReadReceiptCallback
-	readReceiptCallbackMu    sync.RWMutex
+	readReceiptCallback   ReadReceiptCallback
+	readReceiptCallbackMu sync.RWMutex
 }
 
 func NewManager(cfg *config.Config, db *gorm.DB) *Manager {

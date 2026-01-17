@@ -10,7 +10,7 @@ import (
 
 // jsonData wraps session.Data for gotgproto's expected JSON format.
 type jsonData struct {
-	Version int         `json:"Version"`
+	Version int          `json:"Version"`
 	Data    session.Data `json:"Data"`
 }
 

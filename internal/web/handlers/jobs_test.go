@@ -294,9 +294,12 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 
 	// Connect WS client
 	u := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws"
-	wsConn, _, err := websocket.DefaultDialer.Dial(u, nil)
+	wsConn, wsResp, err := websocket.DefaultDialer.Dial(u, nil)
 	require.NoError(t, err)
-	defer wsConn.Close()
+	defer func() { _ = wsConn.Close() }()
+	if wsResp != nil && wsResp.Body != nil {
+		defer func() { _ = wsResp.Body.Close() }()
+	}
 
 	// Allow time for registration
 	time.Sleep(50 * time.Millisecond)
@@ -308,10 +311,11 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Check WS message
-	wsConn.SetReadDeadline(time.Now().Add(time.Second))
+	_ = wsConn.SetReadDeadline(time.Now().Add(time.Second))
 	_, msg, err := wsConn.ReadMessage()
 	require.NoError(t, err)
 

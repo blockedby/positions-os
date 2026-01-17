@@ -14,10 +14,10 @@ const (
 	EventScrapeEnd   = "scrape.end"
 
 	// Brain events
-	EventBrainStarted  = "brain.started"
-	EventBrainProgress = "brain.progress"
+	EventBrainStarted   = "brain.started"
+	EventBrainProgress  = "brain.progress"
 	EventBrainCompleted = "brain.completed"
-	EventBrainError    = "brain.error"
+	EventBrainError     = "brain.error"
 )
 
 // WSEvent represents a structured WebSocket message
@@ -69,10 +69,10 @@ type BrainStartedPayload struct {
 
 // BrainProgressPayload is the payload for EventBrainProgress
 type BrainProgressPayload struct {
-	JobID   string `json:"job_id"`
-	Step    string `json:"step"`              // tailoring, cover_letter, pdf_rendering
+	JobID    string `json:"job_id"`
+	Step     string `json:"step"`              // tailoring, cover_letter, pdf_rendering
 	Progress int    `json:"progress"`          // 0-100
-	Message string `json:"message,omitempty"` // Human-readable message
+	Message  string `json:"message,omitempty"` // Human-readable message
 }
 
 // BrainCompletedPayload is the payload for EventBrainCompleted
@@ -106,10 +106,10 @@ func BrainProgressEvent(jobID uuid.UUID, step string, progress int, message stri
 	evt := WSEvent{
 		Type: EventBrainProgress,
 		Payload: BrainProgressPayload{
-			JobID:   jobID.String(),
-			Step:    step,
+			JobID:    jobID.String(),
+			Step:     step,
 			Progress: progress,
-			Message: message,
+			Message:  message,
 		},
 	}
 	b, _ := json.Marshal(evt)

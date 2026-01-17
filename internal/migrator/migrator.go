@@ -59,7 +59,7 @@ func (m *Migrator) Up(ctx context.Context, databaseURL string) error {
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
-	defer migrator.Close()
+	defer func() { _, _ = migrator.Close() }()
 
 	// Run migrations
 	if err := migrator.Up(); err != nil {
@@ -89,7 +89,7 @@ func (m *Migrator) Version(ctx context.Context, databaseURL string) (version uin
 	if err != nil {
 		return 0, false, fmt.Errorf("create migrator: %w", err)
 	}
-	defer migrator.Close()
+	defer func() { _, _ = migrator.Close() }()
 
 	version, dirty, err = migrator.Version()
 	if err != nil {

@@ -19,7 +19,7 @@ func TestClient_API_UnauthorizedError(t *testing.T) {
 	cfg := &config.Config{}
 	manager := NewManager(cfg, db)
 	// Manager status is INITIALIZING by default, then we don't Init it, so GetClient returns nil
-	
+
 	client := NewClient(manager)
 
 	// Act

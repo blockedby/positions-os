@@ -19,12 +19,12 @@ func TestPDFRenderer_RenderResume_GeneratesPDF(t *testing.T) {
 	ctx := context.Background()
 
 	resumeData := map[string]string{
-		"name":        "John Doe",
-		"title":       "Senior Go Developer",
-		"experience":  "5+ years building scalable systems",
-		"summary":     "Experienced developer",
-		"skills":      "Go, Python, PostgreSQL",
-		"education":   "BS Computer Science, State University, 2018",
+		"name":       "John Doe",
+		"title":      "Senior Go Developer",
+		"experience": "5+ years building scalable systems",
+		"summary":    "Experienced developer",
+		"skills":     "Go, Python, PostgreSQL",
+		"education":  "BS Computer Science, State University, 2018",
 	}
 
 	// Execute
@@ -40,4 +40,3 @@ func TestPDFRenderer_RenderResume_GeneratesPDF(t *testing.T) {
 		t.Errorf("PDF file not created at %s", pdfPath)
 	}
 }
-

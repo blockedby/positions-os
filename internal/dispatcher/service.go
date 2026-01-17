@@ -52,7 +52,7 @@ func NewDispatcherService(
 // SendRequest represents a request to send a job application.
 type SendRequest struct {
 	JobID     uuid.UUID `json:"job_id"`
-	Channel   string    `json:"channel"`   // "TG_DM" or "EMAIL"
+	Channel   string    `json:"channel"` // "TG_DM" or "EMAIL"
 	Recipient string    `json:"recipient"`
 }
 

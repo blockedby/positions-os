@@ -73,10 +73,10 @@ func (c *Client) Subscribe(ctx context.Context, stream, consumer, subject string
 	_, err = cons.Consume(func(msg jetstream.Msg) {
 		if err := handler(msg.Data()); err != nil {
 			// negative acknowledgement - will be redelivered
-			msg.Nak()
+			_ = msg.Nak()
 			return
 		}
-		msg.Ack()
+		_ = msg.Ack()
 	})
 
 	return err

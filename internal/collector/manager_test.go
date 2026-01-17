@@ -177,7 +177,7 @@ func TestScrapeManager_ConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			manager.Start(context.Background(), ScrapeOptions{})
+			_, _ = manager.Start(context.Background(), ScrapeOptions{})
 			manager.Current()
 			manager.Stop()
 		}()

@@ -71,8 +71,8 @@ func TestSendApplication_EMAIL_NotImplemented(t *testing.T) {
 		tgSender: mockTgSender,
 		// emailSender is nil to test not configured case
 		tracker: mockTracker,
-		repo:     mockRepo,
-		log:      log,
+		repo:    mockRepo,
+		log:     log,
 	}
 
 	jobID := uuid.New()

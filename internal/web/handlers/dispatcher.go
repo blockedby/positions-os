@@ -46,17 +46,19 @@ func (h *DispatcherHandler) Status(w http.ResponseWriter, r *http.Request) {
 	// For now, return a static healthy status
 	// In production, this would check actual service health
 	resp := StatusResponse{
-		Status:            "healthy",
-		TelegramAvailable: true,  // TODO: Check actual Telegram client status
-		EmailAvailable:    false, // TODO: Check email configuration
-		ActiveSends:       0,     // TODO: Track active sends
-		RateLimitPerSecond: 0.1,  // 1 request per 10 seconds
-		Version:           "dev",
+		Status:             "healthy",
+		TelegramAvailable:  true,  // TODO: Check actual Telegram client status
+		EmailAvailable:     false, // TODO: Check email configuration
+		ActiveSends:        0,     // TODO: Track active sends
+		RateLimitPerSecond: 0.1,   // 1 request per 10 seconds
+		Version:            "dev",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // DispatcherStatus is an alias for Status for clarity.

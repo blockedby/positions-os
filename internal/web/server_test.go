@@ -20,13 +20,17 @@ func TestServer_Starts(t *testing.T) {
 	cfg := &Config{Port: 0} // random port
 	srv := NewServer(cfg, nil, nil)
 
-	go srv.Start()
-	defer srv.Stop(context.Background())
+	go func() { _ = srv.Start() }()
+	defer func() { _ = srv.Stop(context.Background()) }()
 
 	// wait for server to be ready
 	require.Eventually(t, func() bool {
 		resp, err := http.Get(srv.BaseURL() + "/health")
-		return err == nil && resp.StatusCode == 200
+		if err != nil {
+			return false
+		}
+		defer func() { _ = resp.Body.Close() }()
+		return resp.StatusCode == 200
 	}, 2*time.Second, 100*time.Millisecond)
 }
 
@@ -46,15 +50,15 @@ func TestServer_ServesStatic(t *testing.T) {
 	cfg := &Config{Port: 0, StaticDir: staticDir}
 	srv := NewServer(cfg, nil, nil)
 
-	go srv.Start()
-	defer srv.Stop(context.Background())
+	go func() { _ = srv.Start() }()
+	defer func() { _ = srv.Stop(context.Background()) }()
 
 	// Wait for server
 	time.Sleep(50 * time.Millisecond)
 
 	resp, err := http.Get(srv.BaseURL() + "/static/css/style.css")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Contains(t, resp.Header.Get("Content-Type"), "text/css")
@@ -65,7 +69,7 @@ func TestServer_ServesStatic(t *testing.T) {
 	// Check JS
 	respJS, err := http.Get(srv.BaseURL() + "/static/js/ws.js")
 	require.NoError(t, err)
-	defer respJS.Body.Close()
+	defer func() { _ = respJS.Body.Close() }()
 	assert.Equal(t, http.StatusOK, respJS.StatusCode)
 }
 
@@ -73,14 +77,14 @@ func TestServer_HealthEndpoint(t *testing.T) {
 	cfg := &Config{Port: 0}
 	srv := NewServer(cfg, nil, nil)
 
-	go srv.Start()
-	defer srv.Stop(context.Background())
+	go func() { _ = srv.Start() }()
+	defer func() { _ = srv.Stop(context.Background()) }()
 
 	time.Sleep(50 * time.Millisecond)
 
 	resp, err := http.Get(srv.BaseURL() + "/health")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -102,8 +106,8 @@ func TestServer_WebSocket(t *testing.T) {
 	go hub.Run()
 
 	srv := NewServer(cfg, nil, hub)
-	go srv.Start()
-	defer srv.Stop(context.Background())
+	go func() { _ = srv.Start() }()
+	defer func() { _ = srv.Stop(context.Background()) }()
 
 	// Wait for server to start
 	time.Sleep(50 * time.Millisecond)
@@ -112,9 +116,12 @@ func TestServer_WebSocket(t *testing.T) {
 	u := url.URL{Scheme: "ws", Host: srv.listener.Addr().String(), Path: "/ws"}
 
 	// Connect
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, wsResp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	require.NoError(t, err)
-	defer c.Close()
+	defer func() { _ = c.Close() }()
+	if wsResp != nil && wsResp.Body != nil {
+		defer func() { _ = wsResp.Body.Close() }()
+	}
 }
 
 func TestServer_RegisterJobsHandler(t *testing.T) {
@@ -125,19 +132,20 @@ func TestServer_RegisterJobsHandler(t *testing.T) {
 	handler := &mockJobsAPIHandler{}
 	srv.RegisterJobsHandler(handler)
 
-	go srv.Start()
-	defer srv.Stop(context.Background())
+	go func() { _ = srv.Start() }()
+	defer func() { _ = srv.Stop(context.Background()) }()
 	time.Sleep(50 * time.Millisecond)
 
 	resp, err := http.Get(srv.BaseURL() + "/api/v1/jobs")
 	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 type mockJobsAPIHandler struct{}
 
-func (h *mockJobsAPIHandler) List(w http.ResponseWriter, r *http.Request) {
+func (h *mockJobsAPIHandler) List(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
-func (h *mockJobsAPIHandler) GetByID(w http.ResponseWriter, r *http.Request)      {}
-func (h *mockJobsAPIHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {}
+func (h *mockJobsAPIHandler) GetByID(_ http.ResponseWriter, _ *http.Request)      {}
+func (h *mockJobsAPIHandler) UpdateStatus(_ http.ResponseWriter, _ *http.Request) {}

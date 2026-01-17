@@ -6,12 +6,11 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // ApplicationsRepository defines the interface for application data access.
@@ -73,7 +72,9 @@ func (h *ApplicationsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // GetByID returns a single application by ID.
@@ -97,19 +98,21 @@ func (h *ApplicationsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(app)
+	if err := json.NewEncoder(w).Encode(app); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // Create creates a new job application.
 // POST /api/v1/applications
 func (h *ApplicationsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		JobID           string    `json:"job_id"`
-		TailoredResume  *string   `json:"tailored_resume,omitempty"`
-		CoverLetter     *string   `json:"cover_letter,omitempty"`
-		ResumePDFPath   *string   `json:"resume_pdf_path,omitempty"`
-		CoverPDFPath    *string   `json:"cover_pdf_path,omitempty"`
-		DeliveryChannel string    `json:"delivery_channel"`
+		JobID           string  `json:"job_id"`
+		TailoredResume  *string `json:"tailored_resume,omitempty"`
+		CoverLetter     *string `json:"cover_letter,omitempty"`
+		ResumePDFPath   *string `json:"resume_pdf_path,omitempty"`
+		CoverPDFPath    *string `json:"cover_pdf_path,omitempty"`
+		DeliveryChannel string  `json:"delivery_channel"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -141,14 +144,14 @@ func (h *ApplicationsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app := &models.JobApplication{
-		ID:                uuid.New(),
-		JobID:             jobID,
-		TailoredResumeMD:  payload.TailoredResume,
-		CoverLetterMD:     payload.CoverLetter,
-		ResumePDFPath:     payload.ResumePDFPath,
+		ID:                 uuid.New(),
+		JobID:              jobID,
+		TailoredResumeMD:   payload.TailoredResume,
+		CoverLetterMD:      payload.CoverLetter,
+		ResumePDFPath:      payload.ResumePDFPath,
 		CoverLetterPDFPath: payload.CoverPDFPath,
-		DeliveryChannel:   &channel,
-		DeliveryStatus:    models.DeliveryStatusPending,
+		DeliveryChannel:    &channel,
+		DeliveryStatus:     models.DeliveryStatusPending,
 	}
 
 	if err := h.repo.Create(r.Context(), app); err != nil {
@@ -158,7 +161,9 @@ func (h *ApplicationsHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(app)
+	if err := json.NewEncoder(w).Encode(app); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // SendRequest is the payload for sending an application.
@@ -233,10 +238,12 @@ func (h *ApplicationsHandler) Send(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status":  "sent",
 		"message": "application sent successfully",
-	})
+	}); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // UpdateDeliveryStatusRequest is the payload for updating delivery status.
@@ -294,9 +301,11 @@ func (h *ApplicationsHandler) UpdateDeliveryStatus(w http.ResponseWriter, r *htt
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status": "updated",
-	})
+	}); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // ListByJobID is an alias for List for clearer naming.

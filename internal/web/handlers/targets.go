@@ -231,7 +231,9 @@ func (h *TargetsHandler) Update(w http.ResponseWriter, r *http.Request) {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 // respondError is a helper function to respond with a JSON error

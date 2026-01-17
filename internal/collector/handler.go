@@ -179,7 +179,10 @@ func (h *Handler) ListForumTopics(w http.ResponseWriter, r *http.Request) {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		// Client disconnected or other write error - nothing we can do
+		_ = err
+	}
 }
 
 func respondError(w http.ResponseWriter, status int, message string) {

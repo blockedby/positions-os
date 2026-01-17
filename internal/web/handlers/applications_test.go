@@ -8,13 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/blockedby/positions-os/internal/dispatcher"
+	"github.com/blockedby/positions-os/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/blockedby/positions-os/internal/dispatcher"
-	"github.com/blockedby/positions-os/internal/models"
 )
 
 // MockApplicationsRepository is a mock for ApplicationsRepository
@@ -240,7 +239,7 @@ func TestApplicationsHandler_Create_InvalidPayload(t *testing.T) {
 			assert.Equal(t, tt.expectCode, w.Code)
 
 			var resp map[string]string
-			json.NewDecoder(w.Body).Decode(&resp)
+			_ = json.NewDecoder(w.Body).Decode(&resp)
 			assert.Contains(t, resp["error"], tt.expectErr)
 		})
 	}
@@ -254,23 +253,23 @@ func TestApplicationsHandler_Send(t *testing.T) {
 		JobID:           jobID,
 		DeliveryStatus:  models.DeliveryStatusPending,
 		DeliveryChannel: deliveryChannelPtr(models.DeliveryChannelTGDM),
-		ResumePDFPath:    strPtr("/path/to/resume.pdf"),
-		CoverLetterMD:    strPtr("Cover letter"),
+		ResumePDFPath:   strPtr("/path/to/resume.pdf"),
+		CoverLetterMD:   strPtr("Cover letter"),
 	}
 
 	tests := []struct {
-		name      string
-		sendErr   error
+		name       string
+		sendErr    error
 		expectCode int
 	}{
 		{
-			name:      "success",
-			sendErr:   nil,
+			name:       "success",
+			sendErr:    nil,
 			expectCode: http.StatusOK,
 		},
 		{
-			name:      "dispatcher error",
-			sendErr:   assert.AnError,
+			name:       "dispatcher error",
+			sendErr:    assert.AnError,
 			expectCode: http.StatusInternalServerError,
 		},
 	}

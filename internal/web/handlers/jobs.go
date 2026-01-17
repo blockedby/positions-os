@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/web"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // JobsHandler handles job-related requests
@@ -127,7 +126,9 @@ func (h *JobsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		_ = err // Client disconnected
+	}
 }
 
 func (h *JobsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -149,5 +150,7 @@ func (h *JobsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		_ = err // Client disconnected
+	}
 }

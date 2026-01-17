@@ -12,8 +12,8 @@ var promptsFS embed.FS
 
 const (
 	// Prompt file names (relative to embedded FS)
-	resumePromptFile  = "docs/prompts/resume-tailoring.xml"
-	coverPromptFile   = "docs/prompts/cover-letter.xml"
+	resumePromptFile = "docs/prompts/resume-tailoring.xml"
+	coverPromptFile  = "docs/prompts/cover-letter.xml"
 )
 
 // LoadResumePrompt loads the resume tailoring prompt from embedded FS.

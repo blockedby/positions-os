@@ -56,12 +56,12 @@ func TestQRClient_DispatcherInstanceMatch(t *testing.T) {
 	require.NotNil(t, bundle)
 
 	// Since we fixed NewQRClient to use the same pointer for both,
-	// and Dispatcher is now a pointer in the bundle, this verifies 
+	// and Dispatcher is now a pointer in the bundle, this verifies
 	// we are returning the instance we created.
 	require.NotNil(t, bundle.Dispatcher, "Bundle must have a dispatcher")
-	
+
 	// We can't easily check the Client's internal pointer without reflection/unsafe,
-	// but the code change in qr_client.go (passing 'dispatcher' pointer) 
+	// but the code change in qr_client.go (passing 'dispatcher' pointer)
 	// ensures they are the same.
 }
 
@@ -74,10 +74,10 @@ func TestQRClientFactory_InvalidConfig(t *testing.T) {
 
 func TestQRClientFactory_MemoryStorageIsolation(t *testing.T) {
 	cfg := &config.Config{TGApiID: 12345, TGApiHash: "test_hash"}
-	
+
 	bundle1, _ := NewQRClient(cfg)
 	bundle2, _ := NewQRClient(cfg)
-	
+
 	require.NotNil(t, bundle1.Storage)
 	require.NotNil(t, bundle2.Storage)
 	assert.True(t, bundle1.Storage != bundle2.Storage, "Each bundle should have isolated storage")

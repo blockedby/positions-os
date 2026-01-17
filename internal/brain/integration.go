@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/google/uuid"
 )
 
 // JobRepository extends Repository with methods needed for service integration.

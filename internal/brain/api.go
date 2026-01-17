@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-
-	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Common errors
@@ -58,17 +57,17 @@ type PrepareJobRequest struct {
 
 // PrepareJobResponse represents the response for prepare endpoint.
 type PrepareJobResponse struct {
-	Status     string `json:"status"`
-	WSChannel  string `json:"ws_channel"`
-	Message    string `json:"message,omitempty"`
+	Status    string `json:"status"`
+	WSChannel string `json:"ws_channel"`
+	Message   string `json:"message,omitempty"`
 }
 
 // DocumentsResponse represents the response for documents endpoint.
 type DocumentsResponse struct {
-	ResumeURL    string `json:"resume_url,omitempty"`
-	CoverLetter  string `json:"cover_letter,omitempty"`
-	Status       string `json:"status"`
-	PreparedAt   string `json:"prepared_at,omitempty"`
+	ResumeURL   string `json:"resume_url,omitempty"`
+	CoverLetter string `json:"cover_letter,omitempty"`
+	Status      string `json:"status"`
+	PreparedAt  string `json:"prepared_at,omitempty"`
 }
 
 // PrepareJob triggers the resume tailoring pipeline for a job.
