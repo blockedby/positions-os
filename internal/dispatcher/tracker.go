@@ -181,7 +181,7 @@ func (t *DeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err
 }
 
 // TrackProgress reports intermediate progress (during SENDING)
-func (t *DeliveryTracker) TrackProgress(ctx context.Context, appID uuid.UUID, step string, progress int) error {
+func (t *DeliveryTracker) TrackProgress(_ context.Context, appID uuid.UUID, step string, progress int) error {
 	t.hub.Broadcast(ProgressEvent{
 		Type:          "dispatcher.progress",
 		ApplicationID: appID.String(),

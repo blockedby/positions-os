@@ -26,7 +26,7 @@ func NewNATSPublisher(conn *nats.Conn) *NATSPublisher {
 }
 
 // PublishJobNew publishes a new job event
-func (p *NATSPublisher) PublishJobNew(ctx context.Context, event collector.JobNewEvent) error {
+func (p *NATSPublisher) PublishJobNew(_ context.Context, event collector.JobNewEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)

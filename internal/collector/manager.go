@@ -58,7 +58,7 @@ func NewScrapeManager(scraper Scraper) *ScrapeManager {
 
 // Start starts a new scrape job
 // returns ErrAlreadyRunning if a job is already running
-func (m *ScrapeManager) Start(ctx context.Context, opts ScrapeOptions) (*ScrapeJob, error) {
+func (m *ScrapeManager) Start(_ context.Context, opts ScrapeOptions) (*ScrapeJob, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

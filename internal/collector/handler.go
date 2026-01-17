@@ -24,7 +24,7 @@ func NewHandler(manager *ScrapeManager, targetsRepo *repository.TargetsRepositor
 }
 
 // Health handles GET /health
-func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 	respondJSON(w, http.StatusOK, map[string]string{
 		"status": "ok",
 		"time":   time.Now().Format(time.RFC3339),
@@ -79,7 +79,7 @@ func (h *Handler) StartScrape(w http.ResponseWriter, r *http.Request) {
 }
 
 // StopScrape handles DELETE /api/v1/scrape/current
-func (h *Handler) StopScrape(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) StopScrape(w http.ResponseWriter, _ *http.Request) {
 	h.manager.Stop()
 	respondJSON(w, http.StatusOK, map[string]string{
 		"message": "scrape job stopped",
@@ -87,7 +87,7 @@ func (h *Handler) StopScrape(w http.ResponseWriter, r *http.Request) {
 }
 
 // Status handles GET /api/v1/scrape/status
-func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Status(w http.ResponseWriter, _ *http.Request) {
 	current := h.manager.Current()
 	tgStatus := h.manager.GetTelegramStatus()
 

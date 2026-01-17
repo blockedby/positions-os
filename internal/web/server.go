@@ -30,7 +30,7 @@ type Server struct {
 }
 
 // NewServer creates a new HTTP server
-func NewServer(cfg *Config, repo interface{}, hub interface{}) *Server {
+func NewServer(cfg *Config, _ interface{}, hub interface{}) *Server {
 	router := chi.NewRouter()
 
 	srv := &Server{
@@ -79,7 +79,7 @@ func (s *Server) setupRoutes() {
 	}
 
 	// Health endpoint
-	s.router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	s.router.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte(`{"status":"ok","version":"dev"}`)); err != nil {

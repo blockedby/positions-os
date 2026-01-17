@@ -235,7 +235,7 @@ func (s *Server) Start() error {
 }
 
 // Stop gracefully stops the server.
-func (s *Server) Stop(ctx context.Context) error {
+func (s *Server) Stop(_ context.Context) error {
 	// Fuego uses net/http server internally
 	return nil
 }
@@ -258,7 +258,7 @@ func (s *Server) MountDocsOn(r interface {
 	})
 
 	// Serve OpenAPI spec from Fuego's generated schema
-	r.Get("/openapi.json", func(w http.ResponseWriter, req *http.Request) {
+	r.Get("/openapi.json", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		spec := s.fuego.OpenAPI.Description()
 		if err := json.NewEncoder(w).Encode(spec); err != nil {

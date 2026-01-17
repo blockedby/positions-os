@@ -225,7 +225,7 @@ func (m *Manager) StartQR(ctx context.Context, onQRCode func(url string)) error 
 		qr := bundle.Client.QR()
 		loggedIn := qrlogin.OnLoginToken(&bundle.Dispatcher)
 
-		_, authErr = qr.Auth(ctx, loggedIn, func(ctx context.Context, token qrlogin.Token) error {
+		_, authErr = qr.Auth(ctx, loggedIn, func(_ context.Context, token qrlogin.Token) error {
 			m.log.Info().Str("url", token.URL()).Msg("telegram: QR token generated")
 			onQRCode(token.URL())
 			return nil

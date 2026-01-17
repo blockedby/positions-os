@@ -18,7 +18,7 @@ import (
 // Health
 // ============================================================================
 
-func (s *Server) healthCheck(c fuego.ContextNoBody) (HealthResponse, error) {
+func (s *Server) healthCheck(_ fuego.ContextNoBody) (HealthResponse, error) {
 	return HealthResponse{
 		Status:  "ok",
 		Version: "dev",
@@ -346,7 +346,7 @@ func (s *Server) startScrape(c fuego.ContextWithBody[ScrapeStartRequest]) (Scrap
 	}, nil
 }
 
-func (s *Server) stopScrape(c fuego.ContextNoBody) (any, error) {
+func (s *Server) stopScrape(_ fuego.ContextNoBody) (any, error) {
 	if s.deps.CollectorService == nil {
 		return nil, fuego.InternalServerError{Detail: "Collector service not available"}
 	}
@@ -358,7 +358,7 @@ func (s *Server) stopScrape(c fuego.ContextNoBody) (any, error) {
 	return map[string]string{"status": "stopped"}, nil
 }
 
-func (s *Server) getScrapeStatus(c fuego.ContextNoBody) (ScrapeStatusResponse, error) {
+func (s *Server) getScrapeStatus(_ fuego.ContextNoBody) (ScrapeStatusResponse, error) {
 	if s.deps.CollectorService == nil {
 		return ScrapeStatusResponse{}, nil
 	}
@@ -383,7 +383,7 @@ func (s *Server) getScrapeStatus(c fuego.ContextNoBody) (ScrapeStatusResponse, e
 // Auth Handlers
 // ============================================================================
 
-func (s *Server) getAuthStatus(c fuego.ContextNoBody) (AuthStatusResponse, error) {
+func (s *Server) getAuthStatus(_ fuego.ContextNoBody) (AuthStatusResponse, error) {
 	if s.deps.TelegramClient == nil {
 		return AuthStatusResponse{
 			Status:       "DISCONNECTED",
@@ -400,7 +400,7 @@ func (s *Server) getAuthStatus(c fuego.ContextNoBody) (AuthStatusResponse, error
 	}, nil
 }
 
-func (s *Server) startQRAuth(c fuego.ContextNoBody) (AuthQRStartResponse, error) {
+func (s *Server) startQRAuth(_ fuego.ContextNoBody) (AuthQRStartResponse, error) {
 	if s.deps.TelegramClient == nil {
 		return AuthQRStartResponse{}, fuego.InternalServerError{Detail: "Telegram client not available"}
 	}

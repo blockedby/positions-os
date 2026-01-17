@@ -121,7 +121,7 @@ func authWithQR(apiID int, apiHash string) {
 
 		// Loop to handle QR expiration and regeneration
 		for {
-			auth, err := qr.Auth(ctx, loggedIn, func(ctx context.Context, token qrlogin.Token) error {
+			auth, err := qr.Auth(ctx, loggedIn, func(_ context.Context, token qrlogin.Token) error {
 				expires := time.Until(token.Expires()).Round(time.Second)
 
 				fmt.Println("╔═══════════════════════════════════════════════════════╗")
