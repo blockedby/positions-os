@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useInfiniteJobs } from '@/hooks/useInfiniteJobs'
 import { JobRow } from './JobRow'
 import { Spinner, Skeleton } from '@/components/ui'
@@ -53,12 +53,16 @@ export const InfiniteJobsList = ({
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
+  // Memoize before early returns to satisfy Rules of Hooks
+  const allJobs = useMemo(
+    () => data?.pages.flatMap((page) => page.jobs) ?? [],
+    [data?.pages]
+  )
+  const total = data?.pages[0]?.total ?? 0
+
   if (isLoading) {
     return <InfiniteJobsListSkeleton />
   }
-
-  const allJobs = data?.pages.flatMap((page) => page.jobs) ?? []
-  const total = data?.pages[0]?.total ?? 0
 
   if (allJobs.length === 0) {
     return (
