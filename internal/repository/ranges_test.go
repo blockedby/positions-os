@@ -239,3 +239,87 @@ func TestParsedRange_Extend(t *testing.T) {
 		})
 	}
 }
+
+// test smart message filter that checks both range AND existing jobs
+func TestSmartMessageFilter_FilterNew(t *testing.T) {
+	tests := []struct {
+		name         string
+		minParsed    int64
+		maxParsed    int64
+		existingJobs []int64
+		inputIDs     []int64
+		expectedIDs  []int64
+	}{
+		{
+			name:         "all new when no parsed range",
+			minParsed:    0,
+			maxParsed:    0,
+			existingJobs: []int64{},
+			inputIDs:     []int64{100, 101, 102},
+			expectedIDs:  []int64{100, 101, 102},
+		},
+		{
+			name:         "filters only messages with existing jobs",
+			minParsed:    100,
+			maxParsed:    110,
+			existingJobs: []int64{105, 106, 107},
+			inputIDs:     []int64{103, 105, 106, 107, 108},
+			expectedIDs:  []int64{103, 108},
+		},
+		{
+			name:         "messages outside range are always new",
+			minParsed:    100,
+			maxParsed:    110,
+			existingJobs: []int64{105},
+			inputIDs:     []int64{99, 105, 111},
+			expectedIDs:  []int64{99, 111},
+		},
+		{
+			name:         "empty existing jobs means all in-range are new",
+			minParsed:    100,
+			maxParsed:    110,
+			existingJobs: []int64{},
+			inputIDs:     []int64{103, 105, 107},
+			expectedIDs:  []int64{103, 105, 107},
+		},
+		{
+			name:         "real scenario - gaps in job creation",
+			minParsed:    1911,
+			maxParsed:    1933,
+			existingJobs: []int64{1928, 1929, 1930, 1931, 1932, 1933},
+			inputIDs:     []int64{1920, 1925, 1928, 1930, 1933, 1934},
+			expectedIDs:  []int64{1920, 1925, 1934},
+		},
+		{
+			name:         "handles empty input",
+			minParsed:    100,
+			maxParsed:    200,
+			existingJobs: []int64{150},
+			inputIDs:     []int64{},
+			expectedIDs:  []int64{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter := NewSmartMessageFilter(tt.minParsed, tt.maxParsed, tt.existingJobs)
+			result := filter.FilterNew(tt.inputIDs)
+
+			if len(tt.expectedIDs) == 0 && len(result) == 0 {
+				return
+			}
+
+			if len(result) != len(tt.expectedIDs) {
+				t.Errorf("FilterNew() returned %d items, want %d\ngot: %v\nwant: %v",
+					len(result), len(tt.expectedIDs), result, tt.expectedIDs)
+				return
+			}
+
+			for i, id := range result {
+				if id != tt.expectedIDs[i] {
+					t.Errorf("FilterNew()[%d] = %d, want %d", i, id, tt.expectedIDs[i])
+				}
+			}
+		})
+	}
+}
