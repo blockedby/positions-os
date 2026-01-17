@@ -38,6 +38,12 @@ func (r *ParsedRange) Extend(newMin, newMax int64) {
 	}
 }
 
+// MessageFilter defines the interface for filtering message IDs
+// Both MessageIDFilter and SmartMessageFilter implement this interface
+type MessageFilter interface {
+	FilterNew(messageIDs []int64) []int64
+}
+
 // MessageIDFilter filters messages based on already parsed ranges
 type MessageIDFilter struct {
 	minParsed int64
