@@ -65,7 +65,9 @@ func TestEndToEnd_Scraping(t *testing.T) {
 	}
 
 	// setup logger
-	logger.Init("debug", "")
+	if err := logger.Init("debug", ""); err != nil {
+		t.Fatalf("failed to init logger: %v", err)
+	}
 	log := logger.Get()
 
 	// connect to db

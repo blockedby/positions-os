@@ -298,7 +298,7 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = wsConn.Close() }()
 	if wsResp != nil && wsResp.Body != nil {
-		defer wsResp.Body.Close()
+		defer func() { _ = wsResp.Body.Close() }()
 	}
 
 	// Allow time for registration
@@ -311,7 +311,7 @@ func TestJobsAPI_UpdateStatus_Broadcasts(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Check WS message
