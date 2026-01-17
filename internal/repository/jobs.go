@@ -270,7 +270,6 @@ func (r *JobsRepository) List(ctx context.Context, filter JobFilter) ([]*Job, in
 	}
 	query += fmt.Sprintf(" OFFSET $%d", argID)
 	args = append(args, offset)
-	argID++
 
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
