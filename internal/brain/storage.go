@@ -79,3 +79,23 @@ func SaveCoverLetter(storagePath, jobID, content string) error {
 	logger.Info("cover letter saved successfully")
 	return nil
 }
+
+// FileStorage implements Storage interface using the file system.
+type FileStorage struct {
+	StoragePath string
+}
+
+// LoadBaseResume implements Storage.
+func (f *FileStorage) LoadBaseResume() (string, error) {
+	return LoadBaseResume(f.StoragePath)
+}
+
+// SaveTailoredResume implements Storage.
+func (f *FileStorage) SaveTailoredResume(jobID, content string) error {
+	return SaveTailoredResume(f.StoragePath, jobID, content)
+}
+
+// SaveCoverLetter implements Storage.
+func (f *FileStorage) SaveCoverLetter(jobID, content string) error {
+	return SaveCoverLetter(f.StoragePath, jobID, content)
+}

@@ -7,10 +7,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/api"
+	"github.com/blockedby/positions-os/internal/brain"
 	"github.com/blockedby/positions-os/internal/collector"
 	"github.com/blockedby/positions-os/internal/config"
 	"github.com/blockedby/positions-os/internal/database"
+	"github.com/blockedby/positions-os/internal/llm"
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/migrator"
 	"github.com/blockedby/positions-os/internal/nats"
@@ -138,12 +142,44 @@ func main() {
 	}
 	server := web.NewServer(webCfg, nil, hub)
 
+	// 11a. Initialize Brain Service
+	brainStorage := &brain.FileStorage{StoragePath: cfg.StorageDir}
+	llmCfg := llm.Config{
+		BaseURL:     cfg.LLMBaseURL,
+		APIKey:      cfg.LLMAPIKey,
+		Model:       cfg.LLMModel,
+		MaxTokens:   cfg.LLMMaxTokens,
+		Temperature: float32(cfg.LLMTemperature),
+		Timeout:     time.Duration(cfg.LLMTimeoutSec) * time.Second,
+	}
+	llmClient := llm.NewClient(llmCfg)
+	brainLLM := brain.NewBrainLLM(llmClient)
+	pdfRenderer := brain.NewPDFRenderer(cfg.StorageDir)
+
+	brainService := brain.NewService(brainStorage, brainLLM, pdfRenderer)
+	brainService.SetBroadcaster(hub)
+	brainService.SetStorageDir(cfg.StorageDir)
+
+	brainRepoAdapter := brain.NewJobsRepositoryAdapterFunc(func(ctx context.Context, id uuid.UUID) (string, map[string]interface{}, error) {
+		job, err := jobsRepo.GetByID(ctx, id)
+		if err != nil {
+			return "", nil, err
+		}
+		if job == nil {
+			return "", nil, brain.ErrJobNotFound
+		}
+		return job.Status, job.StructuredData, nil
+	})
+	prepareService := brain.NewPrepareService(brainService, brainRepoAdapter)
+	brainHandler := brain.NewHandler(brainRepoAdapter, prepareService)
+
 	// 12. Register API handlers
 	server.RegisterJobsHandler(jobsAPIHandler)
 	server.RegisterTargetsHandler(targetsAPIHandler)
 	server.RegisterStatsHandler(statsAPIHandler)
 	server.RegisterCollectorHandler(collectorHandler)
 	server.RegisterAuthHandler(authHandler)
+	server.RegisterBrainHandler(brainHandler)
 
 	// 13. Create Fuego API server for OpenAPI documentation
 	// Note: Fuego is used only for OpenAPI spec generation and Scalar UI.
