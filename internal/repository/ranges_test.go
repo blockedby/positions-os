@@ -4,61 +4,90 @@ import (
 	"testing"
 )
 
-// test message id filter for deduplication
+// test message id filter for deduplication using min/max range
 func TestMessageIDFilter_FilterNew(t *testing.T) {
 	tests := []struct {
 		name        string
+		minParsed   int64
 		maxParsed   int64
 		inputIDs    []int64
 		expectedIDs []int64
 	}{
 		{
 			name:        "all new when no parsed",
+			minParsed:   0,
 			maxParsed:   0,
 			inputIDs:    []int64{100, 101, 102},
 			expectedIDs: []int64{100, 101, 102},
 		},
 		{
-			name:        "filters out old messages",
-			maxParsed:   100,
-			inputIDs:    []int64{99, 100, 101, 102},
-			expectedIDs: []int64{101, 102},
+			name:        "filters out messages within range",
+			minParsed:   100,
+			maxParsed:   200,
+			inputIDs:    []int64{99, 100, 150, 200, 201},
+			expectedIDs: []int64{99, 201},
 		},
 		{
-			name:        "returns empty when all old",
+			name:        "returns empty when all within range",
+			minParsed:   50,
 			maxParsed:   200,
 			inputIDs:    []int64{99, 100, 101},
 			expectedIDs: []int64{},
 		},
 		{
 			name:        "handles empty input",
-			maxParsed:   100,
+			minParsed:   100,
+			maxParsed:   200,
 			inputIDs:    []int64{},
 			expectedIDs: []int64{},
 		},
 		{
 			name:        "handles nil input",
-			maxParsed:   100,
+			minParsed:   100,
+			maxParsed:   200,
 			inputIDs:    nil,
 			expectedIDs: []int64{},
 		},
 		{
-			name:        "boundary case - exactly at max",
-			maxParsed:   100,
+			name:        "boundary case - exactly at min",
+			minParsed:   100,
+			maxParsed:   200,
 			inputIDs:    []int64{100},
 			expectedIDs: []int64{},
 		},
 		{
+			name:        "boundary case - exactly at max",
+			minParsed:   100,
+			maxParsed:   200,
+			inputIDs:    []int64{200},
+			expectedIDs: []int64{},
+		},
+		{
+			name:        "boundary case - just below min",
+			minParsed:   100,
+			maxParsed:   200,
+			inputIDs:    []int64{99},
+			expectedIDs: []int64{99},
+		},
+		{
 			name:        "boundary case - just above max",
-			maxParsed:   100,
-			inputIDs:    []int64{101},
-			expectedIDs: []int64{101},
+			minParsed:   100,
+			maxParsed:   200,
+			inputIDs:    []int64{201},
+			expectedIDs: []int64{201},
+		},
+		{
+			name:        "scraping older messages scenario",
+			minParsed:   1896,
+			maxParsed:   1932,
+			inputIDs:    []int64{1828, 1850, 1896, 1900, 1932},
+			expectedIDs: []int64{1828, 1850},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			filter := NewMessageIDFilter(tt.maxParsed)
+			filter := NewMessageIDFilter(tt.minParsed, tt.maxParsed)
 			result := filter.FilterNew(tt.inputIDs)
 
 			// handle nil vs empty slice comparison

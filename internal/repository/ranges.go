@@ -40,23 +40,31 @@ func (r *ParsedRange) Extend(newMin, newMax int64) {
 
 // MessageIDFilter filters messages based on already parsed ranges
 type MessageIDFilter struct {
+	minParsed int64
 	maxParsed int64
 }
 
-// NewMessageIDFilter creates a filter with max parsed message id
-func NewMessageIDFilter(maxParsed int64) *MessageIDFilter {
-	return &MessageIDFilter{maxParsed: maxParsed}
+// NewMessageIDFilter creates a filter with min and max parsed message ids
+func NewMessageIDFilter(minParsed, maxParsed int64) *MessageIDFilter {
+	return &MessageIDFilter{minParsed: minParsed, maxParsed: maxParsed}
 }
 
-// FilterNew returns only message ids that are newer than max parsed
+// FilterNew returns message ids that are outside the parsed range [min, max]
+// Messages below min (older) or above max (newer) are considered new
 func (f *MessageIDFilter) FilterNew(messageIDs []int64) []int64 {
 	if len(messageIDs) == 0 {
 		return []int64{}
 	}
 
+	// If no range exists (both 0), all messages are new
+	if f.minParsed == 0 && f.maxParsed == 0 {
+		return messageIDs
+	}
+
 	var newIDs []int64
 	for _, id := range messageIDs {
-		if id > f.maxParsed {
+		// Message is new if it's outside the [min, max] range
+		if id < f.minParsed || id > f.maxParsed {
 			newIDs = append(newIDs, id)
 		}
 	}
@@ -138,9 +146,12 @@ func (r *RangesRepository) GetMaxMessageID(ctx context.Context, targetID uuid.UU
 
 // NewFilter creates a message filter for a target based on its parsed range
 func (r *RangesRepository) NewFilter(ctx context.Context, targetID uuid.UUID) (*MessageIDFilter, error) {
-	maxID, err := r.GetMaxMessageID(ctx, targetID)
+	pr, err := r.GetRange(ctx, targetID)
 	if err != nil {
 		return nil, err
 	}
-	return NewMessageIDFilter(maxID), nil
+	if pr == nil {
+		return NewMessageIDFilter(0, 0), nil
+	}
+	return NewMessageIDFilter(pr.MinMsgID, pr.MaxMsgID), nil
 }
