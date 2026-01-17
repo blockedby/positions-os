@@ -1,3 +1,4 @@
+// Package analyzer provides NATS consumer for job analysis.
 package analyzer
 
 import (
@@ -6,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/nats"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+
+	"github.com/blockedby/positions-os/internal/nats"
 )
 
 const (

@@ -1,3 +1,4 @@
+// Package api provides HTTP handlers for the REST API.
 package api
 
 import (
@@ -5,19 +6,20 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/go-fuego/fuego"
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/dispatcher"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
-	"github.com/go-fuego/fuego"
-	"github.com/google/uuid"
 )
 
 // ============================================================================
 // Health
 // ============================================================================
 
-func (s *Server) healthCheck(c fuego.ContextNoBody) (HealthResponse, error) {
+func (s *Server) healthCheck(_ fuego.ContextNoBody) (HealthResponse, error) {
 	return HealthResponse{
 		Status:  "ok",
 		Version: "dev",
@@ -87,10 +89,10 @@ func (s *Server) getJob(c fuego.ContextNoBody) (JobResponse, error) {
 
 	job, err := s.deps.JobsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return JobResponse{}, fuego.NotFoundError{Detail: "Job not found"}
+		}
 		return JobResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if job == nil {
-		return JobResponse{}, fuego.NotFoundError{Detail: "Job not found"}
 	}
 
 	return JobFromRepo(job), nil
@@ -220,10 +222,10 @@ func (s *Server) getTarget(c fuego.ContextNoBody) (TargetResponse, error) {
 
 	target, err := s.deps.TargetsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
+		}
 		return TargetResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if target == nil {
-		return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
 	}
 
 	return TargetFromRepo(target), nil
@@ -238,10 +240,10 @@ func (s *Server) updateTarget(c fuego.ContextWithBody[TargetUpdateRequest]) (Tar
 
 	target, err := s.deps.TargetsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
+		}
 		return TargetResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if target == nil {
-		return TargetResponse{}, fuego.NotFoundError{Detail: "Target not found"}
 	}
 
 	body, err := c.Body()
@@ -345,7 +347,7 @@ func (s *Server) startScrape(c fuego.ContextWithBody[ScrapeStartRequest]) (Scrap
 	}, nil
 }
 
-func (s *Server) stopScrape(c fuego.ContextNoBody) (any, error) {
+func (s *Server) stopScrape(_ fuego.ContextNoBody) (any, error) {
 	if s.deps.CollectorService == nil {
 		return nil, fuego.InternalServerError{Detail: "Collector service not available"}
 	}
@@ -357,7 +359,7 @@ func (s *Server) stopScrape(c fuego.ContextNoBody) (any, error) {
 	return map[string]string{"status": "stopped"}, nil
 }
 
-func (s *Server) getScrapeStatus(c fuego.ContextNoBody) (ScrapeStatusResponse, error) {
+func (s *Server) getScrapeStatus(_ fuego.ContextNoBody) (ScrapeStatusResponse, error) {
 	if s.deps.CollectorService == nil {
 		return ScrapeStatusResponse{}, nil
 	}
@@ -382,7 +384,7 @@ func (s *Server) getScrapeStatus(c fuego.ContextNoBody) (ScrapeStatusResponse, e
 // Auth Handlers
 // ============================================================================
 
-func (s *Server) getAuthStatus(c fuego.ContextNoBody) (AuthStatusResponse, error) {
+func (s *Server) getAuthStatus(_ fuego.ContextNoBody) (AuthStatusResponse, error) {
 	if s.deps.TelegramClient == nil {
 		return AuthStatusResponse{
 			Status:       "DISCONNECTED",
@@ -399,7 +401,7 @@ func (s *Server) getAuthStatus(c fuego.ContextNoBody) (AuthStatusResponse, error
 	}, nil
 }
 
-func (s *Server) startQRAuth(c fuego.ContextNoBody) (AuthQRStartResponse, error) {
+func (s *Server) startQRAuth(_ fuego.ContextNoBody) (AuthQRStartResponse, error) {
 	if s.deps.TelegramClient == nil {
 		return AuthQRStartResponse{}, fuego.InternalServerError{Detail: "Telegram client not available"}
 	}
@@ -502,10 +504,10 @@ func (s *Server) getApplication(c fuego.ContextNoBody) (ApplicationResponse, err
 
 	app, err := s.deps.ApplicationsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ApplicationResponse{}, fuego.NotFoundError{Detail: "Application not found"}
+		}
 		return ApplicationResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if app == nil {
-		return ApplicationResponse{}, fuego.NotFoundError{Detail: "Application not found"}
 	}
 
 	return ApplicationFromModel(app), nil
@@ -520,10 +522,10 @@ func (s *Server) sendApplication(c fuego.ContextWithBody[ApplicationSendRequest]
 
 	app, err := s.deps.ApplicationsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return ApplicationSendResponse{}, fuego.NotFoundError{Detail: "Application not found"}
+		}
 		return ApplicationSendResponse{}, fuego.InternalServerError{Detail: err.Error()}
-	}
-	if app == nil {
-		return ApplicationSendResponse{}, fuego.NotFoundError{Detail: "Application not found"}
 	}
 
 	if app.ResumePDFPath == nil || *app.ResumePDFPath == "" {
@@ -597,11 +599,12 @@ func (s *Server) updateDeliveryStatus(c fuego.ContextWithBody[ApplicationUpdateD
 	// Check application exists
 	app, err := s.deps.ApplicationsRepo.GetByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, fuego.NotFoundError{Detail: "Application not found"}
+		}
 		return nil, fuego.InternalServerError{Detail: err.Error()}
 	}
-	if app == nil {
-		return nil, fuego.NotFoundError{Detail: "Application not found"}
-	}
+	_ = app // app is used to verify existence
 
 	if err := s.deps.ApplicationsRepo.UpdateDeliveryStatus(c.Context(), id, status); err != nil {
 		return nil, fuego.InternalServerError{Detail: err.Error()}

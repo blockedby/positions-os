@@ -8,12 +8,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/dispatcher"
-	"github.com/blockedby/positions-os/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/blockedby/positions-os/internal/dispatcher"
+	"github.com/blockedby/positions-os/internal/models"
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // MockApplicationsRepository is a mock for ApplicationsRepository
@@ -43,9 +45,13 @@ func (m *MockApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) 
 		return nil, m.getErr
 	}
 	if m.applications == nil {
-		return nil, nil
+		return nil, repository.ErrNotFound
 	}
-	return m.applications[id], nil
+	app, ok := m.applications[id]
+	if !ok {
+		return nil, repository.ErrNotFound
+	}
+	return app, nil
 }
 
 func (m *MockApplicationsRepository) GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error) {

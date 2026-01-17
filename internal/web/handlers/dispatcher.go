@@ -42,7 +42,7 @@ type StatusResponse struct {
 
 // Status returns the current status of the dispatcher service.
 // GET /api/v1/dispatcher/status
-func (h *DispatcherHandler) Status(w http.ResponseWriter, r *http.Request) {
+func (h *DispatcherHandler) Status(w http.ResponseWriter, _ *http.Request) {
 	// For now, return a static healthy status
 	// In production, this would check actual service health
 	resp := StatusResponse{

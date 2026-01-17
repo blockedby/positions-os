@@ -27,7 +27,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	// Allow all origins for now
-	CheckOrigin: func(r *http.Request) bool {
+	CheckOrigin: func(_ *http.Request) bool {
 		return true
 	},
 }
@@ -58,6 +58,7 @@ type Hub struct {
 	unregister chan *Client
 }
 
+// NewHub creates a new Hub for managing WebSocket connections.
 func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
@@ -67,6 +68,7 @@ func NewHub() *Hub {
 	}
 }
 
+// Run starts the hub's event loop for managing clients.
 func (h *Hub) Run() {
 	for {
 		select {

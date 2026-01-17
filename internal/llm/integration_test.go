@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/llm"
 	"github.com/joho/godotenv"
+
+	"github.com/blockedby/positions-os/internal/llm"
 )
 
 func TestIntegration_ExtractJobData(t *testing.T) {

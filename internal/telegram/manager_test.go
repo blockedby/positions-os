@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/celestix/gotgproto"
 	"github.com/glebarez/sqlite"
 	"github.com/gotd/td/session"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 func TestManager_StartQR_CallsOnQRCode(t *testing.T) {

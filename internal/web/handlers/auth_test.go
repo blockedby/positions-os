@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/telegram"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/blockedby/positions-os/internal/telegram"
 )
 
 // MockTelegramClient is a mock implementation of the TelegramClient interface

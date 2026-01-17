@@ -1,3 +1,4 @@
+// Package telegram provides Telegram MTProto client wrapper.
 package telegram
 
 import (
@@ -6,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/celestix/gotgproto"
 	"github.com/gotd/td/tg"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Client wraps gotgproto client and provides high-level telegram operations.

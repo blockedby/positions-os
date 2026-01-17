@@ -9,12 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/logger"
-	"github.com/blockedby/positions-os/internal/models"
 	"github.com/celestix/gotgproto"
 	"github.com/google/uuid"
 	"github.com/gotd/td/tg"
 	"golang.org/x/time/rate"
+
+	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/models"
 )
 
 // DeliveryTrackerInterface defines the interface for tracking delivery status.

@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/celestix/gotgproto"
 	"github.com/celestix/gotgproto/sessionMaker"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 // NewPersistentClient creates a telegram client that uses the database for session storage.
 // It will automatically persist session updates (auth key refreshes) back to the DB.
-func NewPersistentClient(ctx context.Context, cfg *config.Config, db *gorm.DB) (*gotgproto.Client, error) {
+func NewPersistentClient(_ context.Context, cfg *config.Config, db *gorm.DB) (*gotgproto.Client, error) {
 	// 1. Configure the session constructor.
 	// We use SqlSession, which will store session data and peers in the database.
 	sessionConstructor := sessionMaker.SqlSession(db.Dialector)

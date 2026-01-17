@@ -7,10 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
-	"github.com/google/uuid"
 )
 
 // Mock implementations for testing
@@ -30,7 +31,7 @@ func (m *mockJobsRepo) GetByID(ctx context.Context, id uuid.UUID) (*repository.J
 			return j, nil
 		}
 	}
-	return nil, nil
+	return nil, repository.ErrNotFound
 }
 
 func (m *mockJobsRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
@@ -60,7 +61,7 @@ func (m *mockTargetsRepo) GetByID(ctx context.Context, id uuid.UUID) (*repositor
 			return &t, nil
 		}
 	}
-	return nil, nil
+	return nil, repository.ErrNotFound
 }
 
 func (m *mockTargetsRepo) Update(ctx context.Context, t *repository.ScrapingTarget) error {
@@ -86,11 +87,11 @@ func (m *mockApplicationsRepo) Create(ctx context.Context, app *models.JobApplic
 }
 
 func (m *mockApplicationsRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.JobApplication, error) {
-	return nil, nil
+	return nil, repository.ErrNotFound
 }
 
 func (m *mockApplicationsRepo) GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error) {
-	return nil, nil
+	return []*models.JobApplication{}, nil
 }
 
 func (m *mockApplicationsRepo) UpdateDeliveryStatus(ctx context.Context, id uuid.UUID, status models.DeliveryStatus) error {

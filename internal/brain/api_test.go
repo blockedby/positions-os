@@ -13,12 +13,12 @@ import (
 
 // MockRepository for testing
 type mockRepository struct {
-	job          *BrainJob
+	job          *Job
 	updateError  error
 	getByIDError error
 }
 
-func (m *mockRepository) GetByID(id uuid.UUID) (*BrainJob, error) {
+func (m *mockRepository) GetByID(id uuid.UUID) (*Job, error) {
 	if m.getByIDError != nil {
 		return nil, m.getByIDError
 	}
@@ -55,7 +55,7 @@ func TestHandler_PrepareJob_StartsProcessing(t *testing.T) {
 	// Setup
 	jobID := uuid.New()
 	repo := &mockRepository{
-		job: &BrainJob{ID: jobID, Status: "INTERESTED"},
+		job: &Job{ID: jobID, Status: "INTERESTED"},
 	}
 	svc := &mockService{
 		result: &PipelineResult{
@@ -141,7 +141,7 @@ func TestHandler_PrepareJob_JobNotFound(t *testing.T) {
 func TestHandler_PrepareJob_WrongStatus(t *testing.T) {
 	jobID := uuid.New()
 	repo := &mockRepository{
-		job: &BrainJob{ID: jobID, Status: "RAW"},
+		job: &Job{ID: jobID, Status: "RAW"},
 	}
 	svc := &mockService{}
 	h := NewHandler(repo, svc)
@@ -165,7 +165,7 @@ func TestHandler_PrepareJob_WrongStatus(t *testing.T) {
 func TestHandler_GetDocuments_ReturnsDocumentInfo(t *testing.T) {
 	jobID := uuid.New()
 	repo := &mockRepository{
-		job: &BrainJob{
+		job: &Job{
 			ID:                 jobID,
 			Status:             "TAILORED",
 			TailoredResumePath: "/storage/outputs/" + jobID.String() + "/resume.pdf",
@@ -206,7 +206,7 @@ func TestHandler_GetDocuments_ReturnsDocumentInfo(t *testing.T) {
 func TestHandler_GetDocuments_NotTailored_Returns404(t *testing.T) {
 	jobID := uuid.New()
 	repo := &mockRepository{
-		job: &BrainJob{ID: jobID, Status: "INTERESTED"},
+		job: &Job{ID: jobID, Status: "INTERESTED"},
 	}
 	svc := &mockService{}
 	h := NewHandler(repo, svc)
@@ -235,7 +235,7 @@ func TestHandler_DownloadResume_ServesPDF(t *testing.T) {
 // TestRegisterRoutes_RegistersAllRoutes
 func TestRegisterRoutes_RegistersAllRoutes(t *testing.T) {
 	repo := &mockRepository{
-		job: &BrainJob{
+		job: &Job{
 			ID:                 uuid.New(),
 			Status:             "TAILORED",
 			TailoredResumePath: "/path/to/resume.pdf",

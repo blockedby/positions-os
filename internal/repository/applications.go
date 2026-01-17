@@ -1,3 +1,4 @@
+// Package repository provides database access for job applications.
 package repository
 
 import (
@@ -5,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/logger"
-	"github.com/blockedby/positions-os/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/models"
 )
 
 // ApplicationsRepository handles job applications CRUD operations
@@ -85,7 +87,7 @@ func (r *ApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("get application by id: %w", err)
 	}

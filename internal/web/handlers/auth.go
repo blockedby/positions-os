@@ -14,6 +14,7 @@ type AuthHandler struct {
 	hub    HubBroadcaster // Interface for Hub
 }
 
+// HubBroadcaster defines the interface for broadcasting messages to connected clients.
 type HubBroadcaster interface {
 	Broadcast(message interface{})
 }
@@ -27,7 +28,7 @@ func NewAuthHandler(client TelegramClient, hub HubBroadcaster) *AuthHandler {
 }
 
 // GetStatus returns the current Telegram authentication status
-func (h *AuthHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) GetStatus(w http.ResponseWriter, _ *http.Request) {
 	status := h.client.GetStatus()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -41,7 +42,7 @@ func (h *AuthHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 // StartQR initiates the QR code login flow
-func (h *AuthHandler) StartQR(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) StartQR(w http.ResponseWriter, _ *http.Request) {
 	// 1. Check current status
 	if h.client.GetStatus() == telegram.StatusReady {
 		w.WriteHeader(http.StatusBadRequest)

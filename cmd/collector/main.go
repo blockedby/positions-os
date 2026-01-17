@@ -1,3 +1,4 @@
+// Package main implements the collector service that scrapes and serves jobs.
 package main
 
 import (
@@ -74,7 +75,7 @@ func main() {
 	// 4. Connect to database
 	db, err := database.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to database")
+		log.Fatal().Err(err).Msg("failed to connect to database") //nolint:gocritic // log.Fatal in main is acceptable pattern
 	}
 	defer db.Close()
 

@@ -1,4 +1,4 @@
-// package models defines shared data types for the application.
+// Package models defines shared data types for the application.
 package models
 
 import (
@@ -10,6 +10,7 @@ import (
 // ScrapingTargetType represents the type of scraping source.
 type ScrapingTargetType string
 
+// ScrapingTargetType constants define the supported scraping source types.
 const (
 	TargetTypeTGChannel ScrapingTargetType = "TG_CHANNEL"
 	TargetTypeTGGroup   ScrapingTargetType = "TG_GROUP"

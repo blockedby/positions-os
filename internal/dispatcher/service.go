@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
-	"github.com/google/uuid"
 )
 
 // TelegramSenderInterface defines the interface for sending via Telegram.
@@ -16,9 +17,9 @@ type TelegramSenderInterface interface {
 	SendApplication(ctx context.Context, appID uuid.UUID, recipient string) error
 }
 
-// DispatcherService is the main orchestrator for sending job applications.
+// Service is the main orchestrator for sending job applications.
 // It routes to the appropriate sender based on the delivery channel.
-type DispatcherService struct {
+type Service struct {
 	tgSender    TelegramSenderInterface
 	emailSender EmailSenderInterface
 	tracker     DeliveryTrackerInterface
@@ -32,15 +33,15 @@ type EmailSenderInterface interface {
 	SendApplication(ctx context.Context, appID uuid.UUID, recipient string) error
 }
 
-// NewDispatcherService creates a new DispatcherService.
-func NewDispatcherService(
+// NewService creates a new Service.
+func NewService(
 	tgSender TelegramSenderInterface,
 	emailSender EmailSenderInterface,
 	tracker DeliveryTrackerInterface,
 	repo ApplicationsRepository,
 	log *logger.Logger,
-) *DispatcherService {
-	return &DispatcherService{
+) *Service {
+	return &Service{
 		tgSender:    tgSender,
 		emailSender: emailSender,
 		tracker:     tracker,
@@ -57,7 +58,7 @@ type SendRequest struct {
 }
 
 // SendApplication routes the send request to the appropriate sender based on channel.
-func (s *DispatcherService) SendApplication(ctx context.Context, req *SendRequest) error {
+func (s *Service) SendApplication(ctx context.Context, req *SendRequest) error {
 	// Validate request
 	if req == nil {
 		return errors.New("request cannot be nil")
@@ -84,7 +85,7 @@ func (s *DispatcherService) SendApplication(ctx context.Context, req *SendReques
 }
 
 // SendViaTelegram creates an application and sends it via Telegram.
-func (s *DispatcherService) SendViaTelegram(ctx context.Context, jobID uuid.UUID, recipient string) error {
+func (s *Service) SendViaTelegram(ctx context.Context, jobID uuid.UUID, recipient string) error {
 	// Create application record
 	app := &models.JobApplication{
 		ID:              uuid.New(),

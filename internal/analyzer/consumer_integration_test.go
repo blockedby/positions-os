@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+
 	"github.com/blockedby/positions-os/internal/llm"
 	"github.com/blockedby/positions-os/internal/nats"
 	"github.com/blockedby/positions-os/internal/repository"
-	"github.com/google/uuid"
-	"github.com/rs/zerolog"
 )
 
 func TestConsumer_Integration(t *testing.T) {

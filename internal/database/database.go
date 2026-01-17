@@ -1,4 +1,4 @@
-// package database provides postgresql connection management.
+// Package database provides PostgreSQL connection management.
 package database
 
 import (

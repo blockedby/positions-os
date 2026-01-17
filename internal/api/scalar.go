@@ -49,7 +49,7 @@ func ScalarHandler(specURL, title, description string) http.Handler {
 </body>
 </html>`, title, specURL, title, description)
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(html))

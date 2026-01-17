@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blockedby/positions-os/internal/llm"
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+
+	"github.com/blockedby/positions-os/internal/llm"
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // LLMClient abstracts the LLM provider

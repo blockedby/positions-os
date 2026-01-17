@@ -76,7 +76,7 @@ func (r *TargetsRepository) GetByID(ctx context.Context, id uuid.UUID) (*Scrapin
 	)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("get target by id: %w", err)
 	}
@@ -102,7 +102,7 @@ func (r *TargetsRepository) GetByURL(ctx context.Context, url string) (*Scraping
 	)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("get target by url: %w", err)
 	}

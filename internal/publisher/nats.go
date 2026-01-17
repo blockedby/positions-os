@@ -1,3 +1,4 @@
+// Package publisher provides NATS JetStream publishing for job events.
 package publisher
 
 import (
@@ -5,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/blockedby/positions-os/internal/collector"
 	"github.com/nats-io/nats.go"
+
+	"github.com/blockedby/positions-os/internal/collector"
 )
 
 // NATSClient interface to allow mocking
@@ -25,7 +27,7 @@ func NewNATSPublisher(conn *nats.Conn) *NATSPublisher {
 }
 
 // PublishJobNew publishes a new job event
-func (p *NATSPublisher) PublishJobNew(ctx context.Context, event collector.JobNewEvent) error {
+func (p *NATSPublisher) PublishJobNew(_ context.Context, event collector.JobNewEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)

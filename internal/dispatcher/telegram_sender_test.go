@@ -5,11 +5,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/logger"
-	"github.com/blockedby/positions-os/internal/models"
 	"github.com/celestix/gotgproto"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/blockedby/positions-os/internal/logger"
+	"github.com/blockedby/positions-os/internal/models"
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // TestNewTelegramSender_RedPhase tests that the sender can be created with proper rate limiting.
@@ -44,10 +46,10 @@ func (m *mockApplicationsRepository) Create(ctx context.Context, app *models.Job
 	return nil
 }
 func (m *mockApplicationsRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.JobApplication, error) {
-	return nil, nil
+	return nil, repository.ErrNotFound
 }
 func (m *mockApplicationsRepository) GetByJobID(ctx context.Context, jobID uuid.UUID) ([]*models.JobApplication, error) {
-	return nil, nil
+	return []*models.JobApplication{}, nil
 }
 
 type mockReadTracker struct{}
@@ -103,21 +105,6 @@ func TestUploadAndSend_ValidatesInputs(t *testing.T) {
 	err = sender.UploadAndSend(context.Background(), "@recruiter", "cover letter", "")
 	assert.Error(t, err, "Empty PDF path should return error")
 }
-
-// Mock JobApplication for testing SendApplication
-type mockJobApplication struct {
-	id              string
-	coverLetterMD   string
-	resumePDFPath   string
-	recipient       string
-	deliveryChannel string
-	deliveryStatus  string
-}
-
-func (m *mockJobApplication) GetID() string            { return m.id }
-func (m *mockJobApplication) GetCoverLetterMD() string { return m.coverLetterMD }
-func (m *mockJobApplication) GetResumePDFPath() string { return m.resumePDFPath }
-func (m *mockJobApplication) GetRecipient() string     { return m.recipient }
 
 // TestSendApplication_ValidatesApplication tests that SendApplication validates the application.
 func TestSendApplication_ValidatesApplication(t *testing.T) {

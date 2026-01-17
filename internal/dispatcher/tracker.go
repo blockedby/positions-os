@@ -6,16 +6,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/models"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/web"
-	"github.com/google/uuid"
 )
 
 // DeliveryStatus represents the delivery state of an application
 type DeliveryStatus = models.DeliveryStatus
 
+// DeliveryStatus constants define the possible states of application delivery.
 const (
 	StatusPending   DeliveryStatus = models.DeliveryStatusPending
 	StatusSending   DeliveryStatus = "SENDING" // Additional transient status
@@ -180,7 +182,7 @@ func (t *DeliveryTracker) TrackFailure(ctx context.Context, appID uuid.UUID, err
 }
 
 // TrackProgress reports intermediate progress (during SENDING)
-func (t *DeliveryTracker) TrackProgress(ctx context.Context, appID uuid.UUID, step string, progress int) error {
+func (t *DeliveryTracker) TrackProgress(_ context.Context, appID uuid.UUID, step string, progress int) error {
 	t.hub.Broadcast(ProgressEvent{
 		Type:          "dispatcher.progress",
 		ApplicationID: appID.String(),

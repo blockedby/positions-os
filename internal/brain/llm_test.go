@@ -28,7 +28,7 @@ func (m *MockLLMClient) ExtractJobData(ctx context.Context, rawContent, systemPr
 func TestBrainLLM_RateLimiting(t *testing.T) {
 	// Setup
 	mockLLM := &MockLLMClient{Delay: 10 * time.Millisecond}
-	brain := NewBrainLLM(mockLLM)
+	brain := NewLLMWrapper(mockLLM)
 	ctx := context.Background()
 
 	// Execute: Make 3 rapid calls
@@ -58,7 +58,7 @@ func TestBrainLLM_TailorResume_CallsLLM(t *testing.T) {
 			return "# Tailored Resume", nil
 		},
 	}
-	brain := NewBrainLLM(mockLLM)
+	brain := NewLLMWrapper(mockLLM)
 	ctx := context.Background()
 
 	// Execute
@@ -81,7 +81,7 @@ func TestBrainLLM_GenerateCover_CallsLLM(t *testing.T) {
 			return "Dear Hiring Manager,", nil
 		},
 	}
-	brain := NewBrainLLM(mockLLM)
+	brain := NewLLMWrapper(mockLLM)
 	ctx := context.Background()
 
 	// Execute

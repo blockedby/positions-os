@@ -9,11 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 type MockTargetsRepository struct {
@@ -314,7 +315,7 @@ func TestTargetsHandler_GetByID_NotFound(t *testing.T) {
 	handler := setupTargetsHandler(t, mockRepo)
 
 	id := uuid.New()
-	mockRepo.On("GetByID", mock.Anything, id).Return(nil, nil)
+	mockRepo.On("GetByID", mock.Anything, id).Return(nil, repository.ErrNotFound)
 
 	r := chi.NewRouter()
 	r.Get("/targets/{id}", handler.GetByID)

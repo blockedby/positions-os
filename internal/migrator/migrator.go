@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5" // pgx/v5 driver for database migrations
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
@@ -43,7 +43,7 @@ func NewWithFS(migrationsFS fs.FS) (*Migrator, error) {
 }
 
 // Up runs all pending migrations.
-func (m *Migrator) Up(ctx context.Context, databaseURL string) error {
+func (m *Migrator) Up(_ context.Context, databaseURL string) error {
 	if databaseURL == "" {
 		return errors.New("database URL cannot be empty")
 	}
@@ -74,7 +74,7 @@ func (m *Migrator) Up(ctx context.Context, databaseURL string) error {
 }
 
 // Version returns the current migration version and dirty state.
-func (m *Migrator) Version(ctx context.Context, databaseURL string) (version uint, dirty bool, err error) {
+func (m *Migrator) Version(_ context.Context, databaseURL string) (version uint, dirty bool, err error) {
 	if databaseURL == "" {
 		return 0, false, errors.New("database URL cannot be empty")
 	}

@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // JobRepository extends Repository with methods needed for service integration.
@@ -65,23 +66,23 @@ func (p *PrepareService) PrepareJob(jobID string) (*PipelineResult, error) {
 
 // InMemoryRepository is a simple in-memory repository for testing.
 type InMemoryRepository struct {
-	jobs map[uuid.UUID]*BrainJob
+	jobs map[uuid.UUID]*Job
 }
 
 // NewInMemoryRepository creates a new in-memory repository.
 func NewInMemoryRepository() *InMemoryRepository {
 	return &InMemoryRepository{
-		jobs: make(map[uuid.UUID]*BrainJob),
+		jobs: make(map[uuid.UUID]*Job),
 	}
 }
 
 // AddJob adds a job to the repository.
-func (m *InMemoryRepository) AddJob(job *BrainJob) {
+func (m *InMemoryRepository) AddJob(job *Job) {
 	m.jobs[job.ID] = job
 }
 
 // GetByID implements Repository.
-func (m *InMemoryRepository) GetByID(id uuid.UUID) (*BrainJob, error) {
+func (m *InMemoryRepository) GetByID(id uuid.UUID) (*Job, error) {
 	job, ok := m.jobs[id]
 	if !ok {
 		return nil, ErrJobNotFound

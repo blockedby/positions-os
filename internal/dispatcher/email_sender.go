@@ -1,3 +1,4 @@
+// Package dispatcher provides job application dispatching via multiple channels.
 package dispatcher
 
 import (
@@ -24,11 +25,11 @@ func NewEmailSender() *EmailSender {
 
 // SendApplication returns "not implemented" error
 // This stub ensures the API is ready but clearly indicates email is not available
-func (s *EmailSender) SendApplication(ctx context.Context, appID uuid.UUID, recipient string) error {
+func (s *EmailSender) SendApplication(_ context.Context, _ uuid.UUID, _ string) error {
 	return fmt.Errorf("email sender not implemented: use TG_DM channel instead")
 }
 
 // SendApplicationWithContent is a placeholder for future implementation
-func (s *EmailSender) SendApplicationWithContent(ctx context.Context, recipient string, subject string, body string, attachments []string) error {
+func (s *EmailSender) SendApplicationWithContent(_ context.Context, _ string, _ string, _ string, _ []string) error {
 	return fmt.Errorf("email sender not implemented: use TG_DM channel instead")
 }

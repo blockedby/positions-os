@@ -1,4 +1,4 @@
-// package nats provides a client for nats jetstream pub/sub messaging.
+// Package nats provides a client for NATS JetStream pub/sub messaging.
 package nats
 
 import (
@@ -17,7 +17,7 @@ type Client struct {
 }
 
 // New creates a new nats client with jetstream support.
-func New(ctx context.Context, natsURL string) (*Client, error) {
+func New(_ context.Context, natsURL string) (*Client, error) {
 	conn, err := nats.Connect(natsURL)
 	if err != nil {
 		return nil, fmt.Errorf("connect to nats: %w", err)

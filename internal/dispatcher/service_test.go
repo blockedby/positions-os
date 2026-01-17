@@ -5,10 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Mock EmailSender for testing
@@ -18,15 +19,15 @@ func (m *mockEmailSenderForService) SendApplication(ctx context.Context, appID u
 	return nil
 }
 
-// TestNewDispatcherService tests that the service can be created.
-func TestNewDispatcherService(t *testing.T) {
+// TestNewService tests that the service can be created.
+func TestNewService(t *testing.T) {
 	mockTgSender := &mockTelegramSenderForService{}
 	mockEmailSender := &mockEmailSenderForService{}
 	mockTracker := &mockDeliveryTracker{}
 	mockRepo := &mockApplicationsRepository{}
 	log := logger.Get()
 
-	service := NewDispatcherService(mockTgSender, mockEmailSender, mockTracker, mockRepo, log)
+	service := NewService(mockTgSender, mockEmailSender, mockTracker, mockRepo, log)
 
 	assert.NotNil(t, service, "Service should be created")
 	assert.NotNil(t, service.tgSender, "TG sender should be set")
@@ -45,7 +46,7 @@ func TestSendApplication_TGDM_RoutesCorrectly(t *testing.T) {
 	mockRepo := &mockApplicationsRepository{}
 	log := logger.Get()
 
-	service := NewDispatcherService(mockTgSender, mockEmailSender, mockTracker, mockRepo, log)
+	service := NewService(mockTgSender, mockEmailSender, mockTracker, mockRepo, log)
 
 	jobID := uuid.New()
 	req := &SendRequest{
@@ -67,7 +68,7 @@ func TestSendApplication_EMAIL_NotImplemented(t *testing.T) {
 	log := logger.Get()
 
 	// Create service with nil email sender to test "not configured" path
-	service := &DispatcherService{
+	service := &Service{
 		tgSender: mockTgSender,
 		// emailSender is nil to test not configured case
 		tracker: mockTracker,
@@ -89,7 +90,7 @@ func TestSendApplication_EMAIL_NotImplemented(t *testing.T) {
 
 // TestSendApplication_InvalidChannel tests invalid channel.
 func TestSendApplication_InvalidChannel(t *testing.T) {
-	service := &DispatcherService{
+	service := &Service{
 		tgSender:    &mockTelegramSenderForService{},
 		emailSender: &mockEmailSenderForService{},
 		tracker:     &mockDeliveryTracker{},
@@ -111,7 +112,7 @@ func TestSendApplication_InvalidChannel(t *testing.T) {
 
 // TestSendApplication_ValidatesRequest tests request validation.
 func TestSendApplication_ValidatesRequest(t *testing.T) {
-	service := &DispatcherService{
+	service := &Service{
 		tgSender:    &mockTelegramSenderForService{},
 		emailSender: &mockEmailSenderForService{},
 		tracker:     &mockDeliveryTracker{},

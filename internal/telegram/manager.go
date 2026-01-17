@@ -8,16 +8,19 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/config"
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/celestix/gotgproto" // Added this import
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram/auth/qrlogin"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
+// Status represents the Telegram client status.
 type Status string
 
+// Status constants define the possible states of the Telegram client.
 const (
 	StatusInitializing Status = "INITIALIZING"
 	StatusReady        Status = "READY"
@@ -36,6 +39,7 @@ type QRClientFactory func(cfg *config.Config) (*QRClientBundle, error)
 // maxMsgID is the highest message ID that was read.
 type ReadReceiptCallback func(ctx context.Context, peerUserID int64, maxMsgID int64) error
 
+// Manager handles Telegram client lifecycle and authentication.
 type Manager struct {
 	client *gotgproto.Client
 	db     *gorm.DB
@@ -58,6 +62,7 @@ type Manager struct {
 	readReceiptCallbackMu sync.RWMutex
 }
 
+// NewManager creates a new Telegram Manager.
 func NewManager(cfg *config.Config, db *gorm.DB) *Manager {
 	return &Manager{
 		db:              db,
@@ -106,12 +111,14 @@ func (m *Manager) OnReadReceipt(ctx context.Context, peerUserID int64, maxMsgID 
 	return cb(ctx, peerUserID, maxMsgID)
 }
 
+// GetStatus returns the current Telegram client status.
 func (m *Manager) GetStatus() Status {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.status
 }
 
+// GetClient returns the underlying Telegram client.
 func (m *Manager) GetClient() *gotgproto.Client {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -219,7 +226,7 @@ func (m *Manager) StartQR(ctx context.Context, onQRCode func(url string)) error 
 		qr := bundle.Client.QR()
 		loggedIn := qrlogin.OnLoginToken(&bundle.Dispatcher)
 
-		_, authErr = qr.Auth(ctx, loggedIn, func(ctx context.Context, token qrlogin.Token) error {
+		_, authErr = qr.Auth(ctx, loggedIn, func(_ context.Context, token qrlogin.Token) error {
 			m.log.Info().Str("url", token.URL()).Msg("telegram: QR token generated")
 			onQRCode(token.URL())
 			return nil
@@ -290,6 +297,7 @@ func (m *Manager) saveSessionToDB(data *session.Data) error {
 	return m.db.Save(sess).Error
 }
 
+// Stop stops the Telegram client.
 func (m *Manager) Stop() {
 	m.mu.Lock()
 	defer m.mu.Unlock()

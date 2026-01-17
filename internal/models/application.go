@@ -9,6 +9,7 @@ import (
 // DeliveryChannel represents how the application was sent.
 type DeliveryChannel string
 
+// DeliveryChannel constants define the supported channels for sending applications.
 const (
 	DeliveryChannelTGDM  DeliveryChannel = "TG_DM"
 	DeliveryChannelEmail DeliveryChannel = "EMAIL"
@@ -18,6 +19,7 @@ const (
 // DeliveryStatus represents the delivery state of an application.
 type DeliveryStatus string
 
+// DeliveryStatus constants define the possible states of application delivery.
 const (
 	DeliveryStatusPending   DeliveryStatus = "PENDING"
 	DeliveryStatusSent      DeliveryStatus = "SENT"

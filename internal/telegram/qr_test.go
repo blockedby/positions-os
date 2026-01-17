@@ -5,10 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/config"
 	"github.com/celestix/gotgproto"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/blockedby/positions-os/internal/config"
 )
 
 // TestManager_StartQR_UsesQRFactory verifies that StartQR uses the injectable QRClientFactory.

@@ -1,3 +1,4 @@
+// Package brain provides job tailoring services using LLM.
 package brain
 
 import (
@@ -5,9 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/logger"
 )
 
 // Common errors
@@ -18,12 +20,12 @@ var (
 
 // Repository defines the data layer interface for brain operations.
 type Repository interface {
-	GetByID(id uuid.UUID) (*BrainJob, error)
+	GetByID(id uuid.UUID) (*Job, error)
 	UpdateBrainOutputs(id uuid.UUID, resumePath, coverText string) error
 }
 
-// BrainJob represents job data needed by brain handlers.
-type BrainJob struct {
+// Job represents job data needed by brain handlers.
+type Job struct {
 	ID                 uuid.UUID
 	Status             string
 	TailoredResumePath string
@@ -31,19 +33,19 @@ type BrainJob struct {
 	StructuredData     map[string]string
 }
 
-// BrainService defines the service interface for brain operations.
-type BrainService interface {
+// ServiceInterface defines the service interface for brain operations.
+type ServiceInterface interface {
 	PrepareJob(jobID string) (*PipelineResult, error)
 }
 
 // Handler handles brain API requests.
 type Handler struct {
 	repo Repository
-	svc  BrainService
+	svc  ServiceInterface
 }
 
 // NewHandler creates a new brain handler.
-func NewHandler(repo Repository, svc BrainService) *Handler {
+func NewHandler(repo Repository, svc ServiceInterface) *Handler {
 	return &Handler{
 		repo: repo,
 		svc:  svc,

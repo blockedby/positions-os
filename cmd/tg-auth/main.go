@@ -1,3 +1,4 @@
+// Package main implements the Telegram authentication CLI tool.
 package main
 
 import (
@@ -120,7 +121,7 @@ func authWithQR(apiID int, apiHash string) {
 
 		// Loop to handle QR expiration and regeneration
 		for {
-			auth, err := qr.Auth(ctx, loggedIn, func(ctx context.Context, token qrlogin.Token) error {
+			auth, err := qr.Auth(ctx, loggedIn, func(_ context.Context, token qrlogin.Token) error {
 				expires := time.Until(token.Expires()).Round(time.Second)
 
 				fmt.Println("╔═══════════════════════════════════════════════════════╗")
@@ -153,7 +154,7 @@ func authWithQR(apiID int, apiHash string) {
 			}
 
 			// Export session string in gotgproto format
-			sessionString, err = exportSessionString(memStorage, ctx)
+			sessionString, err = exportSessionString(ctx, memStorage)
 			if err != nil {
 				return fmt.Errorf("failed to export session: %w", err)
 			}
@@ -174,7 +175,7 @@ func authWithQR(apiID int, apiHash string) {
 	if err != nil {
 		if err == context.Canceled {
 			fmt.Println("\n\nAuthentication cancelled by user.")
-			os.Exit(0)
+			os.Exit(0) //nolint:gocritic // os.Exit in main is acceptable pattern
 		}
 		fmt.Printf("\nError during QR login: %v\n", err)
 		os.Exit(1)
@@ -184,7 +185,7 @@ func authWithQR(apiID int, apiHash string) {
 }
 
 // exportSessionString converts gotd session to gotgproto session string
-func exportSessionString(memStorage *session.StorageMemory, ctx context.Context) (string, error) {
+func exportSessionString(ctx context.Context, memStorage *session.StorageMemory) (string, error) {
 	// Get raw session bytes directly (this is what gotgproto does!)
 	// LoadSession returns raw bytes that are already properly formatted
 	rawSessionBytes, err := memStorage.LoadSession(ctx)

@@ -6,10 +6,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/blockedby/positions-os/internal/llm"
-	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+
+	"github.com/blockedby/positions-os/internal/llm"
+	"github.com/blockedby/positions-os/internal/repository"
 )
 
 // MockJobsRepo implements JobsRepository interface for testing
@@ -159,8 +160,4 @@ func TestProcessor_ProcessJob(t *testing.T) {
 			t.Errorf("JSON cleanup failed. Got: %v", mockRepo.UpdatedData)
 		}
 	})
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[0:len(substr)] == substr // simplistic check or stdlib strings.Contains
 }

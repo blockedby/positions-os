@@ -1,4 +1,4 @@
-// package logger provides structured logging with file and console output.
+// Package logger provides structured logging with file and console output.
 package logger
 
 import (
@@ -53,7 +53,7 @@ func New(level string, logFile string) (*Logger, error) {
 	return &Logger{logger}, nil
 }
 
-// global logger for convenience
+// Global is the global logger instance for convenience.
 var Global *Logger
 
 // Init initializes the global logger.

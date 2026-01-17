@@ -1,3 +1,4 @@
+// Package llm provides OpenAI-compatible LLM client.
 package llm
 
 import (
@@ -45,7 +46,7 @@ func NewClient(cfg Config) *Client {
 
 // ExtractJobData extracts structured data from the raw job content.
 // It uses the system and user prompts provided to guide the LLM.
-func (c *Client) ExtractJobData(ctx context.Context, rawContent string, systemPrompt, userPrompt string) (string, error) {
+func (c *Client) ExtractJobData(ctx context.Context, _ string, systemPrompt, userPrompt string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 

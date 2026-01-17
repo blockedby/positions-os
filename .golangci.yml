@@ -22,32 +22,41 @@ linters:
     - nilnil
     - unparam
     - misspell
+  settings:
+    revive:
+      rules:
+        - name: exported
+          severity: warning
+        - name: unused-parameter
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+  exclusions:
+    rules:
+      # Exclude ALL warnings from gosec and unparam in test files.
+      # Test files commonly have security shortcuts and unused parameters
+      # that are acceptable in test contexts.
+      - path: _test\.go
+        linters:
+          - gosec
+          - unparam
+      # Exclude ONLY the unused-parameter rule from revive in test files.
+      # This is separate because we still want other revive rules to apply
+      # to test files (e.g., exported, error-return, etc.). The `text` filter
+      # matches only unused-parameter warnings, not all revive warnings.
+      - path: _test\.go
+        linters:
+          - revive
+        text: "unused-parameter"
 
 formatters:
   enable:
     - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/blockedby/positions-os)
 
-linters-settings:
-  revive:
-    rules:
-      - name: exported
-        severity: warning
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/blockedby/positions-os)
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-
-issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - unparam

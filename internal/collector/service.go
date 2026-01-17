@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/blockedby/positions-os/internal/logger"
 	"github.com/blockedby/positions-os/internal/repository"
 	"github.com/blockedby/positions-os/internal/telegram"
-	"github.com/google/uuid"
 )
 
 // TelegramClient defines interface for telegram operations
@@ -442,14 +443,6 @@ func (s *Service) GetTelegramStatus() telegram.Status {
 	// Otherwise, we might need to cast or if the interface changes.
 	// The TelegramClient interface in service.go needs update too.
 	return s.tgClient.GetStatus()
-}
-
-// helper function
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // buildSourceURL creates a Telegram message URL from channel and message ID

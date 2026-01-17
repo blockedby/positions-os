@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blockedby/positions-os/internal/database"
 	"github.com/google/uuid"
+
+	"github.com/blockedby/positions-os/internal/database"
 )
 
 func TestJobsRepository_GetByID_UpdateStructuredData(t *testing.T) {
