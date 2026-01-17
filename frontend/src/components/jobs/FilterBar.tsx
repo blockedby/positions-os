@@ -27,6 +27,9 @@ const sortOptions = [
 export const FilterBar = ({ onFilter, isScraping }: FilterBarProps) => {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<JobStatus | ''>('')
+  const [technologies, setTechnologies] = useState('')
+  const [salaryMin, setSalaryMin] = useState('')
+  const [salaryMax, setSalaryMax] = useState('')
   const [sortBy, setSortBy] = useState<'created_at' | 'updated_at' | 'salary_max'>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
@@ -34,6 +37,9 @@ export const FilterBar = ({ onFilter, isScraping }: FilterBarProps) => {
     onFilter({
       search: search || undefined,
       status: status || undefined,
+      technologies: technologies ? technologies.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+      salary_min: salaryMin ? parseInt(salaryMin, 10) : undefined,
+      salary_max: salaryMax ? parseInt(salaryMax, 10) : undefined,
       sort_by: sortBy,
       sort_order: sortOrder,
     })
@@ -42,6 +48,9 @@ export const FilterBar = ({ onFilter, isScraping }: FilterBarProps) => {
   const handleClearFilters = () => {
     setSearch('')
     setStatus('')
+    setTechnologies('')
+    setSalaryMin('')
+    setSalaryMax('')
     setSortBy('created_at')
     setSortOrder('desc')
     onFilter({})
@@ -64,6 +73,23 @@ export const FilterBar = ({ onFilter, isScraping }: FilterBarProps) => {
           value={status}
           onChange={(e) => setStatus(e.target.value as JobStatus | '')}
           aria-label="Filter by status"
+        />
+        <Input
+          placeholder="Technologies (e.g., go, react)"
+          value={technologies}
+          onChange={(e) => setTechnologies(e.target.value)}
+        />
+        <Input
+          type="number"
+          placeholder="Min salary"
+          value={salaryMin}
+          onChange={(e) => setSalaryMin(e.target.value)}
+        />
+        <Input
+          type="number"
+          placeholder="Max salary"
+          value={salaryMax}
+          onChange={(e) => setSalaryMax(e.target.value)}
         />
         <Select
           options={sortOptions}
