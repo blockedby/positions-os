@@ -26,7 +26,11 @@ func TestServer_Starts(t *testing.T) {
 	// wait for server to be ready
 	require.Eventually(t, func() bool {
 		resp, err := http.Get(srv.BaseURL() + "/health")
-		return err == nil && resp.StatusCode == 200
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode == 200
 	}, 2*time.Second, 100*time.Millisecond)
 }
 
@@ -112,9 +116,12 @@ func TestServer_WebSocket(t *testing.T) {
 	u := url.URL{Scheme: "ws", Host: srv.listener.Addr().String(), Path: "/ws"}
 
 	// Connect
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, wsResp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	require.NoError(t, err)
 	defer c.Close()
+	if wsResp != nil && wsResp.Body != nil {
+		defer wsResp.Body.Close()
+	}
 }
 
 func TestServer_RegisterJobsHandler(t *testing.T) {
@@ -131,6 +138,7 @@ func TestServer_RegisterJobsHandler(t *testing.T) {
 
 	resp, err := http.Get(srv.BaseURL() + "/api/v1/jobs")
 	require.NoError(t, err)
+	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
