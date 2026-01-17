@@ -14,6 +14,7 @@ type AuthHandler struct {
 	hub    HubBroadcaster // Interface for Hub
 }
 
+// HubBroadcaster defines the interface for broadcasting messages to connected clients.
 type HubBroadcaster interface {
 	Broadcast(message interface{})
 }

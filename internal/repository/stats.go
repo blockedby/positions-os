@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// DashboardStats contains aggregated statistics for the dashboard.
 type DashboardStats struct {
 	TotalJobs      int `json:"total_jobs"`
 	AnalyzedJobs   int `json:"analyzed_jobs"`
@@ -16,14 +17,17 @@ type DashboardStats struct {
 	ActiveTargets  int `json:"active_targets"`
 }
 
+// StatsRepository provides access to statistics data in the database.
 type StatsRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewStatsRepository creates a new StatsRepository.
 func NewStatsRepository(pool *pgxpool.Pool) *StatsRepository {
 	return &StatsRepository{pool: pool}
 }
 
+// GetStats retrieves aggregated statistics for the dashboard.
 func (r *StatsRepository) GetStats(ctx context.Context) (*DashboardStats, error) {
 	stats := &DashboardStats{}
 

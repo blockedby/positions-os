@@ -17,6 +17,7 @@ type JobsHandler struct {
 	hub  *web.Hub
 }
 
+// NewJobsHandler creates a new JobsHandler.
 func NewJobsHandler(repo JobsRepository, hub *web.Hub) *JobsHandler {
 	return &JobsHandler{
 		repo: repo,
@@ -24,8 +25,7 @@ func NewJobsHandler(repo JobsRepository, hub *web.Hub) *JobsHandler {
 	}
 }
 
-// ... List ... GetByID ...
-
+// UpdateStatus updates the status of a job.
 func (h *JobsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -79,6 +79,7 @@ func (h *JobsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// List returns a paginated list of jobs with optional filters.
 func (h *JobsHandler) List(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	if page < 1 {
@@ -131,6 +132,7 @@ func (h *JobsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetByID returns a single job by its ID.
 func (h *JobsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

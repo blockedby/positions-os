@@ -58,6 +58,7 @@ type Hub struct {
 	unregister chan *Client
 }
 
+// NewHub creates a new Hub for managing WebSocket connections.
 func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
@@ -67,6 +68,7 @@ func NewHub() *Hub {
 	}
 }
 
+// Run starts the hub's event loop for managing clients.
 func (h *Hub) Run() {
 	for {
 		select {

@@ -319,6 +319,7 @@ func (h *ApplicationsHandler) SendApplication(w http.ResponseWriter, r *http.Req
 	h.Send(w, r)
 }
 
+// Common errors for application handlers.
 var (
 	ErrApplicationNotFound = errors.New("application not found")
 	ErrInvalidRecipient    = errors.New("invalid recipient")

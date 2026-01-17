@@ -13,28 +13,28 @@ type LLMClient interface {
 	ExtractJobData(ctx context.Context, rawContent, systemPrompt, userPrompt string) (string, error)
 }
 
-// BrainLLM wraps the LLM client with rate limiting for brain operations.
+// LLMWrapper wraps the LLM client with rate limiting for brain operations.
 // Rate limit is hardcoded to 1 request per second.
-type BrainLLM struct {
+type LLMWrapper struct {
 	client      LLMClient
 	rateLimiter *time.Ticker
 }
 
-// NewBrainLLM creates a new BrainLLM with 1 req/sec rate limiting.
-func NewBrainLLM(client LLMClient) *BrainLLM {
-	return &BrainLLM{
+// NewLLMWrapper creates a new LLMWrapper with 1 req/sec rate limiting.
+func NewLLMWrapper(client LLMClient) *LLMWrapper {
+	return &LLMWrapper{
 		client:      client,
 		rateLimiter: time.NewTicker(time.Second),
 	}
 }
 
 // waitForRateLimit waits for the rate limiter before proceeding.
-func (b *BrainLLM) waitForRateLimit() {
+func (b *LLMWrapper) waitForRateLimit() {
 	<-b.rateLimiter.C
 }
 
 // TailorResume adapts the base resume to a specific job using the LLM.
-func (b *BrainLLM) TailorResume(ctx context.Context, baseResume, jobData string) (string, error) {
+func (b *LLMWrapper) TailorResume(ctx context.Context, baseResume, jobData string) (string, error) {
 	logger.Info("calling LLM for resume tailoring")
 
 	b.waitForRateLimit()
@@ -61,7 +61,7 @@ Return ONLY the Markdown resume, no comments.`
 }
 
 // GenerateCover generates a cover letter using the LLM with a template.
-func (b *BrainLLM) GenerateCover(ctx context.Context, jobData, tailoredResume, templateID string) (string, error) {
+func (b *LLMWrapper) GenerateCover(ctx context.Context, jobData, tailoredResume, templateID string) (string, error) {
 	logger.Info("calling LLM for cover letter")
 
 	b.waitForRateLimit()
@@ -128,6 +128,6 @@ Best regards,
 }
 
 // Close stops the rate limiter.
-func (b *BrainLLM) Close() {
+func (b *LLMWrapper) Close() {
 	b.rateLimiter.Stop()
 }

@@ -16,6 +16,7 @@ import (
 // DeliveryStatus represents the delivery state of an application
 type DeliveryStatus = models.DeliveryStatus
 
+// DeliveryStatus constants define the possible states of application delivery.
 const (
 	StatusPending   DeliveryStatus = models.DeliveryStatusPending
 	StatusSending   DeliveryStatus = "SENDING" // Additional transient status

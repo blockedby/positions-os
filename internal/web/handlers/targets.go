@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// TargetsRepository defines the interface for target data access.
 type TargetsRepository interface {
 	List(ctx context.Context) ([]repository.ScrapingTarget, error)
 	Create(ctx context.Context, t *repository.ScrapingTarget) error
@@ -25,10 +26,12 @@ var validTargetTypes = map[string]bool{
 	"HH_SEARCH":  true,
 }
 
+// TargetsHandler handles target-related HTTP requests.
 type TargetsHandler struct {
 	repo TargetsRepository
 }
 
+// NewTargetsHandler creates a new TargetsHandler.
 func NewTargetsHandler(repo TargetsRepository) *TargetsHandler {
 	return &TargetsHandler{
 		repo: repo,
@@ -60,6 +63,7 @@ type CreateTargetRequest struct {
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
+// Create creates a new scraping target.
 func (h *TargetsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateTargetRequest
 
@@ -142,6 +146,7 @@ func (h *TargetsHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, t)
 }
 
+// Delete removes a scraping target by ID.
 func (h *TargetsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -166,6 +171,7 @@ type UpdateTargetRequest struct {
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
+// Update modifies an existing scraping target.
 func (h *TargetsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

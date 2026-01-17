@@ -9,6 +9,7 @@ import (
 // JobStatus represents the processing status of a job posting.
 type JobStatus string
 
+// JobStatus constants define the possible states of a job posting.
 const (
 	JobStatusRaw        JobStatus = "RAW"
 	JobStatusAnalyzed   JobStatus = "ANALYZED"

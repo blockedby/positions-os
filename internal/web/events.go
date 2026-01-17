@@ -33,7 +33,7 @@ type JobUpdatedPayload struct {
 	Status string `json:"status"`
 }
 
-// NewJobUpdatedEvent creates a JSON message for job updates
+// JobUpdatedEvent creates a JSON message for job updates.
 func JobUpdatedEvent(jobID uuid.UUID, status string) []byte {
 	evt := WSEvent{
 		Type: EventJobUpdated,
@@ -46,9 +46,8 @@ func JobUpdatedEvent(jobID uuid.UUID, status string) []byte {
 	return b
 }
 
-// NewHTMXJobUpdateEvent returns an OOB swap trigger (if we were sending HTML directly over WS)
-// Or better, sends a trigger for HTMX to refresh specific parts.
-// When using hx-ws, we can send HTML for OOB swaps.
+// JobRowUpdateHTML returns an OOB swap trigger for HTMX.
+// When using hx-ws, this can send HTML for OOB swaps or JSON to trigger client-side events.
 func JobRowUpdateHTML(jobID uuid.UUID, status string) []byte {
 	// For now returning JSON as per previous plan, but HTMX WS extension usually expects
 	// HTML for OOB swaps or JSON to trigger client-side events.

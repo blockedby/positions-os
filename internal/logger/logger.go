@@ -53,7 +53,7 @@ func New(level string, logFile string) (*Logger, error) {
 	return &Logger{logger}, nil
 }
 
-// global logger for convenience
+// Global is the global logger instance for convenience.
 var Global *Logger
 
 // Init initializes the global logger.

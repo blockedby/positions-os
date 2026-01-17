@@ -16,8 +16,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// Status represents the Telegram client status.
 type Status string
 
+// Status constants define the possible states of the Telegram client.
 const (
 	StatusInitializing Status = "INITIALIZING"
 	StatusReady        Status = "READY"
@@ -36,6 +38,7 @@ type QRClientFactory func(cfg *config.Config) (*QRClientBundle, error)
 // maxMsgID is the highest message ID that was read.
 type ReadReceiptCallback func(ctx context.Context, peerUserID int64, maxMsgID int64) error
 
+// Manager handles Telegram client lifecycle and authentication.
 type Manager struct {
 	client *gotgproto.Client
 	db     *gorm.DB
@@ -58,6 +61,7 @@ type Manager struct {
 	readReceiptCallbackMu sync.RWMutex
 }
 
+// NewManager creates a new Telegram Manager.
 func NewManager(cfg *config.Config, db *gorm.DB) *Manager {
 	return &Manager{
 		db:              db,
@@ -106,12 +110,14 @@ func (m *Manager) OnReadReceipt(ctx context.Context, peerUserID int64, maxMsgID 
 	return cb(ctx, peerUserID, maxMsgID)
 }
 
+// GetStatus returns the current Telegram client status.
 func (m *Manager) GetStatus() Status {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.status
 }
 
+// GetClient returns the underlying Telegram client.
 func (m *Manager) GetClient() *gotgproto.Client {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -290,6 +296,7 @@ func (m *Manager) saveSessionToDB(data *session.Data) error {
 	return m.db.Save(sess).Error
 }
 
+// Stop stops the Telegram client.
 func (m *Manager) Stop() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
